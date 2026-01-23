@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+env/
+venv/
+
+# Node
+node_modules/
+dist/
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+*.log
+
+# Java/Gradle
+/.gradle
+/build
+/out
+*.class
+*.log
+*.war
+*.jar
+/.mvn
+.settings/
+target/
+/.idea/
+
+# Gradle wrapper
+gradle-wrapper.jar
+gradle-wrapper.properties
+
