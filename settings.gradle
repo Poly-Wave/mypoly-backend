@@ -1,1 +1,4 @@
 rootProject.name = 'mypoly-backend'
+
+include 'user-service'
+include 'subsidy-service'
