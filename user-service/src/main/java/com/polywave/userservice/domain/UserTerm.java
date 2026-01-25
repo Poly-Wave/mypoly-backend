@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "user_terms")
 @Entity
-public class UserTerms {
+public class UserTerm {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
