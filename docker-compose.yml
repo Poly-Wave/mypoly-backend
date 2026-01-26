@@ -3,10 +3,8 @@ services:
   db:
     image: postgres:15
     container_name: mypoly-postgres
-    environment:
-      - POSTGRES_USER=mypoly
-      - POSTGRES_PASSWORD=mypoly1234
-      - POSTGRES_DB=mypoly
+    env_file:
+      - ./user-service/.env
     ports:
       - "5432:5432"
     volumes:
@@ -18,13 +16,8 @@ services:
     container_name: mypoly-user-service
     ports:
       - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
-    environment:
-      - KAKAO_CLIENT_ID=f86bfc2d6a9d104e44dc86283047333a
-      - KAKAO_CLIENT_SECRET=To1AMzjIyBzTB79Nhuahmm7nEnV0EUjk
-      - DB_URL=jdbc:postgresql://db:5432/mypoly
-      - DB_USERNAME=mypoly
-      - DB_PASSWORD=mypoly1234
-      - SERVER_PORT=${USER_SERVICE_PORT}
+    env_file:
+      - ./user-service/.env
     depends_on:
       - db
 volumes:
