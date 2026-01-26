@@ -63,7 +63,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             return;
         }
 
-        SocialUserService.SocialUserDto userDto = socialUserService.loginOrRegisterDto(
+        com.polywave.userservice.api.dto.SocialUserDto userDto = socialUserService.loginOrRegisterDto(
             userInfo.getProvider(),
             userInfo.getProviderUserId(),
             null, 

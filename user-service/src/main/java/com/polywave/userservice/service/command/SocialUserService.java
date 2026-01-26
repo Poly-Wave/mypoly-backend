@@ -5,23 +5,17 @@ import com.polywave.userservice.domain.User;
 import com.polywave.userservice.domain.UserOauth;
 import com.polywave.userservice.repository.UserRepository;
 import com.polywave.userservice.repository.UserOauthRepository;
+import com.polywave.userservice.api.dto.SocialUserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+
 public class SocialUserService {
-    public record SocialUserDto(
-        Long userId,
-        String provider,
-        String providerUserId,
-        String nickname,
-        String profileImageUrl
-    ) {}
 
     /**
      * LazyInitializationException 방지용: 트랜잭션 내에서 DTO로 변환
@@ -42,7 +36,7 @@ public class SocialUserService {
     private final UserOauthRepository userOauthRepository;
     
     @Transactional
-    public UserOauth loginOrRegister(String provider, String providerUserId, String nickname, String profileImageUrl) {
+    UserOauth loginOrRegister(String provider, String providerUserId, String nickname, String profileImageUrl) {
         return userOauthRepository.findByProviderAndProviderUserId(provider, providerUserId)
                 .orElseGet(() -> createSocialUser(provider, providerUserId, nickname, profileImageUrl));
     }
