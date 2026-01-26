@@ -5,7 +5,6 @@ import com.polywave.userservice.api.dto.ApiResponse;
 import com.polywave.userservice.api.dto.SocialLoginResponse;
 import com.polywave.userservice.api.oauth.KakaoUserInfo;
 import com.polywave.userservice.api.oauth.SocialUserInfo;
-import com.polywave.userservice.domain.UserOauth;
 import com.polywave.userservice.service.command.SocialUserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
