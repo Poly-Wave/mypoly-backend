@@ -1,3 +1,7 @@
+# User-service 환경변수 파일
+user-service/.env
+# Environment
+.env
 # Python
 __pycache__/
 *.py[cod]
@@ -17,6 +21,7 @@ Thumbs.db
 *.log
 
 # Java/Gradle
+
 /.gradle
 /build
 /out
@@ -27,7 +32,21 @@ Thumbs.db
 /.mvn
 .settings/
 target/
-/.idea/
+.idea/
+
+# === 실무 빌드/산출물 완전 차단 ===
+build/
+bin/
+tmp/
+distributions/
+*.tar
+*.zip
+user-service/build/
+user-service/bin/
+user-service/tmp/
+user-service/distributions/
+user-service/*.tar
+user-service/*.zip
 
 # Gradle wrapper
 gradle-wrapper.jar

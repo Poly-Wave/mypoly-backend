@@ -2,7 +2,6 @@ package com.polywave.userservice.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter
