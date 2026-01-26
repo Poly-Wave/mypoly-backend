@@ -47,7 +47,7 @@ docker-compose up -d
 - 환경변수: `.env`, `user-service/.env` 참고 (민감정보는 git에 포함 금지)
 
 ## 프론트엔드 연동
-- 카카오 로그인 시작: `{도메인}/oauth2/authorization/kakao`
+- 카카오 로그인 시작: `{도메인}:8081/oauth2/authorization/kakao`
 - 로그인 성공 콜백: `/login/success` (JSON 반환)
 
 ## 협업/운영 주의사항
