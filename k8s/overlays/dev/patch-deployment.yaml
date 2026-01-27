@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: mypoly
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: user-service
+          image: mypoly-backend-user-service:latest

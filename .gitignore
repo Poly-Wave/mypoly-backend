@@ -52,3 +52,6 @@ user-service/*.zip
 gradle-wrapper.jar
 gradle-wrapper.properties
 
+# Kubernetes Secret (보안상 git에 포함 금지)
+k8s/base/secret.yaml
+

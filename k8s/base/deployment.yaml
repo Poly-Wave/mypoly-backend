@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: mypoly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: mypoly-backend-user-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: user-service-config
+            - secretRef:
+                name: user-service-secret
+
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
