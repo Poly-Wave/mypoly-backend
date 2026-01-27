@@ -3,6 +3,9 @@ package com.polywave.userservice.config;
 import com.polywave.userservice.security.JwtAuthenticationFilter;
 import com.polywave.userservice.security.OAuth2LoginFailureHandler;
 import com.polywave.userservice.security.OAuth2LoginSuccessHandler;
+import com.polywave.userservice.security.SecurityEndpoints;
+import com.polywave.userservice.security.handler.RestAccessDeniedHandler;
+import com.polywave.userservice.security.handler.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,12 +21,22 @@ public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final RestAccessDeniedHandler restAccessDeniedHandler;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                // 401/403 JSON 표준화
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(restAccessDeniedHandler)
+                )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/error", "/login", "/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers(SecurityEndpoints.PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

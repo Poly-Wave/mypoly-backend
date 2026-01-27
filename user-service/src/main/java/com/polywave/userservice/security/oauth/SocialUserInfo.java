@@ -1,4 +1,4 @@
-package com.polywave.userservice.api.oauth;
+package com.polywave.userservice.security.oauth;
 
 public interface SocialUserInfo {
     String getProvider();

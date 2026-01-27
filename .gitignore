@@ -1,7 +1,9 @@
 # User-service 환경변수 파일
 user-service/.env
+
 # Environment
 .env
+
 # Python
 __pycache__/
 *.py[cod]
@@ -21,7 +23,6 @@ Thumbs.db
 *.log
 
 # Java/Gradle
-
 /.gradle
 /build
 /out
@@ -48,10 +49,9 @@ user-service/distributions/
 user-service/*.tar
 user-service/*.zip
 
-# Gradle wrapper
-gradle-wrapper.jar
-gradle-wrapper.properties
-
 # Kubernetes Secret (보안상 git에 포함 금지)
 k8s/base/secret.yaml
 
+# Gradle Wrapper는 커밋 허용 (재현성 필수)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties

@@ -3,9 +3,12 @@ package com.polywave.userservice.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.polywave.userservice.api.dto.ApiResponse;
 import com.polywave.userservice.api.dto.SocialLoginResponse;
-import com.polywave.userservice.api.oauth.KakaoUserInfo;
-import com.polywave.userservice.api.oauth.SocialUserInfo;
-import com.polywave.userservice.service.command.SocialUserService;
+import com.polywave.userservice.application.auth.SocialUserService;
+import com.polywave.userservice.application.auth.command.SocialLoginCommand;
+import com.polywave.userservice.application.auth.result.SocialUserResult;
+import com.polywave.userservice.security.oauth.SocialUserInfo;
+import com.polywave.userservice.security.oauth.SocialUserInfoResolver;
+import com.polywave.userservice.security.oauth.UnsupportedOAuth2ProviderException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,6 +30,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final JwtUtil jwtUtil;
     private final ObjectMapper objectMapper;
 
+    private final SocialUserInfoResolver socialUserInfoResolver;
+
     @Override
     public void onAuthenticationSuccess(
             HttpServletRequest request,
@@ -34,26 +39,24 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             Authentication authentication
     ) throws IOException, ServletException {
 
-
         if (!(authentication instanceof OAuth2AuthenticationToken token)) {
             write(response, HttpServletResponse.SC_UNAUTHORIZED, ApiResponse.fail("Unauthenticated"));
             return;
         }
+
         Object principal = token.getPrincipal();
-        if (!(principal instanceof OAuth2User)) {
+        if (!(principal instanceof OAuth2User oAuth2User)) {
             write(response, HttpServletResponse.SC_UNAUTHORIZED, ApiResponse.fail("Unauthenticated"));
             return;
         }
-        OAuth2User oAuth2User = (OAuth2User) principal;
 
         String provider = token.getAuthorizedClientRegistrationId(); // ex) kakao
-        SocialUserInfo userInfo = switch (provider) {
-            case "kakao" -> new KakaoUserInfo(oAuth2User);
-            default -> null;
-        };
 
-        if (userInfo == null) {
-            write(response, HttpServletResponse.SC_BAD_REQUEST, ApiResponse.fail("Unsupported provider: " + provider));
+        final SocialUserInfo userInfo;
+        try {
+            userInfo = socialUserInfoResolver.resolve(provider, oAuth2User);
+        } catch (UnsupportedOAuth2ProviderException e) {
+            write(response, HttpServletResponse.SC_BAD_REQUEST, ApiResponse.fail(e.getMessage()));
             return;
         }
 
@@ -62,22 +65,24 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             return;
         }
 
-        com.polywave.userservice.api.dto.SocialUserDto userDto = socialUserService.loginOrRegisterDto(
-            userInfo.getProvider(),
-            userInfo.getProviderUserId(),
-            null, 
-            userInfo.getProfileImageUrl()
+        SocialLoginCommand command = new SocialLoginCommand(
+                userInfo.getProvider(),
+                userInfo.getProviderUserId(),
+                null,
+                userInfo.getProfileImageUrl()
         );
 
-        String jwt = jwtUtil.generateToken(String.valueOf(userDto.userId()));
+        SocialUserResult user = socialUserService.loginOrRegister(command);
+
+        String jwt = jwtUtil.generateToken(String.valueOf(user.userId()));
 
         SocialLoginResponse data = new SocialLoginResponse(
-            userDto.userId(),
-            userDto.provider(),
-            userDto.providerUserId(),
-            userDto.nickname(),
-            userDto.profileImageUrl(),
-            jwt
+                user.userId(),
+                user.provider(),
+                user.providerUserId(),
+                user.nickname(),
+                user.profileImageUrl(),
+                jwt
         );
 
         write(response, HttpServletResponse.SC_OK, ApiResponse.ok("소셜 로그인 성공", data));

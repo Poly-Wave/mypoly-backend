@@ -1,4 +1,4 @@
-package com.polywave.userservice.api.oauth;
+package com.polywave.userservice.security.oauth;
 
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
@@ -25,25 +25,20 @@ public final class KakaoUserInfo implements SocialUserInfo {
 
     @Override
     public String getNickname() {
-        // 권장: kakao_account.profile.nickname
         String nick = getString(getMap(getMap(attributes, "kakao_account"), "profile"), "nickname");
         if (nick != null) return nick;
 
-        // 구형/설정에 따라: properties.nickname
         return getString(getMap(attributes, "properties"), "nickname");
     }
 
     @Override
     public String getProfileImageUrl() {
-        // 권장: kakao_account.profile.profile_image_url
         String url = getString(getMap(getMap(attributes, "kakao_account"), "profile"), "profile_image_url");
         if (url != null) return url;
 
-        // 구형/설정에 따라: properties.profile_image
         url = getString(getMap(attributes, "properties"), "profile_image");
         if (url != null) return url;
 
-        // 혹시 키가 다를 때: kakao_account.profile.profile_image
         return getString(getMap(getMap(attributes, "kakao_account"), "profile"), "profile_image");
     }
 

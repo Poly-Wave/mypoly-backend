@@ -6,17 +6,14 @@ metadata:
   annotations:
     # HTTP only (SSL은 나중)
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    # /users/** 로 들어온 요청을 user-service의 기존 루트 엔드포인트로 전달하기 위한 rewrite
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
-    - host: api-mypoly.kro.kr
+    - host: api-mypoly.kro.kr #<YOUR_DOMAIN>
       http:
         paths:
-          - path: /users(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /users
+            pathType: Prefix
             backend:
               service:
                 name: user-service
