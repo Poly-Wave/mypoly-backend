@@ -33,7 +33,10 @@ spec:
             - name: POSTGRES_USER
               value: mypoly
             - name: POSTGRES_PASSWORD
-              value: mypoly1234
+              valueFrom:
+                secretKeyRef:
+                  name: mypoly-postgres-secret
+                  key: POSTGRES_PASSWORD
           ports:
             - containerPort: 5432
           volumeMounts:
