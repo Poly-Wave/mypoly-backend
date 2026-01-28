@@ -5,7 +5,7 @@
 # Env / secrets
 .env
 **/.env
-k8s/**/secret.yaml
+k8s/**/*secret.yaml
 
 # Gradle / Build outputs
 **/build

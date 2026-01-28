@@ -50,7 +50,7 @@ user-service/*.tar
 user-service/*.zip
 
 # Kubernetes Secret (보안상 git에 포함 금지)
-k8s/base/secret.yaml
+k8s/**/*secret.yaml
 
 # Gradle Wrapper는 커밋 허용 (재현성 필수)
 !gradle/wrapper/gradle-wrapper.jar

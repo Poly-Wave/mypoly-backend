@@ -35,8 +35,8 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mypoly-postgres-secret
-                  key: POSTGRES_PASSWORD
+                  name: user-service-secret
+                  key: DB_PASSWORD
           ports:
             - containerPort: 5432
           volumeMounts:
