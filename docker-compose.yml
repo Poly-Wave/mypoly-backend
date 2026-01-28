@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: mypoly-postgres
+    restart: unless-stopped
+
+    # DB는 공통 인프라 env만
+    env_file:
+      - ./.env
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    #image: mypoly-user-service:latest
+    image: ghcr.io/poly-wave/mypoly-user-service:latest
+    container_name: mypoly-user-service
+    restart: unless-stopped
+
+    # 공통(.env) + 서비스 전용(user-service/.env) 합쳐서 주입
+    env_file:
+      - ./.env
+      - ./user-service/.env
+
+    environment:
+      # compose 네트워크에서는 db(서비스명)로 접근
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # 컨테이너 내부 포트는 8080 고정
+      SERVER_PORT: "8080"
+
+      # 로컬은 보통 context-path 비움 (k8s에서만 /users)
+      SERVER_SERVLET_CONTEXT_PATH: ${SERVER_SERVLET_CONTEXT_PATH:-}
+
+      # Ingress/Reverse proxy 환경에서도 사용 (로컬에서도 켜도 무해)
+      SERVER_FORWARD_HEADERS_STRATEGY: ${SERVER_FORWARD_HEADERS_STRATEGY:-framework}
+
+    ports:
+      # 호스트 포트만 USER_SERVICE_PORT로 조절
+      - "${USER_SERVICE_PORT:-8080}:8080"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

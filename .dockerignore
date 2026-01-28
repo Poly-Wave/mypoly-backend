@@ -1,0 +1,25 @@
+# Git
+.git
+.gitignore
+
+# Env / secrets
+.env
+**/.env
+k8s/**/*secret.yaml
+
+# Gradle / Build outputs
+**/build
+**/.gradle
+**/out
+**/target
+
+# IDE / OS
+.vscode
+.idea
+*.iml
+Thumbs.db
+
+# Logs & archives
+*.log
+*.zip
+*.tar

@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "user_oauths", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"provider", "providerUserId"})
+        @UniqueConstraint(columnNames = {"provider", "provider_user_id"})
 })
 @Entity
 public class UserOauth {
@@ -23,6 +23,6 @@ public class UserOauth {
     @Column(length = 10, nullable = false)
     private String provider;
 
-    @Column(length = 100, nullable = false)
+    @Column(name = "provider_user_id", length = 100, nullable = false)
     private String providerUserId;
 }

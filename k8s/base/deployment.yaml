@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: mypoly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          #image: mypoly-backend-user-service:latest
+          image: ghcr.io/poly-wave/mypoly-user-service:latest #(GitHub Container Registry)
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 8080
+
+          env:
+            # context-path 방식: 서비스가 /users 아래로 동작
+            - name: SERVER_SERVLET_CONTEXT_PATH
+              value: /users
+
+          envFrom:
+            - configMapRef:
+                name: user-service-config
+            - secretRef:
+                name: user-service-secret
+
+          # 기능 엔드포인트(/login) 대신 actuator health로 probe
+          readinessProbe:
+            httpGet:
+              path: /users/actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /users/actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
