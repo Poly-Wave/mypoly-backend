@@ -30,7 +30,7 @@ services:
       context: .
       dockerfile: user-service/Dockerfile
     #image: mypoly-user-service:latest
-    image: ghcr.io/seongyonglim/mypoly-user-service:latest
+    image: ghcr.io/poly-wave/mypoly-user-service:latest
     container_name: mypoly-user-service
     restart: unless-stopped
 

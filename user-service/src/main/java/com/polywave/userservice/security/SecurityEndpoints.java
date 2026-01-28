@@ -11,7 +11,10 @@ public final class SecurityEndpoints {
     private SecurityEndpoints() {}
 
     public static final String[] PUBLIC_ENDPOINTS = {
-            "/", "/error", "/login", "/oauth2/**", "/login/oauth2/**",
+            "/", "/error", "/oauth2/**", "/login/oauth2/**",
+
+            // 소셜 로그인 시작(공식)
+            "/auth/**",
             
             //Actuator 엔드포인트
             "/actuator/health", "/actuator/health/**",

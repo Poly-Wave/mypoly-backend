@@ -18,7 +18,7 @@ public class JwtUtil {
     @Value("${JWT_SECRET}")
     private String secret;
 
-    private static final long EXPIRATION_MS = 1000 * 60 * 60 * 24; // 24시간
+    private static final long EXPIRATION_MS = 1000L * 60 * 60 * 24; // 24시간
 
     public String generateToken(String userId) {
         SecretKey key = getSecretKey();
