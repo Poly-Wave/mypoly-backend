@@ -15,9 +15,9 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: mypoly-backend-user-service:latest
-          #image: ghcr.io/seongyonglim/mypoly-user-service:0.1.0 (GitHub Container Registry)
-          imagePullPolicy: IfNotPresent
+          #image: mypoly-backend-user-service:latest
+          image: ghcr.io/seongyonglim/mypoly-user-service:latest #(GitHub Container Registry)
+          imagePullPolicy: Always
 
           ports:
             - containerPort: 8080

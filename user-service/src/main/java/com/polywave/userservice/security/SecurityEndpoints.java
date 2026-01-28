@@ -12,7 +12,13 @@ public final class SecurityEndpoints {
 
     public static final String[] PUBLIC_ENDPOINTS = {
             "/", "/error", "/login", "/oauth2/**", "/login/oauth2/**",
-            "/actuator/health", "/actuator/health/**"
+            
+            //Actuator 엔드포인트
+            "/actuator/health", "/actuator/health/**",
+
+            //Swagger(OpenApi) API
+            "/v3/api-docs", "/v3/api-docs/**",
+            "/swagger-ui.html", "/swagger-ui/**"
     };
 
     public static final RequestMatcher PUBLIC_REQUEST_MATCHER =

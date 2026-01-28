@@ -29,7 +29,8 @@ services:
     build:
       context: .
       dockerfile: user-service/Dockerfile
-    image: mypoly-backend-user-service:latest
+    #image: mypoly-user-service:latest
+    image: ghcr.io/seongyonglim/mypoly-user-service:latest
     container_name: mypoly-user-service
     restart: unless-stopped
 
