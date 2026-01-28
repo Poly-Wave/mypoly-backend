@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: api-mypoly-kro-kr
+  namespace: mypoly
+spec:
+  secretName: api-mypoly-kro-kr-tls
+  issuerRef:
+    name: letsencrypt-staging   # 처음엔 staging 으로 임시조치, 추후 prod로 변경 후 실제 인증서 생성
+    kind: ClusterIssuer
+  dnsNames:
+    - api-mypoly.kro.kr
