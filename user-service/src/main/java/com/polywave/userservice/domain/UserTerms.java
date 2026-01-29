@@ -1,6 +1,7 @@
 package com.polywave.userservice.domain;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "user_terms")
 @Entity
-public class UserTerm {
+public class UserTerms {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,5 +25,8 @@ public class UserTerm {
     private Terms terms;
 
     @Column(nullable = false)
-    private LocalDateTime agreedAt;
+    private boolean agreed;
+
+    @Column(nullable = false)
+    private Instant agreedAt;
 }
