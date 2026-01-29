@@ -20,8 +20,8 @@ public class UserTerm {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "term_id", nullable = false)
-    private Term term;
+    @JoinColumn(name = "terms_id", nullable = false)
+    private Terms terms;
 
     @Column(nullable = false)
     private LocalDateTime agreedAt;
