@@ -31,4 +31,8 @@ public class User extends BaseEntity {
 
     @Column(length = 10)
     private String onboardingStatus;
+
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }
