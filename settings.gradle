@@ -1,3 +1,4 @@
 rootProject.name = 'mypoly-backend'
 
 include 'user-service'
+include "mypoly-security"
