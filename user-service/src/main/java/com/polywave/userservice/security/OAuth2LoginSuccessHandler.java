@@ -1,6 +1,7 @@
 package com.polywave.userservice.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.polywave.security.JwtUtil;
 import com.polywave.userservice.api.dto.ApiResponse;
 import com.polywave.userservice.api.dto.SocialLoginResponse;
 import com.polywave.userservice.application.auth.SocialUserService;
@@ -12,6 +13,7 @@ import com.polywave.userservice.security.oauth.UnsupportedOAuth2ProviderExceptio
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -20,8 +22,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-
 @Component
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
@@ -29,7 +29,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final SocialUserService socialUserService;
     private final JwtUtil jwtUtil;
     private final ObjectMapper objectMapper;
-
     private final SocialUserInfoResolver socialUserInfoResolver;
 
     @Override
@@ -74,7 +73,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         SocialUserResult user = socialUserService.loginOrRegister(command);
 
-        String jwt = jwtUtil.generateToken(String.valueOf(user.userId()));
+        String jwt = jwtUtil.createToken(user.userId());
 
         SocialLoginResponse data = new SocialLoginResponse(
                 user.userId(),

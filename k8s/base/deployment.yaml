@@ -16,7 +16,7 @@ spec:
       containers:
         - name: user-service
           #image: mypoly-backend-user-service:latest
-          image: ghcr.io/poly-wave/mypoly-user-service:latest #(GitHub Container Registry)
+          image: ghcr.io/poly-wave/mypoly-user-service:0.2 #(GitHub Container Registry)
           imagePullPolicy: Always
 
           ports:
