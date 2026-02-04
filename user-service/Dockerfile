@@ -4,6 +4,10 @@ WORKDIR /workspace
 COPY gradlew gradlew.bat settings.gradle build.gradle ./
 COPY gradle ./gradle
 
+# 멀티모듈: 공통 모듈도 같이 복사해야 빌드됨
+COPY mypoly-security/build.gradle mypoly-security/build.gradle
+COPY mypoly-security/src mypoly-security/src
+
 COPY user-service/build.gradle user-service/build.gradle
 COPY user-service/src user-service/src
 

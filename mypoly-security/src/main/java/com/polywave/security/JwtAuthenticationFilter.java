@@ -1,13 +1,16 @@
 package com.polywave.security;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -28,15 +31,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         String token = resolveToken(request);
-        if (token != null && jwtUtil.validateToken(token)) {
+
+        // 토큰 없으면 그냥 통과 (최종 401/permitAll은 SecurityConfig가 처리)
+        if (token == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 토큰이 있는데 검증 실패면 인증 세팅 안 함 -> EntryPoint에서 401 처리
+        if (jwtUtil.validateToken(token)) {
             Long userId = jwtUtil.extractUserId(token);
 
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(
-                            userId, null,
+                            userId,
+                            null,
                             List.of(new SimpleGrantedAuthority("ROLE_USER"))
                     );
 
+            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
@@ -46,6 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String resolveToken(HttpServletRequest request) {
         String bearer = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (bearer == null || !bearer.startsWith("Bearer ")) return null;
-        return bearer.substring(7);
+        String token = bearer.substring(7).trim();
+        return token.isEmpty() ? null : token;
     }
 }

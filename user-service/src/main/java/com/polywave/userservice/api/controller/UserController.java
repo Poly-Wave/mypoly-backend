@@ -1,8 +1,6 @@
 package com.polywave.userservice.api.controller;
 
-import static org.springframework.http.HttpStatus.CREATED;
-
-import com.polywave.userservice.annotation.LoginUser;
+import com.polywave.security.annotation.LoginUser;
 import com.polywave.userservice.api.dto.ApiResponse;
 import com.polywave.userservice.api.dto.NicknameAvailabilityRequest;
 import com.polywave.userservice.api.dto.NicknameAvailabilityResponse;
@@ -16,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -38,11 +35,10 @@ public class UserController {
 
     @PostMapping("/nicknames")
     public ResponseEntity<ApiResponse<Void>> createNickname(
-            @Valid @RequestBody NicknameCreateRequest request, @LoginUser Long userId
+            @Valid @RequestBody NicknameCreateRequest request,
+            @LoginUser Long userId
     ) {
         userCommandService.createNickname(userId, request.nickname());
-
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("닉네임이 생성 성공"));
     }
-
 }
