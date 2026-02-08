@@ -1,6 +1,6 @@
 package com.polywave.userservice.config;
 
-import com.polywave.userservice.security.JwtAuthenticationFilter;
+import com.polywave.security.JwtAuthenticationFilter;
 import com.polywave.userservice.security.OAuth2LoginFailureHandler;
 import com.polywave.userservice.security.OAuth2LoginSuccessHandler;
 import com.polywave.userservice.security.SecurityEndpoints;
@@ -30,7 +30,6 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-                // 401/403 JSON 표준화
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(restAuthenticationEntryPoint)
                         .accessDeniedHandler(restAccessDeniedHandler)
