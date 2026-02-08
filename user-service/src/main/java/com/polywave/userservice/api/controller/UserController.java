@@ -2,9 +2,9 @@ package com.polywave.userservice.api.controller;
 
 import static org.springframework.http.HttpStatus.CREATED;
 
-import com.polywave.userservice.annotation.LoginUser;
+import com.polywave.security.annotation.LoginUser;
 import com.polywave.userservice.api.dto.*;
-import com.polywave.userservice.application.nickname.service.NicknameCommandService;
+import com.polywave.userservice.application.nickname.command.service.NicknameCommandService;
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
 import com.polywave.userservice.application.nickname.query.result.RandomNicknameResult;
 import com.polywave.userservice.application.nickname.query.service.NicknameQueryService;

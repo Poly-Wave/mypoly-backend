@@ -1,4 +1,4 @@
-package com.polywave.userservice.application.nickname.service;
+package com.polywave.userservice.application.nickname.command.service;
 
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
 
