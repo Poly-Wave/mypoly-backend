@@ -1,6 +1,6 @@
-package com.polywave.userservice.application.user.command.service;
+package com.polywave.userservice.application.nickname.service;
 
-import com.polywave.userservice.application.user.query.result.NicknameAvailabilityResult;
+import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
 import com.polywave.userservice.domain.User;
 import com.polywave.userservice.repository.command.UserCommandRepository;
 import jakarta.transaction.Transactional;

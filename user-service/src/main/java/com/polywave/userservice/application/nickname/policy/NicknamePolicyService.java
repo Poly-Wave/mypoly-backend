@@ -1,4 +1,4 @@
-package com.polywave.userservice.application.user.policy;
+package com.polywave.userservice.application.nickname.policy;
 
 import com.polywave.userservice.repository.query.NicknameForbiddenWordQueryRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class NicknamePolicyService {
 
     private final NicknameForbiddenWordQueryRepository forbiddenWordQueryRepository;
-
-    public void validate(String nickname) {
-        if (forbiddenWordQueryRepository.containsForbiddenWord(nickname)) {
-            throw new IllegalStateException("금칙어가 포함된 닉네임입니다.");
-        }
-    }
 
     public boolean isForbidden(String nickname) {
         return forbiddenWordQueryRepository.containsForbiddenWord(nickname);

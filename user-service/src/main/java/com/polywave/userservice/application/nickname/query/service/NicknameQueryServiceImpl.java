@@ -1,17 +1,15 @@
-    package com.polywave.userservice.application.user.query.service;
+    package com.polywave.userservice.application.nickname.query.service;
 
-import com.polywave.userservice.application.user.generator.RandomNicknameGenerator;
-import com.polywave.userservice.application.user.policy.NicknamePolicyService;
-import com.polywave.userservice.application.user.query.result.NicknameAvailabilityResult;
-import com.polywave.userservice.application.user.query.result.RandomNicknameResult;
+import com.polywave.userservice.application.nickname.generator.RandomNicknameGenerator;
+import com.polywave.userservice.application.nickname.policy.NicknamePolicyService;
+import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
+import com.polywave.userservice.application.nickname.query.result.RandomNicknameResult;
 import com.polywave.userservice.repository.query.UserQueryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.random.RandomGenerator;
-
-@Service
+    @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class NicknameQueryServiceImpl implements NicknameQueryService {
@@ -30,7 +28,6 @@ public class NicknameQueryServiceImpl implements NicknameQueryService {
             return new NicknameAvailabilityResult(false);
         }
 
-        //  중복 체크
         return new NicknameAvailabilityResult(available);
     }
 

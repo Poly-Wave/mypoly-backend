@@ -1,4 +1,4 @@
-package com.polywave.userservice.application.user.query.result;
+package com.polywave.userservice.application.nickname.query.result;
 
 public record RandomNicknameResult(
         String nickname

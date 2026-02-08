@@ -1,4 +1,4 @@
-package com.polywave.userservice.application.user.generator;
+package com.polywave.userservice.application.nickname.generator;
 
 import com.polywave.userservice.domain.NicknameWordType;
 import com.polywave.userservice.repository.query.NicknameWordQueryRepository;
