@@ -4,8 +4,9 @@ import com.polywave.userservice.application.auth.command.SocialLoginCommand;
 import com.polywave.userservice.application.auth.result.SocialUserResult;
 import com.polywave.userservice.domain.User;
 import com.polywave.userservice.domain.UserOauth;
-import com.polywave.userservice.repository.UserOauthRepository;
-import com.polywave.userservice.repository.UserRepository;
+import com.polywave.userservice.repository.command.UserCommandRepository;
+import com.polywave.userservice.repository.command.UserOauthCommandRepository;
+import com.polywave.userservice.repository.query.UserOauthQueryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -15,12 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SocialUserService {
 
-    private final UserRepository userRepository;
-    private final UserOauthRepository userOauthRepository;
+    private final UserCommandRepository userCommandRepository;
+    private final UserOauthCommandRepository userOauthCommandRepository;
+    private final UserOauthQueryRepository userOauthQueryRepository;
 
     @Transactional
     public SocialUserResult loginOrRegister(SocialLoginCommand command) {
-        UserOauth userOauth = userOauthRepository
+        UserOauth userOauth = userOauthQueryRepository
                 .findByProviderAndProviderUserId(command.provider(), command.providerUserId())
                 .orElseGet(() -> createSocialUser(command));
 
@@ -36,22 +38,24 @@ public class SocialUserService {
     }
 
     private UserOauth createSocialUser(SocialLoginCommand command) {
-        User user = userRepository.save(User.builder()
+        User user = userCommandRepository.save(User.builder()
                 .nickname(command.nickname())
                 .profileImageUrl(command.profileImageUrl())
                 .build());
 
         try {
-            return userOauthRepository.save(UserOauth.builder()
+            return userOauthCommandRepository.save(UserOauth.builder()
                     .provider(command.provider())
                     .providerUserId(command.providerUserId())
                     .user(user)
                     .build());
 
         } catch (DataIntegrityViolationException e) {
-            userRepository.delete(user);
+            userCommandRepository.delete(user);
 
-            return userOauthRepository.findByProviderAndProviderUserId(command.provider(), command.providerUserId())
+            // 이미 다른 트랜잭션에서 (provider, providerUserId)로 생성했을 수 있으니 재조회
+            return userOauthQueryRepository
+                    .findByProviderAndProviderUserId(command.provider(), command.providerUserId())
                     .orElseThrow(() -> e);
         }
     }

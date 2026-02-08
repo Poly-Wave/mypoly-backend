@@ -1,11 +1,16 @@
 package com.polywave.userservice.application.nickname.command.service;
 
-import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
+import com.polywave.userservice.api.exception.DuplicateNicknameException;
+import com.polywave.userservice.api.exception.ForbiddenNicknameException;
+import com.polywave.userservice.api.exception.UserNotFoundException;
+import com.polywave.userservice.application.nickname.policy.NicknameNormalizer;
+import com.polywave.userservice.application.nickname.policy.NicknamePolicyService;
 import com.polywave.userservice.domain.User;
 import com.polywave.userservice.repository.command.UserCommandRepository;
-import jakarta.transaction.Transactional;
+import com.polywave.userservice.repository.query.UserQueryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -13,20 +18,24 @@ import org.springframework.stereotype.Service;
 public class NicknameCommandServiceImpl implements NicknameCommandService {
 
     private final UserCommandRepository userCommandRepository;
+    private final UserQueryRepository userQueryRepository;
+    private final NicknamePolicyService nicknamePolicyService;
 
     @Override
-    public void assignNickname(Long userId, String nickname, NicknameAvailabilityResult availabilityResult) {
+    public void assignNickname(Long userId, String rawNickname) {
+        String nickname = NicknameNormalizer.normalize(rawNickname);
 
-        // 1. 닉네임 검증
-        if (!availabilityResult.available()) {
-            throw new IllegalStateException("사용 불가능한 닉네임입니다.");
+        if (nicknamePolicyService.isForbidden(nickname)) {
+            throw new ForbiddenNicknameException();
         }
 
-        // 2. 사용자 조회
-        User user = userCommandRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        if (userQueryRepository.existsByNickname(nickname)) {
+            throw new DuplicateNicknameException();
+        }
 
-        // 3. 닉네임 변경
+        User user = userCommandRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+
         user.changeNickname(nickname);
     }
 }

@@ -1,6 +1,7 @@
-    package com.polywave.userservice.application.nickname.query.service;
+package com.polywave.userservice.application.nickname.query.service;
 
 import com.polywave.userservice.application.nickname.generator.RandomNicknameGenerator;
+import com.polywave.userservice.application.nickname.policy.NicknameNormalizer;
 import com.polywave.userservice.application.nickname.policy.NicknamePolicyService;
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
 import com.polywave.userservice.application.nickname.query.result.RandomNicknameResult;
@@ -9,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-    @Service
+@Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class NicknameQueryServiceImpl implements NicknameQueryService {
@@ -19,15 +20,14 @@ public class NicknameQueryServiceImpl implements NicknameQueryService {
     private final RandomNicknameGenerator randomNicknameGenerator;
 
     @Override
-    public NicknameAvailabilityResult isNicknameAvailable(String nickname) {
+    public NicknameAvailabilityResult isNicknameAvailable(String rawNickname) {
+        String nickname = NicknameNormalizer.normalize(rawNickname);
 
-        boolean available = !userQueryRepository.existsByNickname(nickname);
-
-        // 금칙어 체크
         if (nicknamePolicyService.isForbidden(nickname)) {
             return new NicknameAvailabilityResult(false);
         }
 
+        boolean available = !userQueryRepository.existsByNickname(nickname);
         return new NicknameAvailabilityResult(available);
     }
 
