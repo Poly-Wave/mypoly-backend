@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-config
+  namespace: mypoly
+data:
+  SPRING_PROFILES_ACTIVE: "local"
+  SERVER_PORT: "8080"
+  SERVER_FORWARD_HEADERS_STRATEGY: "framework"
+
+  DB_URL: "jdbc:postgresql://mypoly-postgres:5432/mypoly"
+
+  # 필요하면 여기서 켜고 끄면 됨(지금은 기본 true라 없어도 됨)
+  OPENAPI_ENABLED: "true"
+  SWAGGER_UI_ENABLED: "true"

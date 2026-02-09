@@ -4,7 +4,6 @@ metadata:
   name: user-service-ingress
   namespace: mypoly
   annotations:
-    # HTTP → HTTPS 리다이렉트
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:

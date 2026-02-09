@@ -5,9 +5,6 @@ resources:
   - namespace.yaml
   - clusterissuers.yaml
   - api-mypoly-cert.yaml
-  - configmap.yaml
-  - secret.yaml
-  - postgres.yaml
-  - service.yaml
-  - deployment.yaml
-  - ingress.yaml
+
+  - infra/postgres
+  - services/user-service

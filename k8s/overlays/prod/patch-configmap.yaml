@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: user-service-config
-  namespace: mypoly
-data:
-  SPRING_PROFILES_ACTIVE: "prod"

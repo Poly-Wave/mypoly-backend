@@ -15,15 +15,13 @@ spec:
     spec:
       containers:
         - name: user-service
-          #image: mypoly-backend-user-service:latest
-          image: ghcr.io/poly-wave/mypoly-user-service:0.2 #(GitHub Container Registry)
+          image: ghcr.io/poly-wave/mypoly-user-service:0.1
           imagePullPolicy: Always
 
           ports:
             - containerPort: 8080
 
           env:
-            # context-path 방식: 서비스가 /users 아래로 동작
             - name: SERVER_SERVLET_CONTEXT_PATH
               value: /users
 
@@ -31,9 +29,10 @@ spec:
             - configMapRef:
                 name: user-service-config
             - secretRef:
+                name: mypoly-db-secret
+            - secretRef:
                 name: user-service-secret
 
-          # 기능 엔드포인트(/login) 대신 actuator health로 probe
           readinessProbe:
             httpGet:
               path: /users/actuator/health/readiness
