@@ -55,3 +55,7 @@ k8s/**/*secret.yaml
 # Gradle Wrapper는 커밋 허용 (재현성 필수)
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
+
+# user-service 금칙어 리스트/랜덤 닉네임 생성 규칙
+user-service/src/main/resources/db/migration/V3__seed_nickname_forbidden_words.sql
+user-service/src/main/resources/db/migration/V4__seed_nickname_random_words.sql
