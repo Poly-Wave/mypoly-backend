@@ -7,11 +7,13 @@ import com.polywave.userservice.domain.User;
 import com.polywave.userservice.domain.UserTerms;
 import com.polywave.userservice.repository.command.UserTermsCommandRepository;
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.time.Instant;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,32 +22,65 @@ public class UserTermsCommandService {
     private final UserTermsCommandRepository userTermsCommandRepository;
     private final EntityManager entityManager;
 
+    /**
+     * 업서트 방식:
+     * - (user_id, terms_id) 유니크 보장
+     * - 있으면 update(agreed/agreedAt), 없으면 insert
+     */
     @Transactional
     public void saveUserAgreement(UserAgreementCommand command) {
         Long userId = command.userId();
         List<TermsAgreement> termAgreements = command.termsAgreements();
 
         if (termAgreements == null || termAgreements.isEmpty()) {
-            return; // 처리할 약관이 없으면 종료
+            return;
         }
 
-        // User Proxy 생성 (DB 조회 안 함)
-        User userProxy = entityManager.getReference(User.class, userId);
-
-        // Terms Proxy 생성 (DB 조회 안 함)
-        List<UserTerms> userTermsToSave = termAgreements.stream()
-                .map(ta -> {
-                    Terms termsProxy = entityManager.getReference(Terms.class, ta.termId());
-                    return UserTerms.builder()
-                            .user(userProxy)
-                            .terms(termsProxy)
-                            .agreedAt(Instant.now())  // UTC 기준 시간
-                            .agreed(ta.agreed())      // Term별 동의 여부 적용
-                            .build();
-                })
+        // termId 중복 제거
+        List<Long> termIds = termAgreements.stream()
+                .map(TermsAgreement::termId)
+                .filter(Objects::nonNull)
+                .distinct()
                 .toList();
 
-        // 저장
-        userTermsCommandRepository.saveAll(userTermsToSave);
+        if (termIds.isEmpty()) {
+            return;
+        }
+
+        // 기존 데이터 조회 (한방에)
+        List<UserTerms> existing = userTermsCommandRepository.findByUserIdAndTermsIdIn(userId, termIds);
+        Map<Long, UserTerms> existingMap = existing.stream()
+                .collect(Collectors.toMap(
+                        ut -> ut.getTerms().getId(),
+                        Function.identity(),
+                        (a, b) -> a
+                ));
+
+        User userProxy = entityManager.getReference(User.class, userId);
+        Instant now = Instant.now();
+
+        List<UserTerms> toInsert = new ArrayList<>();
+
+        for (TermsAgreement ta : termAgreements) {
+            if (ta == null || ta.termId() == null) continue;
+
+            UserTerms current = existingMap.get(ta.termId());
+            if (current != null) {
+                current.updateAgreement(ta.agreed(), now);
+                continue;
+            }
+
+            Terms termsProxy = entityManager.getReference(Terms.class, ta.termId());
+            toInsert.add(UserTerms.builder()
+                    .user(userProxy)
+                    .terms(termsProxy)
+                    .agreedAt(now)
+                    .agreed(ta.agreed())
+                    .build());
+        }
+
+        if (!toInsert.isEmpty()) {
+            userTermsCommandRepository.saveAll(toInsert);
+        }
     }
 }

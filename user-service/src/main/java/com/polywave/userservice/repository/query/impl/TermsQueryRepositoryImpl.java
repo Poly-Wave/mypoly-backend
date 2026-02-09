@@ -2,7 +2,6 @@ package com.polywave.userservice.repository.query.impl;
 
 import com.polywave.userservice.application.terms.query.result.TermsResult;
 import com.polywave.userservice.domain.QTerms;
-import com.polywave.userservice.domain.Terms;
 import com.polywave.userservice.repository.query.TermsQueryRepository;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPAExpressions;
@@ -16,7 +15,10 @@ import org.springframework.stereotype.Repository;
 public class TermsQueryRepositoryImpl implements TermsQueryRepository {
     private final JPAQueryFactory queryFactory;
 
-    // 서브 쿼리 사용해서, version이 가장 최신인 약관 목록 조회
+    /**
+     * 약관 "종류(name)별" 최신 버전만 조회
+     * - 목록 API에서는 본문(content)을 제외해 payload를 줄임
+     */
     @Override
     public List<TermsResult> findLatestTerms() {
         QTerms term = QTerms.terms;
@@ -27,7 +29,10 @@ public class TermsQueryRepositoryImpl implements TermsQueryRepository {
                         TermsResult.class,
                         term.id,
                         term.name,
-                        term.required
+                        term.title,
+                        term.version,
+                        term.required,
+                        term.effectiveFrom
                 ))
                 .from(term)
                 .where(
@@ -35,9 +40,10 @@ public class TermsQueryRepositoryImpl implements TermsQueryRepository {
                                 JPAExpressions
                                         .select(sub.version.max())
                                         .from(sub)
+                                        .where(sub.name.eq(term.name))
                         )
                 )
+                .orderBy(term.name.asc())
                 .fetch();
     }
-
 }
