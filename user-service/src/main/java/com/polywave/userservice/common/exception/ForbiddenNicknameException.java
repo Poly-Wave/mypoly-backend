@@ -1,4 +1,4 @@
-package com.polywave.userservice.api.exception;
+package com.polywave.userservice.common.exception;
 
 public class ForbiddenNicknameException extends RuntimeException {
     public ForbiddenNicknameException() {
