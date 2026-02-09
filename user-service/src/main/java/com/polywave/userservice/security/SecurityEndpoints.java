@@ -11,11 +11,13 @@ public final class SecurityEndpoints {
             // 소셜 로그인 시작(공식)
             "/auth/**",
 
-            // Actuator
-            "/actuator/health", "/actuator/health/**",
+            // 약관(로그인 전 접근 가능해야 함)
+            "/terms/**",
 
-            // Swagger(OpenApi)
-            "/v3/api-docs", "/v3/api-docs/**",
-            "/swagger-ui.html", "/swagger-ui/**"
+            // Swagger (운영에서는 필요 시 막아도 됨)
+            "/swagger-ui/**", "/v3/api-docs/**",
+
+            // Actuator
+            "/actuator/health/**", "/actuator/info"
     };
 }

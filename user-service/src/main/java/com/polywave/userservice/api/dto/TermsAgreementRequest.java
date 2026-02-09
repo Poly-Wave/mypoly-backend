@@ -1,6 +1,5 @@
 package com.polywave.userservice.api.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record TermsAgreementRequest(

@@ -1,6 +1,7 @@
 package com.polywave.userservice.api.exception;
 
 import com.polywave.userservice.api.dto.ApiResponse;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TermsNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleTermsNotFound(TermsNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException e) {
+        String message = (e.getMessage() == null || e.getMessage().isBlank())
+                ? "요청이 올바르지 않습니다."
+                : e.getMessage();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(message));
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEntityNotFound(EntityNotFoundException e) {
+        String message = (e.getMessage() == null || e.getMessage().isBlank())
+                ? "리소스를 찾을 수 없습니다."
+                : e.getMessage();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(message));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

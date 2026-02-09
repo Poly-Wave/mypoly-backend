@@ -8,55 +8,41 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(
-        name = "terms",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_terms_name_version",
-                        columnNames = {"name", "version"}
-                )
-        }
-)
+@Table(name = "terms")
 @Entity
 public class Terms extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * 약관 종류 키(코드)
-     * 예: "TERMS_OF_SERVICE", "PRIVACY_POLICY"
-     */
+    // 약관 종류(예: TERMS_OF_SERVICE, PRIVACY_POLICY 등)
     @Column(length = 50, nullable = false)
     private String name;
 
-    /**
-     * 사용자에게 보여줄 제목
-     * 예: "서비스 이용약관", "개인정보 처리방침"
-     */
+    // 화면에 노출되는 제목
     @Column(length = 100, nullable = false)
     private String title;
 
     /**
-     * 약관 전문(긴 텍스트)
+     * 약관 본문(HTML)
+     * - PostgreSQL TEXT 컬럼 사용
+     * - @Lob 을 쓰면 PostgreSQL에서 OID(CLOB)로 매핑되어 Flyway(TEXT)와 충돌할 수 있음
      */
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    /**
-     * 버전(최신 조회/정렬을 위해 int로 고정)
-     * 예: 1,2,3...
-     */
+    // 버전(약관 개정 시 증가)
     @Column(nullable = false)
     private Integer version;
 
+    // 필수/선택 약관
     @Column(nullable = false)
     private Boolean required;
 
-    /**
-     * 시행일(없으면 null 허용)
-     * - 필요 없으면 그냥 null로 두면 됨
-     */
+    // 시행일(선택)
     private LocalDate effectiveFrom;
+
+    public boolean isRequired() {
+        return required != null && required;
+    }
 }
