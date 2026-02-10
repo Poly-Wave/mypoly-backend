@@ -80,6 +80,6 @@ public class CategoryInterestCommandService {
         if (categoryIds.isEmpty()) return;
 
         // JPA query method를 사용하여 삭제
-        userBillInterestCommandRepository.deleteByUserIdAndCategoryIdIn(userId, categoryIds);
+        userBillInterestCommandRepository.deleteByUserIdAndCategory_IdIn(userId, categoryIds);
     }
 }
