@@ -6,5 +6,9 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CategoryCommandRepository extends JpaRepository<BillCategory, Long> {
-    List<BillCategory> findAllActiveByIdIn(Collection<Long> ids);
+
+    /**
+     * 관심사 저장 시 사용: 활성화된 카테고리만 조회
+     */
+    List<BillCategory> findAllByIdInAndIsActiveTrue(Collection<Long> ids);
 }

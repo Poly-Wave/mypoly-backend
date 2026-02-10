@@ -1,5 +1,6 @@
-# User-service 환경변수 파일
+# 서비스별 환경변수 파일
 user-service/.env
+bill-service/.env
 
 # Environment
 .env
@@ -33,7 +34,6 @@ Thumbs.db
 /.mvn
 .settings/
 target/
-.idea/
 
 # === 실무 빌드/산출물 완전 차단 ===
 build/
@@ -42,12 +42,20 @@ tmp/
 distributions/
 *.tar
 *.zip
+
 user-service/build/
 user-service/bin/
 user-service/tmp/
 user-service/distributions/
 user-service/*.tar
 user-service/*.zip
+
+bill-service/build/
+bill-service/bin/
+bill-service/tmp/
+bill-service/distributions/
+bill-service/*.tar
+bill-service/*.zip
 
 # Kubernetes Secret (보안상 git에 포함 금지)
 k8s/**/*secret.yaml
@@ -56,6 +64,6 @@ k8s/**/*secret.yaml
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 
-# user-service 금칙어 리스트/랜덤 닉네임 생성 규칙
+# user-service 금칙어 리스트/랜덤 닉네임 생성 규칙 (로컬에서만 주입)
 user-service/src/main/resources/db/migration/V3__seed_nickname_forbidden_words.sql
 user-service/src/main/resources/db/migration/V4__seed_nickname_random_words.sql

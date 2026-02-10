@@ -60,7 +60,7 @@ public class CategoryInterestCommandService {
 
         // DB에서 활성화된 카테고리 정보 조회
         List<BillCategory> categories =
-                categoryCommandRepository.findAllActiveByIdIn(categoryIds);
+                categoryCommandRepository.findAllByIdInAndIsActiveTrue(categoryIds);
 
         // UserBillInterest 엔티티로 변환
         List<UserBillInterest> interests = categories.stream()

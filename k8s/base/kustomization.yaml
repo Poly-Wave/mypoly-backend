@@ -8,3 +8,4 @@ resources:
 
   - infra/postgres
   - services/user-service
+  - services/bill-service

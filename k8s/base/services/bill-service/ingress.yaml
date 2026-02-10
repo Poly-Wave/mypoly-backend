@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bill-service-ingress
+  namespace: mypoly
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api-mypoly.kro.kr
+      secretName: api-mypoly-kro-kr-tls
+  rules:
+    - host: api-mypoly.kro.kr
+      http:
+        paths:
+          - path: /bills
+            pathType: Prefix
+            backend:
+              service:
+                name: bill-service
+                port:
+                  number: 80
