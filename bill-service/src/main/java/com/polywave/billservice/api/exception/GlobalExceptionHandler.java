@@ -1,10 +1,6 @@
-package com.polywave.userservice.api.exception;
+package com.polywave.billservice.api.exception;
 
-import com.polywave.userservice.api.dto.ApiResponse;
-import com.polywave.userservice.common.exception.DuplicateNicknameException;
-import com.polywave.userservice.common.exception.ForbiddenNicknameException;
-import com.polywave.userservice.common.exception.TermsNotFoundException;
-import com.polywave.userservice.common.exception.UserNotFoundException;
+import com.polywave.billservice.api.dto.ApiResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -29,26 +25,6 @@ public class GlobalExceptionHandler {
                 : e.getBindingResult().getFieldErrors().get(0).getDefaultMessage();
 
         return ResponseEntity.badRequest().body(ApiResponse.fail(message));
-    }
-
-    @ExceptionHandler(DuplicateNicknameException.class)
-    public ResponseEntity<ApiResponse<Void>> handleDuplicateNicknameException(DuplicateNicknameException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
-    }
-
-    @ExceptionHandler(ForbiddenNicknameException.class)
-    public ResponseEntity<ApiResponse<Void>> handleForbiddenNicknameException(ForbiddenNicknameException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(e.getMessage()));
-    }
-
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleUserNotFoundException(UserNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
-    }
-
-    @ExceptionHandler(TermsNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleTermsNotFoundException(TermsNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
     }
 
     @ExceptionHandler(EntityNotFoundException.class)

@@ -9,6 +9,7 @@ import com.polywave.userservice.domain.Terms;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,19 +23,26 @@ public class TermsController {
     private final TermsQueryService termsQueryService;
 
     @GetMapping
-    public ApiResponse<TermsListResponse> getLatestTerms() {
+    public ResponseEntity<ApiResponse<TermsListResponse>> getLatestTerms() {
         List<TermsResult> termsResults = termsQueryService.getLatestTerms();
-        return ApiResponse.ok("약관 목록 조회 성공", TermsListResponse.from(termsResults));
+        return ResponseEntity.ok(
+                ApiResponse.ok("약관 목록 조회 성공", TermsListResponse.from(termsResults))
+        );
     }
 
     @GetMapping("/{termsId}")
-    public ApiResponse<TermsResponse> getTermsMeta(@PathVariable Long termsId) {
+    public ResponseEntity<ApiResponse<TermsResponse>> getTermsMeta(@PathVariable Long termsId) {
         Terms terms = termsQueryService.getTerms(termsId);
-        return ApiResponse.ok("약관 메타 조회 성공", TermsResponse.from(terms));
+        return ResponseEntity.ok(
+                ApiResponse.ok("약관 메타 조회 성공", TermsResponse.from(terms))
+        );
     }
 
     @GetMapping(value = "/{termsId}/html", produces = MediaType.TEXT_HTML_VALUE)
-    public String getTermsHtml(@PathVariable Long termsId) {
-        return termsQueryService.getTermsHtml(termsId);
+    public ResponseEntity<String> getTermsHtml(@PathVariable Long termsId) {
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.TEXT_HTML)
+                .body(termsQueryService.getTermsHtml(termsId));
     }
 }
