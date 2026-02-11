@@ -1,4 +1,4 @@
-package com.polywave.userservice.api.exception;
+package com.polywave.userservice.common.exception;
 
 public class UserNotFoundException extends RuntimeException {
     public UserNotFoundException() {

@@ -8,7 +8,15 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "user_terms")
+@Table(
+        name = "user_terms",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_user_terms_user_terms",
+                        columnNames = {"user_id", "terms_id"}
+                )
+        }
+)
 @Entity
 public class UserTerms {
     @Id
@@ -28,4 +36,9 @@ public class UserTerms {
 
     @Column(nullable = false)
     private Instant agreedAt;
+
+    public void updateAgreement(boolean agreed, Instant agreedAt) {
+        this.agreed = agreed;
+        this.agreedAt = agreedAt;
+    }
 }

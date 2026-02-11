@@ -1,51 +1,64 @@
 package com.polywave.userservice.api.exception;
 
 import com.polywave.userservice.api.dto.ApiResponse;
-import org.springframework.dao.DataIntegrityViolationException;
+import com.polywave.userservice.common.exception.DuplicateNicknameException;
+import com.polywave.userservice.common.exception.ForbiddenNicknameException;
+import com.polywave.userservice.common.exception.TermsNotFoundException;
+import com.polywave.userservice.common.exception.UserNotFoundException;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().isEmpty()
+                ? "요청 값이 올바르지 않습니다."
+                : e.getBindingResult().getFieldErrors().get(0).getDefaultMessage();
+
+        return ResponseEntity.badRequest().body(ApiResponse.fail(message));
+    }
+
     @ExceptionHandler(DuplicateNicknameException.class)
-    public ResponseEntity<ApiResponse<Void>> handleDuplicateNickname(DuplicateNicknameException e) {
+    public ResponseEntity<ApiResponse<Void>> handleDuplicateNicknameException(DuplicateNicknameException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
     }
 
     @ExceptionHandler(ForbiddenNicknameException.class)
-    public ResponseEntity<ApiResponse<Void>> handleForbiddenNickname(ForbiddenNicknameException e) {
+    public ResponseEntity<ApiResponse<Void>> handleForbiddenNicknameException(ForbiddenNicknameException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(e.getMessage()));
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleUserNotFound(UserNotFoundException e) {
+    public ResponseEntity<ApiResponse<Void>> handleUserNotFoundException(UserNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
     }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.fail("요청이 충돌했습니다. 다시 시도해주세요."));
+    @ExceptionHandler(TermsNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTermsNotFoundException(TermsNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
-        String message = e.getBindingResult().getAllErrors().isEmpty()
-                ? "요청이 올바르지 않습니다."
-                : e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(message));
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEntityNotFoundException(EntityNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
     }
 
-    @ExceptionHandler(BindException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBindException(BindException e) {
-        String message = e.getBindingResult().getAllErrors().isEmpty()
-                ? "요청이 올바르지 않습니다."
-                : e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(message));
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
+        log.error("Unhandled exception", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.fail("서버 오류가 발생했습니다."));
     }
 }

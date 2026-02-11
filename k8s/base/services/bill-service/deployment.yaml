@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bill-service
+  namespace: mypoly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bill-service
+  template:
+    metadata:
+      labels:
+        app: bill-service
+    spec:
+      containers:
+        - name: bill-service
+          image: ghcr.io/poly-wave/mypoly-bill-service:0.1
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 8080
+
+          env:
+            - name: SERVER_SERVLET_CONTEXT_PATH
+              value: /bills
+
+          envFrom:
+            - configMapRef:
+                name: bill-service-config
+            - secretRef:
+                name: mypoly-db-secret
+            - secretRef:
+                name: bill-service-secret
+
+          readinessProbe:
+            httpGet:
+              path: /bills/actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /bills/actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
