@@ -1,13 +1,12 @@
 package com.polywave.userservice.api.controller;
 
 import com.polywave.security.annotation.LoginUser;
-import com.polywave.userservice.api.dto.ApiResponse;
-import com.polywave.userservice.api.dto.NicknameAvailabilityRequest;
-import com.polywave.userservice.api.dto.NicknameAvailabilityResponse;
-import com.polywave.userservice.api.dto.NicknameCreateRequest;
-import com.polywave.userservice.api.dto.RandomNicknameResponse;
+import com.polywave.userservice.api.dto.*;
 import com.polywave.userservice.api.spec.UserApi;
+import com.polywave.userservice.application.address.query.result.AddressSearchResult;
+import com.polywave.userservice.application.address.query.service.AddressQueryService;
 import com.polywave.userservice.application.nickname.command.service.NicknameCommandService;
+import com.polywave.userservice.application.user.command.service.UserCommandService;
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
 import com.polywave.userservice.application.nickname.query.result.RandomNicknameResult;
 import com.polywave.userservice.application.nickname.query.service.NicknameQueryService;
@@ -21,6 +20,8 @@ public class UserController implements UserApi {
 
         private final NicknameCommandService nicknameCommandService;
         private final NicknameQueryService nicknameQueryService;
+        private final AddressQueryService addressQueryService;
+        private final UserCommandService userCommandService;
 
         @Override
         public ResponseEntity<ApiResponse<NicknameAvailabilityResponse>> checkNicknameAvailability(
@@ -47,5 +48,36 @@ public class UserController implements UserApi {
                         @LoginUser Long userId) {
                 nicknameCommandService.assignNickname(userId, request.nickname());
                 return ResponseEntity.ok(ApiResponse.ok("닉네임 설정 성공"));
+        }
+
+        @Override
+        public ResponseEntity<ApiResponse<Void>> updateProfile(
+                        UserUpdateProfileRequest request,
+                        @LoginUser Long userId) {
+                userCommandService.updateUserProfile(userId, request);
+                return ResponseEntity.ok(ApiResponse.ok("프로필 수정 성공"));
+        }
+
+        @Override
+        public ResponseEntity<ApiResponse<AddressSearchResponse>> searchAddress(AddressSearchRequest request) {
+                AddressSearchResult result = addressQueryService.searchAddress(
+                                request.keyword(),
+                                request.currentPage(),
+                                request.countPerPage());
+
+                return ResponseEntity.ok(
+                                ApiResponse.ok(
+                                                "주소 검색 성공",
+                                                convertToResponse(result)));
+        }
+
+        private AddressSearchResponse convertToResponse(AddressSearchResult result) {
+                return new AddressSearchResponse(
+                                result.totalCount(),
+                                result.currentPage(),
+                                result.countPerPage(),
+                                result.addresses().stream()
+                                                .map(a -> new AddressInfoResponse(a.sido(), a.sigungu(), a.emdName()))
+                                                .toList());
         }
 }

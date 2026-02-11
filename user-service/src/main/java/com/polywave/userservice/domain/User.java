@@ -17,22 +17,42 @@ public class User extends BaseEntity {
     @Column(length = 20, unique = true)
     private String nickname;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 10)
-    private String gender;
+    private Gender gender;
+
+    @Column(length = 8)
+    private String birthDate;
 
     @Column(length = 500)
     private String profileImageUrl;
 
-    @Column(length = 10)
+    @Column(length = 20)
     private String sido;
 
-    @Column(length = 10)
+    @Column(length = 20)
     private String sigungu;
+
+    @Column(length = 20)
+    private String emdName;
+
+    @Column(length = 100)
+    private String address;
 
     @Column(length = 10)
     private String onboardingStatus;
 
     public void changeNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    public void updateProfile(Gender gender, String birthDate, String sido, String sigungu, String emdName,
+            String address) {
+        this.gender = gender;
+        this.birthDate = birthDate;
+        this.sido = sido;
+        this.sigungu = sigungu;
+        this.emdName = emdName;
+        this.address = address;
     }
 }

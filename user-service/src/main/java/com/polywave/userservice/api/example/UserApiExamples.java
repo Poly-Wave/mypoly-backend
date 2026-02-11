@@ -71,4 +71,41 @@ public final class UserApiExamples {
               "data": null
             }
             """;
+
+    public static final String EXAMPLE_ADDRESS_SEARCH_OK = """
+            {
+              "success": true,
+              "message": "주소 검색 성공",
+              "data": {
+                "totalCount": 1,
+                "currentPage": 1,
+                "countPerPage": 10,
+                "addresses": [
+                  {
+                    "sido": "경기도",
+                    "sigungu": "과천시",
+                    "emdName": "중앙동"
+                  }
+                ]
+              }
+            }
+            """;
+
+    public static final String EXAMPLE_UPDATE_PROFILE_REQUEST = """
+            {
+              "gender": "MAN",
+              "birthDate": "19990101",
+              "sido": "서울특별시",
+              "sigungu": "강남구",
+              "emdName": "역삼동"
+            }
+            """;
+
+    public static final String EXAMPLE_UPDATE_PROFILE_OK = """
+            {
+              "success": true,
+              "message": "프로필 수정 성공",
+              "data": null
+            }
+            """;
 }
