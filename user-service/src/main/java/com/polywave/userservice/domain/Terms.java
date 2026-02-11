@@ -1,8 +1,17 @@
 package com.polywave.userservice.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.LocalDate;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
@@ -11,6 +20,7 @@ import lombok.*;
 @Table(name = "terms")
 @Entity
 public class Terms extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -39,7 +49,12 @@ public class Terms extends BaseEntity {
     @Column(nullable = false)
     private Boolean required;
 
-    // 시행일(선택)
+    /**
+     * 시행일(날짜 의미)
+     * - '시각'이 아니라 '날짜'가 의미인 값이라 LocalDate가 정배
+     * - 서버/DB/클라이언트 타임존이 바뀌어도 날짜가 밀리지 않음
+     */
+    @Column(name = "effective_from")
     private LocalDate effectiveFrom;
 
     public boolean isRequired() {

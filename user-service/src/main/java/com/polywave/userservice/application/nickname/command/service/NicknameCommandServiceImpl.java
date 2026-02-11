@@ -44,6 +44,8 @@ public class NicknameCommandServiceImpl implements NicknameCommandService {
         }
 
         user.changeNickname(nickname);
-        userCommandRepository.save(user);
+
+        // @Transactional + 영속 상태 엔티티(User) 변경이므로 Dirty Checking으로 자동 반영됨
+        // (명시적 save는 불필요)
     }
 }

@@ -15,14 +15,17 @@ COPY user-service/src user-service/src
 # settings.gradle에 포함돼 있으니 "존재만" 시켜줌 (src는 필요 없음)
 COPY bill-service/build.gradle bill-service/build.gradle
 
-# user-service만 bootJar 생성 (테스트는 필요 시 -x test 제거)
+# user-service만 bootJar 생성
 RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
 RUN ./gradlew :user-service:bootJar -x test --no-daemon
 
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
+ENV TZ=Asia/Seoul
 
 COPY --from=builder /workspace/user-service/build/libs/*.jar app.jar
+
+USER 10001
 
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app/app.jar"]

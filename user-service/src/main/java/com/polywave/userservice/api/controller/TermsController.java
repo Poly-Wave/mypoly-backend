@@ -5,7 +5,6 @@ import com.polywave.userservice.api.dto.TermsListResponse;
 import com.polywave.userservice.api.dto.TermsResponse;
 import com.polywave.userservice.application.terms.query.result.TermsResult;
 import com.polywave.userservice.application.terms.query.service.TermsQueryService;
-import com.polywave.userservice.domain.Terms;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -32,9 +31,9 @@ public class TermsController {
 
     @GetMapping("/{termsId}")
     public ResponseEntity<ApiResponse<TermsResponse>> getTermsMeta(@PathVariable Long termsId) {
-        Terms terms = termsQueryService.getTerms(termsId);
+        TermsResult termsResult = termsQueryService.getTermsMeta(termsId);
         return ResponseEntity.ok(
-                ApiResponse.ok("약관 메타 조회 성공", TermsResponse.from(terms))
+                ApiResponse.ok("약관 메타 조회 성공", TermsResponse.from(termsResult))
         );
     }
 

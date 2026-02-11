@@ -21,8 +21,11 @@ RUN ./gradlew :bill-service:bootJar -x test --no-daemon
 
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
+ENV TZ=Asia/Seoul
 
 COPY --from=builder /workspace/bill-service/build/libs/*.jar app.jar
+
+USER 10001
 
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app/app.jar"]

@@ -1,6 +1,6 @@
 package com.polywave.userservice.api.dto;
 
-import com.polywave.userservice.domain.Terms;
+import com.polywave.userservice.application.terms.query.result.TermsDetailResult;
 import java.time.LocalDate;
 
 /**
@@ -16,15 +16,15 @@ public record TermsDetailResponse(
         String content,
         LocalDate effectiveFrom
 ) {
-    public static TermsDetailResponse from(Terms terms) {
+    public static TermsDetailResponse from(TermsDetailResult terms) {
         return new TermsDetailResponse(
-                terms.getId(),
-                terms.getName(),
-                terms.getTitle(),
-                terms.getVersion(),
-                terms.getRequired(),
-                terms.getContent(),
-                terms.getEffectiveFrom()
+                terms.id(),
+                terms.name(),
+                terms.title(),
+                terms.version(),
+                terms.required(),
+                terms.content(),
+                terms.effectiveFrom()
         );
     }
 }

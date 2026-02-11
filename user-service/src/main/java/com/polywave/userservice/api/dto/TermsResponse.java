@@ -1,7 +1,6 @@
 package com.polywave.userservice.api.dto;
 
 import com.polywave.userservice.application.terms.query.result.TermsResult;
-import com.polywave.userservice.domain.Terms;
 import java.time.LocalDate;
 
 /**
@@ -16,7 +15,6 @@ public record TermsResponse(
         Boolean required,
         LocalDate effectiveFrom
 ) {
-
     public static TermsResponse from(TermsResult termsResult) {
         return new TermsResponse(
                 termsResult.id(),
@@ -25,17 +23,6 @@ public record TermsResponse(
                 termsResult.version(),
                 termsResult.required(),
                 termsResult.effectiveFrom()
-        );
-    }
-
-    public static TermsResponse from(Terms terms) {
-        return new TermsResponse(
-                terms.getId(),
-                terms.getName(),
-                terms.getTitle(),
-                terms.getVersion(),
-                terms.getRequired(),
-                terms.getEffectiveFrom()
         );
     }
 }
