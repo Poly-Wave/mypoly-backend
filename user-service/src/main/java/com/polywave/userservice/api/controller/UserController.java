@@ -6,6 +6,7 @@ import com.polywave.userservice.api.spec.UserApi;
 import com.polywave.userservice.application.address.query.result.AddressSearchResult;
 import com.polywave.userservice.application.address.query.service.AddressQueryService;
 import com.polywave.userservice.application.nickname.command.service.NicknameCommandService;
+import com.polywave.userservice.application.user.command.UserUpdateProfileCommmand;
 import com.polywave.userservice.application.user.command.service.UserCommandService;
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
 import com.polywave.userservice.application.nickname.query.result.RandomNicknameResult;
@@ -54,7 +55,15 @@ public class UserController implements UserApi {
         public ResponseEntity<ApiResponse<Void>> updateProfile(
                         UserUpdateProfileRequest request,
                         @LoginUser Long userId) {
-                userCommandService.updateUserProfile(userId, request);
+
+                UserUpdateProfileCommmand updateProfileCommmand = new UserUpdateProfileCommmand(
+                        request.gender(),
+                        request.birthDate(),
+                        request.sido(),
+                        request.sigungu(),
+                        request.emdName()
+                );
+                userCommandService.updateUserProfile(userId, updateProfileCommmand);
                 return ResponseEntity.ok(ApiResponse.ok("프로필 수정 성공"));
         }
 

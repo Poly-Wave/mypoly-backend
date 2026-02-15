@@ -101,8 +101,8 @@ CREATE TABLE administrative_area (
     sido VARCHAR(20) NOT NULL,
     sigungu VARCHAR(20),
     emd_name VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP
+    created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at     TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_admin_area_sido ON administrative_area(sido);

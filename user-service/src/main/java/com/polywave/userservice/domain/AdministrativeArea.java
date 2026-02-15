@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "administrative_area", indexes = {
         @Index(name = "idx_admin_area_sido", columnList = "sido"),
         @Index(name = "idx_admin_area_sigungu", columnList = "sigungu"),
-        @Index(name = "idx_admin_area_emd", columnList = "emdName"),
-        @Index(name = "idx_admin_area_full", columnList = "sido, sigungu, emdName")
+        @Index(name = "idx_admin_area_emd", columnList = "emd_name"),
+        @Index(name = "idx_admin_area_full", columnList = "sido, sigungu, emd_name")
 })
 public class AdministrativeArea extends BaseEntity {
 
@@ -26,6 +26,6 @@ public class AdministrativeArea extends BaseEntity {
     @Column(length = 20)
     private String sigungu;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 20, name = "emd_name")
     private String emdName;
 }

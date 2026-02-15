@@ -1,7 +1,7 @@
 package com.polywave.userservice.application.user.command.service;
 
-import com.polywave.userservice.api.dto.UserUpdateProfileRequest;
+import com.polywave.userservice.application.user.command.UserUpdateProfileCommmand;
 
 public interface UserCommandService {
-    void updateUserProfile(Long userId, UserUpdateProfileRequest request);
+    void updateUserProfile(Long userId, UserUpdateProfileCommmand command);
 }
