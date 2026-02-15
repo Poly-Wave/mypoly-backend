@@ -39,12 +39,9 @@ dependencies {
 	implementation 'org.postgresql:postgresql'
 
 	// Flyway (DB 마이그레이션)
-	// Spring Boot 3.1.6에서는 flyway-core만 넣으면 자동으로 migration 실행됨
 	implementation 'org.flywaydb:flyway-core'
 
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-
-	//(템플릿: Google/Apple ID_TOKEN 검증용) Nimbus JwtDecoder 사용하려고 추가
+	// (템플릿: Google/Apple ID_TOKEN 검증용) Nimbus JwtDecoder 사용
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 
 	// QueryDSL

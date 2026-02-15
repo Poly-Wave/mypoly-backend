@@ -1,8 +1,6 @@
 package com.polywave.userservice.config;
 
 import com.polywave.security.JwtAuthenticationFilter;
-import com.polywave.userservice.security.OAuth2LoginFailureHandler;
-import com.polywave.userservice.security.OAuth2LoginSuccessHandler;
 import com.polywave.userservice.security.SecurityEndpoints;
 import com.polywave.userservice.security.handler.RestAccessDeniedHandler;
 import com.polywave.userservice.security.handler.RestAuthenticationEntryPoint;
@@ -20,14 +18,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
-
-    @Value("${social.oauth2-login.enabled:false}")
-    private boolean oauth2LoginEnabled;
 
     @Value("${social.dev-auth.enabled:false}")
     private boolean devAuthEnabled;
@@ -39,6 +32,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(restAuthenticationEntryPoint)
                         .accessDeniedHandler(restAccessDeniedHandler)
@@ -46,9 +40,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(SecurityEndpoints.PUBLIC_ENDPOINTS).permitAll();
 
-                    if (oauth2LoginEnabled) {
-                        auth.requestMatchers(SecurityEndpoints.OAUTH2_ENDPOINTS).permitAll();
-                    }
                     if (devAuthEnabled) {
                         auth.requestMatchers(SecurityEndpoints.DEV_ONLY_ENDPOINTS).permitAll();
                     }
@@ -56,19 +47,6 @@ public class SecurityConfig {
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
-        // prod는 stateless 권장, oauth2 리다이렉트 켜는 local/dev는 세션 필요할 수 있음
-        if (!oauth2LoginEnabled) {
-            http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-        }
-
-        // dev/local에서만 oauth2 리다이렉트 플로우를 켜고 싶으면 property로 활성화
-        if (oauth2LoginEnabled) {
-            http.oauth2Login(oauth2 -> oauth2
-                    .successHandler(oAuth2LoginSuccessHandler)
-                    .failureHandler(oAuth2LoginFailureHandler)
-            );
-        }
 
         return http.build();
     }
