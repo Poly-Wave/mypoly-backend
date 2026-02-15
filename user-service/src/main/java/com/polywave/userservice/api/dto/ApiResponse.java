@@ -37,7 +37,8 @@ public record ApiResponse<T>(
         return new ApiResponse<>(true, message, null);
     }
 
-    public static ApiResponse<Void> fail(String message) {
+    // 핵심: fail도 제네릭으로 (컨텍스트 타입에 맞게 추론됨)
+    public static <T> ApiResponse<T> fail(String message) {
         return new ApiResponse<>(false, message, null);
     }
 }

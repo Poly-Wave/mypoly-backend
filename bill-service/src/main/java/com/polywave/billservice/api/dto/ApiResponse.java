@@ -18,7 +18,7 @@ public record ApiResponse<T>(
         @Schema(description = "요청 성공 여부", example = "true")
         boolean success,
 
-        @Schema(description = "응답 메시지(성공/실패 사유). 성공 시 null일 수 있습니다.", example = "카테고리 목록 조회 성공")
+        @Schema(description = "응답 메시지(성공/실패 사유). 성공 시 null일 수 있습니다.")
         String message,
 
         @Schema(description = "응답 데이터. 성공 시 payload, 실패 시 null", nullable = true)
@@ -37,7 +37,8 @@ public record ApiResponse<T>(
         return new ApiResponse<>(true, message, null);
     }
 
-    public static ApiResponse<Void> fail(String message) {
+    // 핵심: fail도 제네릭
+    public static <T> ApiResponse<T> fail(String message) {
         return new ApiResponse<>(false, message, null);
     }
 }

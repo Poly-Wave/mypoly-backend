@@ -67,3 +67,4 @@ k8s/**/*secret.yaml
 # user-service 금칙어 리스트/랜덤 닉네임 생성 규칙 (로컬에서만 주입)
 user-service/src/main/resources/db/migration/V3__seed_nickname_forbidden_words.sql
 user-service/src/main/resources/db/migration/V4__seed_nickname_random_words.sql
+user-service/src/main/resources/db/migration/V5__seed_administrative_area.sql

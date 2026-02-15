@@ -3,6 +3,8 @@ package com.polywave.billservice.api.controller;
 import com.polywave.billservice.api.dto.ApiResponse;
 import com.polywave.billservice.api.dto.CategoryInterestUpdateRequest;
 import com.polywave.billservice.api.dto.CategoryResponse;
+import com.polywave.billservice.api.example.CategoryApiExamples;
+import com.polywave.billservice.api.example.CommonApiExamples;
 import com.polywave.billservice.application.category.UserBillInterestAppService;
 import com.polywave.billservice.application.category.command.service.CategoryInterestCommand;
 import com.polywave.billservice.application.category.query.result.CategoryResult;
@@ -32,63 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/categories")
 public class CategoryController {
 
-    private static final String EXAMPLE_GET_CATEGORIES_OK = """
-            {
-              "success": true,
-              "message": "카테고리 목록 조회 성공",
-              "data": [
-                { "id": 1, "code": "DIGITAL", "name": "디지털" },
-                { "id": 2, "code": "SECURITY", "name": "보안" }
-              ]
-            }
-            """;
-
-    private static final String EXAMPLE_UPDATE_INTERESTS_REQUEST = """
-            {
-              "categoryIds": [1, 2, 3]
-            }
-            """;
-
-    private static final String EXAMPLE_UPDATE_INTERESTS_OK = """
-            {
-              "success": true,
-              "message": "관심 카테고리 저장 성공",
-              "data": null
-            }
-            """;
-
-    private static final String EXAMPLE_BAD_REQUEST_VALIDATION = """
-            {
-              "success": false,
-              "message": "must not be empty",
-              "data": null
-            }
-            """;
-
-    private static final String EXAMPLE_UNAUTHORIZED = """
-            {
-              "success": false,
-              "message": "인증이 필요합니다.",
-              "data": null
-            }
-            """;
-
-    private static final String EXAMPLE_FORBIDDEN = """
-            {
-              "success": false,
-              "message": "접근 권한이 없습니다.",
-              "data": null
-            }
-            """;
-
-    private static final String EXAMPLE_INTERNAL_SERVER_ERROR = """
-            {
-              "success": false,
-              "message": "서버 오류가 발생했습니다.",
-              "data": null
-            }
-            """;
-
     private final CategoryQueryService categoryQueryService;
     private final UserBillInterestAppService userBillInterestAppService;
 
@@ -107,7 +52,7 @@ public class CategoryController {
                     description = "조회 성공",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(name = "성공 응답 예시", value = EXAMPLE_GET_CATEGORIES_OK)
+                            examples = @ExampleObject(name = "성공 응답 예시", value = CategoryApiExamples.EXAMPLE_GET_CATEGORIES_OK)
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -115,7 +60,7 @@ public class CategoryController {
                     description = "서버 오류",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(name = "서버 오류 예시", value = EXAMPLE_INTERNAL_SERVER_ERROR)
+                            examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)
                     )
             )
     })
@@ -128,10 +73,7 @@ public class CategoryController {
                 .toList();
 
         return ResponseEntity.ok(
-                ApiResponse.ok(
-                        "카테고리 목록 조회 성공",
-                        categories
-                )
+                ApiResponse.ok("카테고리 목록 조회 성공", categories)
         );
     }
 
@@ -158,7 +100,7 @@ public class CategoryController {
                     description = "저장 성공",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(name = "성공 응답 예시", value = EXAMPLE_UPDATE_INTERESTS_OK)
+                            examples = @ExampleObject(name = "성공 응답 예시", value = CategoryApiExamples.EXAMPLE_UPDATE_INTERESTS_OK)
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -166,7 +108,7 @@ public class CategoryController {
                     description = "요청 값 검증 실패",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(name = "검증 실패 예시", value = EXAMPLE_BAD_REQUEST_VALIDATION)
+                            examples = @ExampleObject(name = "검증 실패 예시", value = CategoryApiExamples.EXAMPLE_BAD_REQUEST_VALIDATION)
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -174,7 +116,7 @@ public class CategoryController {
                     description = "인증 필요(JWT 누락/만료/위조)",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(name = "401 예시", value = EXAMPLE_UNAUTHORIZED)
+                            examples = @ExampleObject(name = "401 예시", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED)
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -182,7 +124,7 @@ public class CategoryController {
                     description = "권한 없음",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(name = "403 예시", value = EXAMPLE_FORBIDDEN)
+                            examples = @ExampleObject(name = "403 예시", value = CommonApiExamples.EXAMPLE_FORBIDDEN)
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -190,7 +132,7 @@ public class CategoryController {
                     description = "서버 오류",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(name = "서버 오류 예시", value = EXAMPLE_INTERNAL_SERVER_ERROR)
+                            examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)
                     )
             )
     })
@@ -203,12 +145,11 @@ public class CategoryController {
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = CategoryInterestUpdateRequest.class),
-                            examples = @ExampleObject(name = "요청 예시", value = EXAMPLE_UPDATE_INTERESTS_REQUEST)
+                            examples = @ExampleObject(name = "요청 예시", value = CategoryApiExamples.EXAMPLE_UPDATE_INTERESTS_REQUEST)
                     )
             )
             @RequestBody @Valid CategoryInterestUpdateRequest request
     ) {
-
         CategoryInterestCommand command = new CategoryInterestCommand(userId, request.categoryIds());
         userBillInterestAppService.updateInterests(command);
 

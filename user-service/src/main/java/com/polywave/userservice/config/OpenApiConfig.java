@@ -16,16 +16,29 @@ public class OpenApiConfig {
         String guide = """
                 MyPoly %s OpenAPI 문서입니다.
 
-                ## Swagger에서 테스트하는 방법
-                1) **소셜 로그인 시작**
-                   - 브라우저 주소창에서 `/users/auth/kakao` 접속 (Swagger Execute는 리다이렉트/CORS로 제한될 수 있음)
-                2) 로그인 성공 후 서버가 내려준 JSON에서 `jwt` 값을 복사
-                3) Swagger 우측 상단 **Authorize** 버튼에 JWT 입력
-                   - 형식: `Bearer {token}` 또는 `{token}` (프로젝트 설정에 맞게)
-                4) 잠금 아이콘이 있는 API 호출로 정상 동작 확인
+                ## Swagger만으로 “전체 기능” 테스트하는 방법(추천)
+
+                ### 1) dev/local: DevAuth로 JWT 발급 (앱 필요 없음)
+                1) `POST /dev-auth/login` 호출 (헤더 `X-DEV-KEY` 필요)
+                2) 응답의 `data.jwt` 복사
+                3) Swagger 우측 상단 **Authorize** → `Bearer {jwt}` 입력
+                4) 잠금 아이콘 API(User/UserTerms 등) 호출
+
+                - local 기본값
+                  - `social.dev-auth.enabled=true`
+                  - `X-DEV-KEY=local-dev-key` (DEV_AUTH_KEY 미주입 시 기본)
+
+                ### 2) 실서비스/앱연동: SDK 토큰 검증 기반 JWT 발급
+                1) 앱 SDK로 소셜 로그인 → access_token 또는 id_token 획득
+                2) `POST /auth/{provider}/token` 호출 → JWT 발급
+                3) Authorize에 `Bearer {jwt}` 입력 후 보호 API 호출
+
+                ### 3) (옵션) dev/local 리다이렉트 로그인 시작점
+                - `GET /auth/redirect/{provider}` → `/oauth2/authorization/{provider}` 로 302 이동
+                - 브라우저에서만 확인용(Swagger Execute는 비추)
 
                 ## 참고
-                - `/auth/{provider}`는 302 리다이렉트 엔드포인트라 Swagger Execute에서 흐름이 깔끔히 보이지 않을 수 있습니다.
+                - 운영(prod)에서는 Swagger가 꺼져있는 구성이 기본입니다.
                 """.formatted(appName);
 
         return new OpenAPI()
@@ -34,12 +47,12 @@ public class OpenApiConfig {
                         .version("v1")
                         .description(guide))
                 .components(new Components()
-                        .addSecuritySchemes("bearerAuth",
+                        .addSecuritySchemes(
+                                "bearerAuth",
                                 new SecurityScheme()
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
-                        )
-                );
+                        ));
     }
 }
