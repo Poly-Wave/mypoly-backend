@@ -7,11 +7,18 @@ SET search_path TO user_service;
 CREATE TABLE users (
     id                 BIGSERIAL PRIMARY KEY,
     nickname           VARCHAR(20) UNIQUE,
+
     gender             VARCHAR(10),
+    birth_date         VARCHAR(8),
     profile_image_url  VARCHAR(500),
-    sido               VARCHAR(10),
-    sigungu            VARCHAR(10),
+
+    sido               VARCHAR(20),
+    sigungu            VARCHAR(20),
+    emd_name           VARCHAR(20),
+    address            VARCHAR(100),
+
     onboarding_status  VARCHAR(10),
+
     created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -88,3 +95,17 @@ CREATE TABLE nickname_words (
 );
 
 CREATE INDEX idx_nickname_words_type ON nickname_words (type);
+
+CREATE TABLE administrative_area (
+    id BIGSERIAL PRIMARY KEY,
+    sido VARCHAR(20) NOT NULL,
+    sigungu VARCHAR(20),
+    emd_name VARCHAR(20) NOT NULL,
+    created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at     TIMESTAMPTZ  NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_admin_area_sido ON administrative_area(sido);
+CREATE INDEX idx_admin_area_sigungu ON administrative_area(sigungu);
+CREATE INDEX idx_admin_area_emd ON administrative_area(emd_name);
+CREATE INDEX idx_admin_area_full ON administrative_area(sido, sigungu, emd_name);
