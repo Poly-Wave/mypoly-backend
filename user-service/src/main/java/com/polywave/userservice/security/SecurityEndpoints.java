@@ -4,14 +4,14 @@ public final class SecurityEndpoints {
 
     private SecurityEndpoints() {}
 
+    /** 항상 공개 */
     public static final String[] PUBLIC_ENDPOINTS = {
             "/", "/error",
-            "/oauth2/**", "/login/oauth2/**",
 
-            // 소셜 로그인 시작(공식)
+            // SDK 토큰 검증 기반 로그인 엔드포인트
             "/auth/**",
 
-            // 약관(로그인 전 접근 가능해야 함)
+            // 약관(로그인 전 접근 가능)
             "/terms/**",
 
             // Swagger (운영에서는 필요 시 막아도 됨)
@@ -19,5 +19,10 @@ public final class SecurityEndpoints {
 
             // Actuator
             "/actuator/health/**", "/actuator/info"
+    };
+
+    /** Swagger 테스트 생산성용 (dev/local에서만) */
+    public static final String[] DEV_ONLY_ENDPOINTS = {
+            "/dev-auth/**"
     };
 }
