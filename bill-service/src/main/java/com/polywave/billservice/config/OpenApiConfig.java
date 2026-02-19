@@ -17,7 +17,7 @@ public class OpenApiConfig {
                 MyPoly %s OpenAPI 문서입니다.
 
                 ## bill-service가 하는 일
-                - **요금/정책 카테고리** 목록 제공
+                - **의안 카테고리** 목록 제공
                 - 로그인 사용자의 **관심 카테고리** 저장(갱신)
 
                 ## 인증(JWT) 안내

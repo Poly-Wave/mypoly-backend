@@ -2,8 +2,8 @@ package com.polywave.userservice.application.auth;
 
 import com.polywave.security.JwtUtil;
 import com.polywave.userservice.api.dto.SocialLoginResponse;
-import com.polywave.userservice.api.dto.SocialTokenLoginRequest;
 import com.polywave.userservice.application.auth.command.SocialLoginCommand;
+import com.polywave.userservice.application.auth.command.SocialTokenLoginCommand;
 import com.polywave.userservice.application.auth.result.SocialUserResult;
 import com.polywave.userservice.security.token.SocialTokenVerifierResolver;
 import com.polywave.userservice.security.token.SocialVerifiedUser;
@@ -20,10 +20,10 @@ public class SocialTokenAuthService {
     private final JwtUtil jwtUtil;
 
     @Transactional
-    public SocialLoginResponse login(String provider, SocialTokenLoginRequest request) {
+    public SocialLoginResponse login(SocialTokenLoginCommand command) {
         SocialVerifiedUser verified = verifierResolver
-                .resolve(provider, request.tokenType())
-                .verify(request.token(), request.tokenType());
+                .resolve(command.provider(), command.tokenType())
+                .verify(command.token(), command.tokenType());
 
         SocialUserResult user = socialUserService.loginOrRegister(new SocialLoginCommand(
                 verified.provider(),
