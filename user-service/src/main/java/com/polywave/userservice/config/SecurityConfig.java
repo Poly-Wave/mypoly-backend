@@ -1,9 +1,9 @@
 package com.polywave.userservice.config;
 
 import com.polywave.security.JwtAuthenticationFilter;
+import com.polywave.common.security.handler.RestAccessDeniedHandler;
+import com.polywave.common.security.handler.RestAuthenticationEntryPoint;
 import com.polywave.userservice.security.SecurityEndpoints;
-import com.polywave.userservice.security.handler.RestAccessDeniedHandler;
-import com.polywave.userservice.security.handler.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -35,8 +35,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(restAuthenticationEntryPoint)
-                        .accessDeniedHandler(restAccessDeniedHandler)
-                )
+                        .accessDeniedHandler(restAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(SecurityEndpoints.PUBLIC_ENDPOINTS).permitAll();
 

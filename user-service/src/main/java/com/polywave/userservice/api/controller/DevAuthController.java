@@ -1,7 +1,7 @@
 package com.polywave.userservice.api.controller;
 
+import com.polywave.common.dto.ApiResponse;
 import com.polywave.security.JwtUtil;
-import com.polywave.userservice.api.dto.ApiResponse;
 import com.polywave.userservice.api.dto.SocialLoginResponse;
 import com.polywave.userservice.api.spec.DevAuthApi;
 import com.polywave.userservice.application.auth.SocialUserService;
@@ -25,8 +25,7 @@ public class DevAuthController implements DevAuthApi {
     public DevAuthController(
             @Value("${social.dev-auth.key:}") String expectedDevKey,
             SocialUserService socialUserService,
-            JwtUtil jwtUtil
-    ) {
+            JwtUtil jwtUtil) {
         this.expectedDevKey = expectedDevKey;
         this.socialUserService = socialUserService;
         this.jwtUtil = jwtUtil;
@@ -41,12 +40,11 @@ public class DevAuthController implements DevAuthApi {
             return ResponseEntity.status(403).body(ApiResponse.fail("dev-auth key가 일치하지 않습니다."));
         }
 
-        SocialUserResult user = socialUserService.loginOrRegister(new SocialLoginCommand(
+        SocialUserResult user = socialUserService.login(new SocialLoginCommand(
                 "dev",
                 "swagger",
                 null,
-                null
-        ));
+                null));
 
         String jwt = jwtUtil.createToken(user.userId());
 
@@ -56,8 +54,7 @@ public class DevAuthController implements DevAuthApi {
                 user.providerUserId(),
                 user.nickname(),
                 user.profileImageUrl(),
-                jwt
-        );
+                jwt);
 
         return ResponseEntity.ok(ApiResponse.ok("dev 로그인 성공", data));
     }

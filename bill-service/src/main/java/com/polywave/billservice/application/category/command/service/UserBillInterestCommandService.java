@@ -1,5 +1,6 @@
 package com.polywave.billservice.application.category.command.service;
 
+import com.polywave.billservice.client.UserServiceClient;
 import com.polywave.billservice.domain.BillCategory;
 import com.polywave.billservice.domain.UserBillInterest;
 import com.polywave.billservice.repository.command.CategoryCommandRepository;
@@ -14,8 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserBillInterestCommandService {
 
+    private static final String ONBOARDING_STATUS_CATEGORY = "CATEGORY";
+
     private final UserBillInterestCommandRepository userBillInterestCommandRepository;
     private final CategoryCommandRepository categoryCommandRepository;
+    private final UserServiceClient userServiceClient;
 
     /**
      * 관심사 추가
@@ -25,7 +29,8 @@ public class UserBillInterestCommandService {
      */
     @Transactional
     public void addInterests(Long userId, Set<Long> categoryIds) {
-        if (categoryIds.isEmpty()) return;
+        if (categoryIds.isEmpty())
+            return;
 
         // 활성화된 카테고리만 추가
         List<BillCategory> categories = categoryCommandRepository.findAllByIdInAndIsActiveTrue(categoryIds);
@@ -35,6 +40,9 @@ public class UserBillInterestCommandService {
                 .toList();
 
         userBillInterestCommandRepository.saveAll(interests);
+
+        // user-service에 온보딩 상태 CATEGORY로 업데이트 요청
+        userServiceClient.updateOnboardingStatus(userId, ONBOARDING_STATUS_CATEGORY);
     }
 
     /**
@@ -42,7 +50,8 @@ public class UserBillInterestCommandService {
      */
     @Transactional
     public void removeInterests(Long userId, Set<Long> categoryIds) {
-        if (categoryIds.isEmpty()) return;
+        if (categoryIds.isEmpty())
+            return;
         userBillInterestCommandRepository.deleteByUserIdAndCategory_IdIn(userId, categoryIds);
     }
 }

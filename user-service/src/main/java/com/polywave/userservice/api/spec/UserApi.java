@@ -1,12 +1,13 @@
 package com.polywave.userservice.api.spec;
 
+import com.polywave.common.dto.ApiResponse;
 import com.polywave.userservice.api.dto.AddressSearchRequest;
 import com.polywave.userservice.api.dto.AddressSearchResponse;
-import com.polywave.userservice.api.dto.ApiResponse;
 import com.polywave.userservice.api.dto.NicknameAvailabilityRequest;
 import com.polywave.userservice.api.dto.NicknameAvailabilityResponse;
-import com.polywave.userservice.api.dto.NicknameCreateRequest;
+
 import com.polywave.userservice.api.dto.RandomNicknameResponse;
+import com.polywave.userservice.api.dto.UpdateOnboardingStatusRequest;
 import com.polywave.userservice.api.dto.UserUpdateProfileRequest;
 import com.polywave.userservice.api.example.CommonApiExamples;
 import com.polywave.userservice.api.example.UserApiExamples;
@@ -22,6 +23,7 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "User", description = "사용자 정보(닉네임/프로필/주소) 관련 API")
@@ -62,36 +64,6 @@ public interface UserApi {
         @GetMapping("/nicknames/random")
         ResponseEntity<ApiResponse<RandomNicknameResponse>> getRandomNickname();
 
-        @Operation(summary = "내 닉네임 설정", description = """
-                        로그인 사용자의 닉네임을 설정(또는 변경)합니다.
-
-                        예외 정책
-                        - 요청 값 검증 실패: 400
-                        - 금칙어 포함: 400
-                        - 중복 닉네임: 409
-                        - 사용자 없음: 404
-
-                        인증
-                        - JWT 인증이 필요합니다.
-                        - Swagger 우측 상단 Authorize에 `Bearer {jwt}` 입력 후 호출하세요.
-                        """)
-        @io.swagger.v3.oas.annotations.responses.ApiResponses({
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "설정 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "성공 응답 예시", value = UserApiExamples.EXAMPLE_ASSIGN_NICKNAME_OK))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패 또는 금칙어 포함", content = @Content(mediaType = "application/json", examples = {
-                                        @ExampleObject(name = "검증 실패 예시", value = UserApiExamples.EXAMPLE_VALIDATION_ERROR),
-                                        @ExampleObject(name = "금칙어 포함 예시", value = UserApiExamples.EXAMPLE_FORBIDDEN_NICKNAME)
-                        })),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "401 예시", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "403 예시", value = CommonApiExamples.EXAMPLE_FORBIDDEN))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "404 예시", value = UserApiExamples.EXAMPLE_USER_NOT_FOUND))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이미 사용 중인 닉네임", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "중복 닉네임 예시", value = UserApiExamples.EXAMPLE_DUPLICATE_NICKNAME))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
-        })
-        @PatchMapping("/me/nickname")
-        ResponseEntity<ApiResponse<Void>> assignNickname(
-                        @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "설정할 닉네임", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = NicknameCreateRequest.class), examples = @ExampleObject(name = "요청 예시", value = UserApiExamples.EXAMPLE_ASSIGN_NICKNAME_REQUEST))) @Valid @RequestBody NicknameCreateRequest request,
-                        @Parameter(hidden = true) Long userId);
-
         @Operation(summary = "주소 검색", description = """
                         행정구역(시도/시군구/읍면동) 주소 검색 결과를 반환합니다.
                         DB에서 직접 조회하며, 검색어에 해당하는 읍면동 정보를 포함합니다.
@@ -127,4 +99,25 @@ public interface UserApi {
         ResponseEntity<ApiResponse<Void>> updateProfile(
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "수정할 프로필 정보", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserUpdateProfileRequest.class), examples = @ExampleObject(name = "요청 예시", value = UserApiExamples.EXAMPLE_UPDATE_PROFILE_REQUEST))) @RequestBody @Valid UserUpdateProfileRequest request,
                         @Parameter(hidden = true) Long userId);
+
+        @Operation(summary = "온보딩 상태 업데이트", description = """
+                        사용자 온보딩 상태를 업데이트할 때 호출.
+                        JWT로 본인 확인 후 path의 userId와 일치할 때만 수정 가능.
+
+                        인증
+                        - JWT 인증이 필요합니다.
+                        - bill-service 호출 시 클라이언트의 Authorization 헤더를 그대로 전달하세요.
+                        """)
+        @io.swagger.v3.oas.annotations.responses.ApiResponses({
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "업데이트 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "성공 응답 예시", value = UserApiExamples.EXAMPLE_UPDATE_ONBOARDING_STATUS_OK))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "검증 실패 예시", value = UserApiExamples.EXAMPLE_UPDATE_ONBOARDING_STATUS_VALIDATION_ERROR))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "401 예시", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "본인만 수정 가능", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "403 예시", value = CommonApiExamples.EXAMPLE_FORBIDDEN))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+        })
+        @PatchMapping("/users/{userId}/onboarding-status")
+        ResponseEntity<ApiResponse<Void>> updateOnboardingStatus(
+                        @Parameter(description = "사용자 ID") @PathVariable Long userId,
+                        @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "업데이트할 온보딩 상태", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = UpdateOnboardingStatusRequest.class), examples = @ExampleObject(name = "요청 예시", value = UserApiExamples.EXAMPLE_UPDATE_ONBOARDING_STATUS_REQUEST))) @RequestBody @Valid UpdateOnboardingStatusRequest request,
+                        @Parameter(hidden = true) Long authenticatedUserId);
 }

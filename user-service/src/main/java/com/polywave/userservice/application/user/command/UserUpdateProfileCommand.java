@@ -1,9 +1,8 @@
 package com.polywave.userservice.application.user.command;
 
-import com.polywave.userservice.api.dto.UserUpdateProfileRequest;
 import com.polywave.userservice.domain.Gender;
 
-public record UserUpdateProfileCommmand(
+public record UserUpdateProfileCommand(
         Gender gender,
         String birthdate,
         String sido,

@@ -1,6 +1,6 @@
 package com.polywave.billservice.api.controller;
 
-import com.polywave.billservice.api.dto.ApiResponse;
+import com.polywave.common.dto.ApiResponse;
 import com.polywave.billservice.api.dto.CategoryInterestUpdateRequest;
 import com.polywave.billservice.api.dto.CategoryResponse;
 import com.polywave.billservice.api.example.CategoryApiExamples;

@@ -5,6 +5,9 @@ COPY gradlew gradlew.bat settings.gradle build.gradle ./
 COPY gradle ./gradle
 
 # 멀티모듈: 공통 모듈/다른 서비스 모듈도 settings.gradle에 포함돼 있으니 같이 복사
+COPY mypoly-common/build.gradle mypoly-common/build.gradle
+COPY mypoly-common/src mypoly-common/src
+
 COPY mypoly-security/build.gradle mypoly-security/build.gradle
 COPY mypoly-security/src mypoly-security/src
 

@@ -1,4 +1,4 @@
-package com.polywave.userservice.domain;
+package com.polywave.common.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;

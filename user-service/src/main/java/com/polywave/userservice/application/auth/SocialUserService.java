@@ -20,11 +20,12 @@ public class SocialUserService {
     private final UserOauthCommandRepository userOauthCommandRepository;
     private final UserOauthQueryRepository userOauthQueryRepository;
 
-    @Transactional
-    public SocialUserResult loginOrRegister(SocialLoginCommand command) {
+    @Transactional(readOnly = true)
+    public SocialUserResult login(SocialLoginCommand command) {
         UserOauth userOauth = userOauthQueryRepository
                 .findByProviderAndProviderUserId(command.provider(), command.providerUserId())
-                .orElseGet(() -> createSocialUser(command));
+                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND")); // 클라이언트가 400 또는 특정 코드로 분기처리할 수 있도록
+                                                                                    // 예외 투척
 
         User user = userOauth.getUser();
 
@@ -33,8 +34,26 @@ public class SocialUserService {
                 userOauth.getProvider(),
                 userOauth.getProviderUserId(),
                 user.getNickname(),
-                user.getProfileImageUrl()
-        );
+                user.getProfileImageUrl());
+    }
+
+    @Transactional
+    public SocialUserResult register(SocialLoginCommand command) {
+        userOauthQueryRepository
+                .findByProviderAndProviderUserId(command.provider(), command.providerUserId())
+                .ifPresent(u -> {
+                    throw new IllegalArgumentException("USER_ALREADY_EXISTS");
+                });
+
+        UserOauth userOauth = createSocialUser(command);
+        User user = userOauth.getUser();
+
+        return new SocialUserResult(
+                user.getId(),
+                userOauth.getProvider(),
+                userOauth.getProviderUserId(),
+                user.getNickname(),
+                user.getProfileImageUrl());
     }
 
     private UserOauth createSocialUser(SocialLoginCommand command) {

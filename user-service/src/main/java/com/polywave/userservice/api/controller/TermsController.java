@@ -1,6 +1,6 @@
 package com.polywave.userservice.api.controller;
 
-import com.polywave.userservice.api.dto.ApiResponse;
+import com.polywave.common.dto.ApiResponse;
 import com.polywave.userservice.api.dto.TermsListResponse;
 import com.polywave.userservice.api.dto.TermsResponse;
 import com.polywave.userservice.api.spec.TermsApi;
