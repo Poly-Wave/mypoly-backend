@@ -1,5 +1,6 @@
 package com.polywave.billservice.client;
 
+import com.polywave.billservice.client.dto.OnboardingStatusResponse;
 import com.polywave.billservice.client.dto.UpdateOnboardingStatusRequest;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
@@ -51,6 +52,35 @@ public class UserServiceClient {
      * @param onboardingStatus OnBoardingStatus enum 값 (SIGNUP, ONBOARDING,
      *                         CATEGORY, COMPLETE)
      */
+    /**
+     * 사용자 온보딩 상태 조회
+     *
+     * @param userId 사용자 ID
+     * @return 온보딩 상태 (SIGNUP, ONBOARDING, CATEGORY, COMPLETE)
+     */
+    public String getOnboardingStatus(Long userId) {
+        String url = userServiceUrl + userId + "/onboarding-status";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(AUTHORIZATION_HEADER, "Bearer " + resolveBearerToken());
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        Supplier<String> supplier = () -> {
+            try {
+                var response = restTemplate.exchange(url, HttpMethod.GET, entity,
+                        OnboardingStatusResponse.class);
+                return response.getBody().getOnboardingStatus();
+            } catch (Exception e) {
+                log.warn("user-service 온보딩 상태 조회 실패 (재시도 가능): userId={}, url={}", userId, url, e);
+                throw new RuntimeException("user-service 조회 실패", e);
+            }
+        };
+
+        Supplier<String> retrySupplier = Retry.decorateSupplier(userServiceRetry, supplier);
+        return userServiceCircuitBreaker.executeSupplier(retrySupplier);
+    }
+
     public void updateOnboardingStatus(Long userId, String onboardingStatus) {
         String url = userServiceUrl + userId + "/onboarding-status";
 
@@ -74,12 +104,8 @@ public class UserServiceClient {
                 restTemplate.exchange(url, HttpMethod.PATCH, entity, Void.class);
                 log.debug("user-service 온보딩 상태 업데이트 성공: userId={}, status={}", userId, onboardingStatus);
                 return null;
-            } catch (org.springframework.web.client.RestClientException e) {
-                log.warn("user-service 호출 실패 (재시도 가능): userId={}, status={}, url={}", userId, onboardingStatus, url, e);
-                throw e; // Retry가 RestClientException을 인식할 수 있도록 원래 예외를 던집니다.
             } catch (Exception e) {
-                log.warn("user-service 호출 실패 (알 수 없는 오류): userId={}, status={}, url={}", userId, onboardingStatus, url,
-                        e);
+                log.warn("user-service 호출 실패 (재시도 가능): userId={}, status={}, url={}", userId, onboardingStatus, url, e);
                 throw new RuntimeException("user-service 호출 실패", e);
             }
         };

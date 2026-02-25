@@ -96,4 +96,9 @@ public final class UserApiExamples {
         "code": "VALIDATION_ERROR"
       }
       """;
+  public static final String EXAMPLE_GET_ONBOARDING_STATUS_OK = """
+      {
+        "onboardingStatus": "COMPLETE"
+      }
+      """;
 }

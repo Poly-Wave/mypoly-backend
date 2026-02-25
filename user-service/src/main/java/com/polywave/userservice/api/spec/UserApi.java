@@ -119,4 +119,17 @@ public interface UserApi {
                         @Parameter(description = "사용자 ID") @PathVariable Long userId,
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "업데이트할 온보딩 상태", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = UpdateOnboardingStatusRequest.class), examples = @ExampleObject(name = "요청 예시", value = UserApiExamples.EXAMPLE_UPDATE_ONBOARDING_STATUS_REQUEST))) @RequestBody @Valid UpdateOnboardingStatusRequest request,
                         @Parameter(hidden = true) Long authenticatedUserId);
+
+        @Operation(summary = "온보딩 상태 조회", description = """
+                        사용자의 온보딩 상태를 조회합니다.
+                        """)
+        @io.swagger.v3.oas.annotations.responses.ApiResponses({
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "성공 응답 예시", value = UserApiExamples.EXAMPLE_GET_ONBOARDING_STATUS_OK))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "401 예시", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "404 예시", value = UserApiExamples.EXAMPLE_USER_NOT_FOUND))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+        })
+        @GetMapping("/{userId}/onboarding-status")
+        ResponseEntity<com.polywave.userservice.api.dto.OnboardingStatusResponse> getOnboardingStatus(
+                        @Parameter(description = "사용자 ID") @PathVariable Long userId);
 }

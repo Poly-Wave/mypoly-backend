@@ -86,4 +86,28 @@ public class CategoryController {
 
                 return ResponseEntity.ok().build();
         }
+
+        @Operation(summary = "내 관심 카테고리 저장 (온보딩 전용)", description = """
+                        사용자 **온보딩 과정에서** 관심 카테고리 목록을 저장합니다. (JWT 인증 필요)
+                        - 사용자 온보딩 상태를 변경하는 작업이 포함됩니다. (SIGNUP, ONBOARDING -> CATEGORY)
+                        - **이미 온보딩 기능이 완료되었거나 접근할 수 없는 상태라면 예외가 발생합니다.**
+                        - 저장 로직은 일반 관심사 저장과 동일합니다.
+                        """)
+        @SecurityRequirement(name = "bearerAuth")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses({
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "저장 및 상태 업데이트 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "성공 응답 예시", value = CategoryApiExamples.EXAMPLE_UPDATE_INTERESTS_OK))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패 (또는 잘못된 온보딩 상태)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "검증 실패 예시", value = CategoryApiExamples.EXAMPLE_BAD_REQUEST_VALIDATION))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "401 예시", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "403 예시", value = CommonApiExamples.EXAMPLE_FORBIDDEN))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+        })
+        @PostMapping("/onboarding/interests")
+        public ResponseEntity<Void> updateOnboardingInterests(
+                        @Parameter(hidden = true) @LoginUser Long userId,
+                        @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "저장할 관심 카테고리 ID 목록", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = CategoryInterestUpdateRequest.class), examples = @ExampleObject(name = "요청 예시", value = CategoryApiExamples.EXAMPLE_UPDATE_INTERESTS_REQUEST))) @RequestBody @Valid CategoryInterestUpdateRequest request) {
+                CategoryInterestCommand command = new CategoryInterestCommand(userId, request.categoryIds());
+                userBillInterestAppService.saveOnboardingInterests(command);
+
+                return ResponseEntity.ok().build();
+        }
 }

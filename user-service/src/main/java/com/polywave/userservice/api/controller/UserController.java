@@ -10,8 +10,11 @@ import com.polywave.userservice.application.user.command.service.UserCommandServ
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
 import com.polywave.userservice.application.nickname.query.result.RandomNicknameResult;
 import com.polywave.userservice.application.nickname.query.service.NicknameQueryService;
+import com.polywave.userservice.application.user.query.result.OnboardingStatusResult;
+import com.polywave.userservice.application.user.query.service.UserQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -20,6 +23,7 @@ public class UserController implements UserApi {
 
         private final NicknameQueryService nicknameQueryService;
         private final AddressQueryService addressQueryService;
+        private final UserQueryService userQueryService;
         private final UserCommandService userCommandService;
 
         @Override
@@ -56,7 +60,7 @@ public class UserController implements UserApi {
                         UpdateOnboardingStatusRequest request,
                         @LoginUser Long authenticatedUserId) {
                 if (!authenticatedUserId.equals(userId)) {
-                        throw new org.springframework.security.access.AccessDeniedException("본인만 수정할 수 있습니다.");
+                        throw new AccessDeniedException("본인만 수정할 수 있습니다.");
                 }
                 userCommandService.updateUserOnboardingStatus(userId, request.onboardingStatus());
                 return ResponseEntity.ok().build();
@@ -70,6 +74,13 @@ public class UserController implements UserApi {
                                 request.countPerPage());
 
                 return ResponseEntity.ok(convertToResponse(result));
+        }
+
+        @Override
+        public ResponseEntity<OnboardingStatusResponse> getOnboardingStatus(Long userId) {
+                OnboardingStatusResult result = userQueryService
+                                .getOnboardingStatus(userId);
+                return ResponseEntity.ok(OnboardingStatusResponse.of(result.status()));
         }
 
         private AddressSearchResponse convertToResponse(AddressSearchResult result) {
