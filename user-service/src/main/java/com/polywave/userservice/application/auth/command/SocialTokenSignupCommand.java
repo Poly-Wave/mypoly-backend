@@ -10,6 +10,5 @@ public record SocialTokenSignupCommand(
         SocialTokenType tokenType,
         String token,
         String nickname,
-        List<TermsAgreement> termsAgreements
-) {
+        List<TermsAgreement> termsAgreements) {
 }
