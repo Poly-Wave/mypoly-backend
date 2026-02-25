@@ -29,6 +29,9 @@ public class UserBillInterestCommandService {
      */
     @Transactional
     public void addInterests(Long userId, Set<Long> categoryIds) {
+        // user-service에 온보딩 상태 CATEGORY로 업데이트 요청 (관심사 추가할 항목이 없어도 진행 상태는 업데이트해야 함)
+        userServiceClient.updateOnboardingStatus(userId, ONBOARDING_STATUS_CATEGORY);
+
         if (categoryIds.isEmpty())
             return;
 
@@ -40,9 +43,6 @@ public class UserBillInterestCommandService {
                 .toList();
 
         userBillInterestCommandRepository.saveAll(interests);
-
-        // user-service에 온보딩 상태 CATEGORY로 업데이트 요청
-        userServiceClient.updateOnboardingStatus(userId, ONBOARDING_STATUS_CATEGORY);
     }
 
     /**

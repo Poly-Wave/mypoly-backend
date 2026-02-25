@@ -1,6 +1,5 @@
 package com.polywave.userservice.api.controller;
 
-import com.polywave.common.dto.ApiResponse;
 import com.polywave.userservice.api.dto.SocialLoginResponse;
 import com.polywave.userservice.api.dto.SocialTokenLoginRequest;
 import com.polywave.userservice.api.dto.SocialTokenSignupRequest;
@@ -23,8 +22,8 @@ public class SocialTokenAuthController implements SocialTokenAuthApi {
         private final SocialTokenAuthService socialTokenAuthService;
 
         @Override
-        public ResponseEntity<ApiResponse<SocialLoginResponse>> loginWithToken(String provider,
-                                                                               SocialTokenLoginRequest request) {
+        public ResponseEntity<SocialLoginResponse> loginWithToken(String provider,
+                        SocialTokenLoginRequest request) {
                 SocialTokenLoginCommand command = new SocialTokenLoginCommand(
                                 provider,
                                 request.tokenType(),
@@ -38,11 +37,11 @@ public class SocialTokenAuthController implements SocialTokenAuthApi {
                                 result.nickname(),
                                 result.profileImageUrl(),
                                 result.jwt());
-                return ResponseEntity.ok(ApiResponse.ok("소셜 로그인 성공", data));
+                return ResponseEntity.ok(data);
         }
 
         @Override
-        public ResponseEntity<ApiResponse<SocialLoginResponse>> signupWithToken(String provider,
+        public ResponseEntity<SocialLoginResponse> signupWithToken(String provider,
                         SocialTokenSignupRequest request) {
                 SocialTokenSignupCommand command = new SocialTokenSignupCommand(
                                 provider,
@@ -62,6 +61,6 @@ public class SocialTokenAuthController implements SocialTokenAuthApi {
                                 result.profileImageUrl(),
                                 result.jwt());
                 return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
-                                .body(ApiResponse.ok("소셜 회원가입 성공", data));
+                                .body(data);
         }
 }

@@ -1,11 +1,10 @@
 package com.polywave.userservice.api.spec;
 
-import com.polywave.common.dto.ApiResponse;
 import com.polywave.userservice.api.dto.SocialLoginResponse;
 import com.polywave.userservice.api.dto.SocialTokenLoginRequest;
 import com.polywave.userservice.api.dto.SocialTokenSignupRequest;
 import com.polywave.userservice.api.example.AuthApiExamples;
-import com.polywave.userservice.api.example.CommonApiExamples;
+import com.polywave.common.example.CommonApiExamples;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -40,7 +39,7 @@ public interface SocialTokenAuthApi {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @PostMapping("/{provider}/token")
-        ResponseEntity<ApiResponse<SocialLoginResponse>> loginWithToken(
+        ResponseEntity<SocialLoginResponse> loginWithToken(
                         @Parameter(description = "provider", example = "kakao") @PathVariable String provider,
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = """
                                         SDK에서 받은 토큰을 전달합니다.
@@ -67,7 +66,7 @@ public interface SocialTokenAuthApi {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "소셜 토큰 만료 또는 위조 내역 발견")
         })
         @PostMapping("/{provider}/signup")
-        ResponseEntity<ApiResponse<SocialLoginResponse>> signupWithToken(
+        ResponseEntity<SocialLoginResponse> signupWithToken(
                         @Parameter(description = "provider (kakao, google, apple 등)", example = "kakao") @PathVariable String provider,
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "토큰 타입, 토큰 값, 새로운 닉네임, 동의한 약관 목록의 JSON", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = SocialTokenSignupRequest.class))) @Valid @RequestBody SocialTokenSignupRequest request);
 }

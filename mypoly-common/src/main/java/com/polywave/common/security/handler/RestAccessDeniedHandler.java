@@ -1,7 +1,7 @@
 package com.polywave.common.security.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.polywave.common.dto.ApiResponse;
+import com.polywave.common.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +24,7 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
     public void handle(
             HttpServletRequest request,
             HttpServletResponse response,
-            AccessDeniedException accessDeniedException
-    ) throws IOException {
+            AccessDeniedException accessDeniedException) throws IOException {
 
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -33,7 +32,6 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
         objectMapper.writeValue(
                 response.getWriter(),
-                ApiResponse.fail(ERROR_CODE_FORBIDDEN, "접근 권한이 없습니다.")
-        );
+                new ErrorResponse(ERROR_CODE_FORBIDDEN));
     }
 }

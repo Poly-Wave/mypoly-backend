@@ -1,9 +1,8 @@
 package com.polywave.userservice.api.spec;
 
-import com.polywave.common.dto.ApiResponse;
 import com.polywave.userservice.api.dto.TermsListResponse;
 import com.polywave.userservice.api.dto.TermsResponse;
-import com.polywave.userservice.api.example.CommonApiExamples;
+import com.polywave.common.example.CommonApiExamples;
 import com.polywave.userservice.api.example.TermsApiExamples;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -28,7 +27,7 @@ public interface TermsApi {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping
-        ResponseEntity<ApiResponse<TermsListResponse>> getLatestTerms();
+        ResponseEntity<TermsListResponse> getLatestTerms();
 
         @Operation(summary = "약관 메타데이터 단건 조회", description = """
                         약관 ID로 약관의 메타데이터를 조회합니다.
@@ -42,7 +41,7 @@ public interface TermsApi {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping("/{termsId}")
-        ResponseEntity<ApiResponse<TermsResponse>> getTermsMeta(@PathVariable Long termsId);
+        ResponseEntity<TermsResponse> getTermsMeta(@PathVariable Long termsId);
 
         @Operation(summary = "약관 본문(HTML) 조회", description = """
                         약관의 본문을 **HTML(text/html)** 로 반환합니다.

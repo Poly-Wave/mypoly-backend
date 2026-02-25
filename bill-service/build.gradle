@@ -49,6 +49,9 @@ dependencies {
 	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.1.0'
 	implementation 'io.github.resilience4j:resilience4j-reactor:2.1.0'
 
+	// RestTemplate PATCH 지원 (HttpURLConnection은 PATCH 미지원)
+	implementation 'org.apache.httpcomponents.client5:httpclient5'
+
 	// QueryDSL
 	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
 	annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'

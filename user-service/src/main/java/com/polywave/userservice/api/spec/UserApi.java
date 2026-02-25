@@ -1,6 +1,5 @@
 package com.polywave.userservice.api.spec;
 
-import com.polywave.common.dto.ApiResponse;
 import com.polywave.userservice.api.dto.AddressSearchRequest;
 import com.polywave.userservice.api.dto.AddressSearchResponse;
 import com.polywave.userservice.api.dto.NicknameAvailabilityRequest;
@@ -9,7 +8,7 @@ import com.polywave.userservice.api.dto.NicknameAvailabilityResponse;
 import com.polywave.userservice.api.dto.RandomNicknameResponse;
 import com.polywave.userservice.api.dto.UpdateOnboardingStatusRequest;
 import com.polywave.userservice.api.dto.UserUpdateProfileRequest;
-import com.polywave.userservice.api.example.CommonApiExamples;
+import com.polywave.common.example.CommonApiExamples;
 import com.polywave.userservice.api.example.UserApiExamples;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,7 +44,7 @@ public interface UserApi {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping("/nicknames/availability")
-        ResponseEntity<ApiResponse<NicknameAvailabilityResponse>> checkNicknameAvailability(
+        ResponseEntity<NicknameAvailabilityResponse> checkNicknameAvailability(
                         @ParameterObject @Valid NicknameAvailabilityRequest request);
 
         @Operation(summary = "랜덤 닉네임 생성", description = """
@@ -62,7 +61,7 @@ public interface UserApi {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping("/nicknames/random")
-        ResponseEntity<ApiResponse<RandomNicknameResponse>> getRandomNickname();
+        ResponseEntity<RandomNicknameResponse> getRandomNickname();
 
         @Operation(summary = "주소 검색", description = """
                         행정구역(시도/시군구/읍면동) 주소 검색 결과를 반환합니다.
@@ -79,7 +78,7 @@ public interface UserApi {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping("/addresses")
-        ResponseEntity<ApiResponse<AddressSearchResponse>> searchAddress(
+        ResponseEntity<AddressSearchResponse> searchAddress(
                         @ParameterObject @Valid AddressSearchRequest request);
 
         @Operation(summary = "사용자 프로필 수정", description = """
@@ -96,7 +95,7 @@ public interface UserApi {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @PatchMapping("/me/profile")
-        ResponseEntity<ApiResponse<Void>> updateProfile(
+        ResponseEntity<Void> updateProfile(
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "수정할 프로필 정보", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserUpdateProfileRequest.class), examples = @ExampleObject(name = "요청 예시", value = UserApiExamples.EXAMPLE_UPDATE_PROFILE_REQUEST))) @RequestBody @Valid UserUpdateProfileRequest request,
                         @Parameter(hidden = true) Long userId);
 
@@ -115,8 +114,8 @@ public interface UserApi {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "본인만 수정 가능", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "403 예시", value = CommonApiExamples.EXAMPLE_FORBIDDEN))),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
-        @PatchMapping("/users/{userId}/onboarding-status")
-        ResponseEntity<ApiResponse<Void>> updateOnboardingStatus(
+        @PatchMapping("/{userId}/onboarding-status")
+        ResponseEntity<Void> updateOnboardingStatus(
                         @Parameter(description = "사용자 ID") @PathVariable Long userId,
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "업데이트할 온보딩 상태", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = UpdateOnboardingStatusRequest.class), examples = @ExampleObject(name = "요청 예시", value = UserApiExamples.EXAMPLE_UPDATE_ONBOARDING_STATUS_REQUEST))) @RequestBody @Valid UpdateOnboardingStatusRequest request,
                         @Parameter(hidden = true) Long authenticatedUserId);

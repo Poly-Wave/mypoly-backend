@@ -74,8 +74,12 @@ public class UserServiceClient {
                 restTemplate.exchange(url, HttpMethod.PATCH, entity, Void.class);
                 log.debug("user-service 온보딩 상태 업데이트 성공: userId={}, status={}", userId, onboardingStatus);
                 return null;
-            } catch (Exception e) {
+            } catch (org.springframework.web.client.RestClientException e) {
                 log.warn("user-service 호출 실패 (재시도 가능): userId={}, status={}, url={}", userId, onboardingStatus, url, e);
+                throw e; // Retry가 RestClientException을 인식할 수 있도록 원래 예외를 던집니다.
+            } catch (Exception e) {
+                log.warn("user-service 호출 실패 (알 수 없는 오류): userId={}, status={}, url={}", userId, onboardingStatus, url,
+                        e);
                 throw new RuntimeException("user-service 호출 실패", e);
             }
         };

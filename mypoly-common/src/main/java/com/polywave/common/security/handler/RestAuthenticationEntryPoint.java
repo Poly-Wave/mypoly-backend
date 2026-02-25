@@ -1,7 +1,7 @@
 package com.polywave.common.security.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.polywave.common.dto.ApiResponse;
+import com.polywave.common.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +24,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
     public void commence(
             HttpServletRequest request,
             HttpServletResponse response,
-            AuthenticationException authException
-    ) throws IOException {
+            AuthenticationException authException) throws IOException {
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -33,7 +32,6 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
         objectMapper.writeValue(
                 response.getWriter(),
-                ApiResponse.fail(ERROR_CODE_UNAUTHORIZED, "인증이 필요합니다.")
-        );
+                new ErrorResponse(ERROR_CODE_UNAUTHORIZED));
     }
 }

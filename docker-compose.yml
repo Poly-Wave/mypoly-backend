@@ -30,7 +30,7 @@ services:
       context: .
       dockerfile: user-service/Dockerfile
     #image: mypoly-user-service:latest
-    image: ghcr.io/poly-wave/mypoly-user-service:0.2
+    image: ghcr.io/poly-wave/mypoly-user-service:0.3
     container_name: mypoly-user-service
     restart: unless-stopped
 
@@ -67,7 +67,7 @@ services:
       context: .
       dockerfile: bill-service/Dockerfile
     #image: mypoly-bill-service:latest
-    image: ghcr.io/poly-wave/mypoly-bill-service:0.1
+    image: ghcr.io/poly-wave/mypoly-bill-service:0.3
     container_name: mypoly-bill-service
     restart: unless-stopped
 
