@@ -23,7 +23,7 @@ public interface TermsApi {
                         - 본문이 필요하면 `GET /terms/{termsId}/html`을 사용하세요.
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "성공 응답 예시", value = TermsApiExamples.EXAMPLE_TERMS_LIST_OK))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping
@@ -36,7 +36,7 @@ public interface TermsApi {
                         - 본문이 필요하면 `GET /terms/{termsId}/html`을 사용하세요.
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "성공 응답 예시", value = TermsApiExamples.EXAMPLE_TERMS_META_OK))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "약관을 찾을 수 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "404 예시", value = TermsApiExamples.EXAMPLE_TERMS_NOT_FOUND))),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
@@ -50,9 +50,9 @@ public interface TermsApi {
                         - 응답은 JSON(ApiResponse)이 아니라 순수 HTML 문자열입니다.
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공(HTML 반환)", content = @Content(mediaType = "text/html", examples = @ExampleObject(name = "HTML 예시", value = "<h1>서비스 이용약관</h1>..."))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "약관을 찾을 수 없음", content = @Content(mediaType = "application/json")),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json"))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공(HTML 반환)"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "약관을 찾을 수 없음"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류")
         })
         @GetMapping(value = "/{termsId}/html", produces = MediaType.TEXT_HTML_VALUE)
         ResponseEntity<String> getTermsHtml(@PathVariable Long termsId);

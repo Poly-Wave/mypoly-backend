@@ -28,7 +28,7 @@ public interface DevAuthApi {
                         3) 잠금 아이콘 API 호출
                         """)
         @ApiResponses({
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "JWT 발급 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "성공 응답 예시", value = AuthApiExamples.EXAMPLE_DEV_AUTH_OK))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "JWT 발급 성공"),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "DEV 키 설정/불일치", content = @Content(mediaType = "application/json", examples = {
                                         @ExampleObject(name = "DEV 키 미설정 예시", value = AuthApiExamples.EXAMPLE_DEV_AUTH_KEY_NOT_SET),
                                         @ExampleObject(name = "DEV 키 불일치 예시", value = AuthApiExamples.EXAMPLE_DEV_AUTH_KEY_MISMATCH)
