@@ -33,7 +33,7 @@ public interface SocialTokenAuthApi {
                         - dev/local: `POST /dev-auth/login` 으로 JWT 발급 → Authorize → 보호 API 테스트
                         """)
         @ApiResponses({
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "JWT 발급 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "성공 응답 예시", value = AuthApiExamples.EXAMPLE_SOCIAL_TOKEN_LOGIN_OK))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "JWT 발급 성공"),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "지원하지 않는 provider/tokenType 또는 요청 값 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "지원하지 않는 요청 예시", value = AuthApiExamples.EXAMPLE_UNSUPPORTED_SOCIAL_LOGIN))),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "소셜 토큰 검증 실패(만료/위조/aud 불일치 등)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "카카오 토큰 실패 예시", value = AuthApiExamples.EXAMPLE_INVALID_KAKAO_TOKEN))),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
