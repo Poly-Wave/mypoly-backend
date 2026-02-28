@@ -30,7 +30,7 @@ services:
       context: .
       dockerfile: user-service/Dockerfile
     #image: mypoly-user-service:latest
-    image: ghcr.io/poly-wave/mypoly-user-service:0.5
+    image: ghcr.io/poly-wave/mypoly-user-service:0.1
     container_name: mypoly-user-service
     restart: unless-stopped
 
@@ -67,7 +67,7 @@ services:
       context: .
       dockerfile: bill-service/Dockerfile
     #image: mypoly-bill-service:latest
-    image: ghcr.io/poly-wave/mypoly-bill-service:0.5
+    image: ghcr.io/poly-wave/mypoly-bill-service:0.1
     container_name: mypoly-bill-service
     restart: unless-stopped
 
@@ -75,7 +75,7 @@ services:
     env_file:
       - ./.env
       - ./bill-service/.env
-
+ 
     environment:
       DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
       DB_USERNAME: ${POSTGRES_USER}
@@ -85,9 +85,6 @@ services:
 
       # 로컬은 비움(= /categories), k8s에서는 /bills 권장
       SERVER_SERVLET_CONTEXT_PATH: ${BILL_SERVER_SERVLET_CONTEXT_PATH:-}
-
-      # user-service 호출 URL (compose 네트워크에서는 서비스명으로 접근)
-      USER_SERVICE_URL: ${USER_SERVICE_URL:-http://user-service:8080}
 
       SERVER_FORWARD_HEADERS_STRATEGY: ${SERVER_FORWARD_HEADERS_STRATEGY:-framework}
 
