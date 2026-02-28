@@ -5,13 +5,16 @@ import com.polywave.userservice.api.dto.*;
 import com.polywave.userservice.api.spec.UserApi;
 import com.polywave.userservice.application.address.query.result.AddressSearchResult;
 import com.polywave.userservice.application.address.query.service.AddressQueryService;
-import com.polywave.userservice.application.nickname.command.service.NicknameCommandService;
-import com.polywave.userservice.application.user.command.UserUpdateProfileCommmand;
+import com.polywave.userservice.application.user.command.UserUpdateProfileCommand;
 import com.polywave.userservice.application.user.command.service.UserCommandService;
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
 import com.polywave.userservice.application.nickname.query.result.RandomNicknameResult;
 import com.polywave.userservice.application.nickname.query.service.NicknameQueryService;
+import com.polywave.userservice.application.user.query.result.OnboardingStatusResult;
+import com.polywave.userservice.application.user.query.service.UserQueryService;
 import lombok.RequiredArgsConstructor;
+import com.polywave.userservice.common.exception.UserErrorCode;
+import com.polywave.userservice.common.exception.UserValidationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,65 +22,66 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class UserController implements UserApi {
 
-        private final NicknameCommandService nicknameCommandService;
         private final NicknameQueryService nicknameQueryService;
         private final AddressQueryService addressQueryService;
+        private final UserQueryService userQueryService;
         private final UserCommandService userCommandService;
 
         @Override
-        public ResponseEntity<ApiResponse<NicknameAvailabilityResponse>> checkNicknameAvailability(
+        public ResponseEntity<NicknameAvailabilityResponse> checkNicknameAvailability(
                         NicknameAvailabilityRequest request) {
                 NicknameAvailabilityResult result = nicknameQueryService.isNicknameAvailable(request.nickname());
-                return ResponseEntity.ok(
-                                ApiResponse.ok(
-                                                "닉네임 사용 가능 여부 조회 성공",
-                                                NicknameAvailabilityResponse.of(result.available())));
+                return ResponseEntity.ok(NicknameAvailabilityResponse.of(result.available()));
         }
 
         @Override
-        public ResponseEntity<ApiResponse<RandomNicknameResponse>> getRandomNickname() {
+        public ResponseEntity<RandomNicknameResponse> getRandomNickname() {
                 RandomNicknameResult result = nicknameQueryService.generateRandomNickname();
-                return ResponseEntity.ok(
-                                ApiResponse.ok(
-                                                "랜덤 닉네임 생성 성공",
-                                                RandomNicknameResponse.of(result.nickname())));
+                return ResponseEntity.ok(RandomNicknameResponse.of(result.nickname()));
         }
 
         @Override
-        public ResponseEntity<ApiResponse<Void>> assignNickname(
-                        NicknameCreateRequest request,
-                        @LoginUser Long userId) {
-                nicknameCommandService.assignNickname(userId, request.nickname());
-                return ResponseEntity.ok(ApiResponse.ok("닉네임 설정 성공"));
-        }
-
-        @Override
-        public ResponseEntity<ApiResponse<Void>> updateProfile(
+        public ResponseEntity<Void> updateProfile(
                         UserUpdateProfileRequest request,
                         @LoginUser Long userId) {
 
-                UserUpdateProfileCommmand updateProfileCommmand = new UserUpdateProfileCommmand(
-                        request.gender(),
-                        request.birthDate(),
-                        request.sido(),
-                        request.sigungu(),
-                        request.emdName()
-                );
+                UserUpdateProfileCommand updateProfileCommmand = new UserUpdateProfileCommand(
+                                request.gender(),
+                                request.birthDate(),
+                                request.sido(),
+                                request.sigungu(),
+                                request.emdName());
                 userCommandService.updateUserProfile(userId, updateProfileCommmand);
-                return ResponseEntity.ok(ApiResponse.ok("프로필 수정 성공"));
+                return ResponseEntity.ok().build();
         }
 
         @Override
-        public ResponseEntity<ApiResponse<AddressSearchResponse>> searchAddress(AddressSearchRequest request) {
+        public ResponseEntity<Void> updateOnboardingStatus(
+                        Long userId,
+                        UpdateOnboardingStatusRequest request,
+                        @LoginUser Long authenticatedUserId) {
+                if (!authenticatedUserId.equals(userId)) {
+                        throw new UserValidationException(UserErrorCode.FORBIDDEN_NOT_OWNER);
+                }
+                userCommandService.updateUserOnboardingStatus(userId, request.onboardingStatus());
+                return ResponseEntity.ok().build();
+        }
+
+        @Override
+        public ResponseEntity<AddressSearchResponse> searchAddress(AddressSearchRequest request) {
                 AddressSearchResult result = addressQueryService.searchAddress(
                                 request.keyword(),
                                 request.currentPage(),
                                 request.countPerPage());
 
-                return ResponseEntity.ok(
-                                ApiResponse.ok(
-                                                "주소 검색 성공",
-                                                convertToResponse(result)));
+                return ResponseEntity.ok(convertToResponse(result));
+        }
+
+        @Override
+        public ResponseEntity<OnboardingStatusResponse> getOnboardingStatus(Long userId) {
+                OnboardingStatusResult result = userQueryService
+                                .getOnboardingStatus(userId);
+                return ResponseEntity.ok(OnboardingStatusResponse.of(result.status()));
         }
 
         private AddressSearchResponse convertToResponse(AddressSearchResult result) {

@@ -1,7 +1,9 @@
 package com.polywave.userservice.common.exception;
 
-public class InvalidSocialTokenException extends RuntimeException {
-    public InvalidSocialTokenException(String message) {
-        super(message);
+import com.polywave.common.exception.BusinessException;
+
+public class InvalidSocialTokenException extends BusinessException {
+    public InvalidSocialTokenException() {
+        super(UserErrorCode.INVALID_SOCIAL_TOKEN);
     }
 }

@@ -21,8 +21,7 @@ public class AppleIdTokenVerifier implements SocialTokenVerifier {
     public AppleIdTokenVerifier(
             @Value("${social.apple.client-id:}") String clientId,
             @Value("${social.apple.issuer:https://appleid.apple.com}") String issuer,
-            @Value("${social.apple.jwk-set-uri:https://appleid.apple.com/auth/keys}") String jwkSetUri
-    ) {
+            @Value("${social.apple.jwk-set-uri:https://appleid.apple.com/auth/keys}") String jwkSetUri) {
         if (clientId == null || clientId.isBlank()) {
             this.enabled = false;
             this.jwtDecoder = null;
@@ -58,11 +57,11 @@ public class AppleIdTokenVerifier implements SocialTokenVerifier {
             Jwt jwt = jwtDecoder.decode(token);
             String sub = jwt.getSubject();
             if (sub == null || sub.isBlank()) {
-                throw new InvalidSocialTokenException("애플 id_token 검증 실패(sub 누락)");
+                throw new InvalidSocialTokenException();
             }
             return new SocialVerifiedUser("apple", sub, null);
         } catch (JwtException e) {
-            throw new InvalidSocialTokenException("애플 id_token 검증 실패: " + e.getMessage());
+            throw new InvalidSocialTokenException();
         }
     }
 }

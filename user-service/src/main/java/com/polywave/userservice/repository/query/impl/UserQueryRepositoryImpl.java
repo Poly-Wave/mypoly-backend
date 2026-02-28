@@ -1,5 +1,6 @@
 package com.polywave.userservice.repository.query.impl;
 
+import com.polywave.userservice.domain.OnBoardingStatus;
 import com.polywave.userservice.domain.QUser;
 import com.polywave.userservice.repository.query.UserQueryRepository;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -20,5 +21,14 @@ public class UserQueryRepositoryImpl implements UserQueryRepository {
                 .where(QUser.user.nickname.eq(nickname))
                 .fetchFirst();
         return result != null;
+    }
+
+    @Override
+    public OnBoardingStatus findOnboardingStatusByUserId(Long userId) {
+        return jpaQueryFactory
+                .select(QUser.user.onboardingStatus)
+                .from(QUser.user)
+                .where(QUser.user.id.eq(userId))
+                .fetchOne();
     }
 }

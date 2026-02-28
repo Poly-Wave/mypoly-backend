@@ -26,6 +26,9 @@ repositories {
 }
 
 dependencies {
+	// 공통 모듈
+	implementation project(':mypoly-common')
+	
 	// 공통 보안 모듈
 	implementation project(':mypoly-security')
 

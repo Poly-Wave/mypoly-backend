@@ -1,5 +1,6 @@
 package com.polywave.userservice.domain;
 
+import com.polywave.common.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -39,8 +40,9 @@ public class User extends BaseEntity {
     @Column(length = 100)
     private String address;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 10)
-    private String onboardingStatus;
+    private OnBoardingStatus onboardingStatus;
 
     public void changeNickname(String nickname) {
         this.nickname = nickname;
@@ -54,5 +56,9 @@ public class User extends BaseEntity {
         this.sigungu = sigungu;
         this.emdName = emdName;
         this.address = address;
+    }
+
+    public void updateOnBoardingStatus(OnBoardingStatus status) {
+        this.onboardingStatus = status;
     }
 }

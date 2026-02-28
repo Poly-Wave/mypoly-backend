@@ -36,4 +36,20 @@ public class UserBillInterestAppService {
         commandService.addInterests(userId, diff.toAdd());
         commandService.removeInterests(userId, diff.toRemove());
     }
+
+    /**
+     * 온보딩 단계 전용 관심사 저장
+     * 온보딩 상태를 먼저 검증한 후 관심사를 저장하고, 온보딩 완료 상태로 변경합니다.
+     */
+    @Transactional
+    public void saveOnboardingInterests(CategoryInterestCommand command) {
+        // 1. 상태 먼저 체크 (진행 가능한 상태가 아니면 예외 발생)
+        commandService.verifyOnboardingStatus(command.userId());
+
+        // 2. 관심사 저장
+        updateInterests(command);
+
+        // 3. 상태 변경 반영
+        commandService.updateOnboardingStatusToCategory(command.userId());
+    }
 }

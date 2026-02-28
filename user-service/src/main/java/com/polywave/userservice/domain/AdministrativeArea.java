@@ -1,5 +1,6 @@
 package com.polywave.userservice.domain;
 
+import com.polywave.common.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

@@ -8,6 +8,8 @@ import com.polywave.userservice.repository.command.UserCommandRepository;
 import com.polywave.userservice.repository.command.UserOauthCommandRepository;
 import com.polywave.userservice.repository.query.UserOauthQueryRepository;
 import lombok.RequiredArgsConstructor;
+import com.polywave.common.exception.BusinessException;
+import com.polywave.userservice.common.exception.UserErrorCode;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,11 +22,11 @@ public class SocialUserService {
     private final UserOauthCommandRepository userOauthCommandRepository;
     private final UserOauthQueryRepository userOauthQueryRepository;
 
-    @Transactional
-    public SocialUserResult loginOrRegister(SocialLoginCommand command) {
+    @Transactional(readOnly = true)
+    public SocialUserResult login(SocialLoginCommand command) {
         UserOauth userOauth = userOauthQueryRepository
                 .findByProviderAndProviderUserId(command.provider(), command.providerUserId())
-                .orElseGet(() -> createSocialUser(command));
+                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
         User user = userOauth.getUser();
 
@@ -33,8 +35,26 @@ public class SocialUserService {
                 userOauth.getProvider(),
                 userOauth.getProviderUserId(),
                 user.getNickname(),
-                user.getProfileImageUrl()
-        );
+                user.getProfileImageUrl());
+    }
+
+    @Transactional
+    public SocialUserResult register(SocialLoginCommand command) {
+        userOauthQueryRepository
+                .findByProviderAndProviderUserId(command.provider(), command.providerUserId())
+                .ifPresent(u -> {
+                    throw new BusinessException(UserErrorCode.USER_ALREADY_EXISTS);
+                });
+
+        UserOauth userOauth = createSocialUser(command);
+        User user = userOauth.getUser();
+
+        return new SocialUserResult(
+                user.getId(),
+                userOauth.getProvider(),
+                userOauth.getProviderUserId(),
+                user.getNickname(),
+                user.getProfileImageUrl());
     }
 
     private UserOauth createSocialUser(SocialLoginCommand command) {

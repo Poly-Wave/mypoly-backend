@@ -26,6 +26,9 @@ repositories {
 }
 
 dependencies {
+	// 공통 모듈
+	implementation project(':mypoly-common')
+	
 	// 공통 보안 모듈
 	implementation project(':mypoly-security')
 
@@ -41,6 +44,13 @@ dependencies {
 	implementation 'org.flywaydb:flyway-core'
 
 	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0"
+	
+	// Resilience4j (서킷브레이커, 재시도)
+	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.1.0'
+	implementation 'io.github.resilience4j:resilience4j-reactor:2.1.0'
+
+	// RestTemplate PATCH 지원 (HttpURLConnection은 PATCH 미지원)
+	implementation 'org.apache.httpcomponents.client5:httpclient5'
 
 	// QueryDSL
 	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'

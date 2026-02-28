@@ -1,6 +1,5 @@
 package com.polywave.userservice.api.controller;
 
-import com.polywave.userservice.api.dto.ApiResponse;
 import com.polywave.userservice.api.dto.TermsListResponse;
 import com.polywave.userservice.api.dto.TermsResponse;
 import com.polywave.userservice.api.spec.TermsApi;
@@ -21,17 +20,15 @@ public class TermsController implements TermsApi {
         private final TermsQueryService termsQueryService;
 
         @Override
-        public ResponseEntity<ApiResponse<TermsListResponse>> getLatestTerms() {
+        public ResponseEntity<TermsListResponse> getLatestTerms() {
                 List<TermsResult> termsResults = termsQueryService.getLatestTerms();
-                return ResponseEntity.ok(
-                                ApiResponse.ok("약관 목록 조회 성공", TermsListResponse.from(termsResults)));
+                return ResponseEntity.ok(TermsListResponse.from(termsResults));
         }
 
         @Override
-        public ResponseEntity<ApiResponse<TermsResponse>> getTermsMeta(Long termsId) {
+        public ResponseEntity<TermsResponse> getTermsMeta(Long termsId) {
                 TermsResult termsResult = termsQueryService.getTermsMeta(termsId);
-                return ResponseEntity.ok(
-                                ApiResponse.ok("약관 메타 조회 성공", TermsResponse.from(termsResult)));
+                return ResponseEntity.ok(TermsResponse.from(termsResult));
         }
 
         @Override

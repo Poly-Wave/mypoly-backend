@@ -9,7 +9,9 @@ import com.polywave.userservice.repository.command.TermsCommandRepository;
 import com.polywave.userservice.repository.command.UserCommandRepository;
 import com.polywave.userservice.repository.command.UserTermsCommandRepository;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityNotFoundException;
+import com.polywave.userservice.common.exception.UserNotFoundException;
+import com.polywave.userservice.common.exception.UserValidationException;
+import com.polywave.userservice.common.exception.UserErrorCode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,22 +46,22 @@ public class UserTermsCommandService {
     @Transactional
     public void saveUserAgreement(UserAgreementCommand command) {
         if (command == null) {
-            throw new IllegalArgumentException("요청 본문이 비어있습니다.");
+            throw new UserValidationException(UserErrorCode.EMPTY_REQUEST_BODY);
         }
 
         Long userId = command.userId();
         List<TermsAgreement> termAgreements = command.termsAgreements();
 
         if (userId == null) {
-            throw new IllegalArgumentException("인증 사용자 정보가 없습니다.");
+            throw new UserValidationException(UserErrorCode.MISSING_USER_INFO);
         }
 
         if (!userCommandRepository.existsById(userId)) {
-            throw new EntityNotFoundException("유저를 찾을 수 없습니다. userId=" + userId);
+            throw new UserNotFoundException();
         }
 
         if (termAgreements == null || termAgreements.isEmpty()) {
-            throw new IllegalArgumentException("약관 동의 정보가 비어있습니다.");
+            throw new UserValidationException(UserErrorCode.MISSING_TERMS_AGREE);
         }
 
         List<Long> termIds = termAgreements.stream()
@@ -70,7 +72,7 @@ public class UserTermsCommandService {
                 .toList();
 
         if (termIds.isEmpty()) {
-            throw new IllegalArgumentException("약관 ID(termId)가 비어있습니다.");
+            throw new UserValidationException(UserErrorCode.MISSING_TERMS_ID);
         }
 
         Set<Long> existingTermIds = termsCommandRepository.findAllById(termIds).stream()
@@ -82,7 +84,7 @@ public class UserTermsCommandService {
                 .toList();
 
         if (!missing.isEmpty()) {
-            throw new IllegalArgumentException("유효하지 않은 약관 ID가 포함되어 있습니다: " + missing);
+            throw new UserValidationException(UserErrorCode.INVALID_TERMS_ID);
         }
 
         List<UserTerms> existing = userTermsCommandRepository.findByUserIdAndTermsIdIn(userId, termIds);
@@ -90,8 +92,7 @@ public class UserTermsCommandService {
                 .collect(Collectors.toMap(
                         ut -> ut.getTerms().getId(),
                         Function.identity(),
-                        (a, b) -> a
-                ));
+                        (a, b) -> a));
 
         User userProxy = entityManager.getReference(User.class, userId);
         Instant now = Instant.now();
@@ -100,7 +101,7 @@ public class UserTermsCommandService {
 
         for (TermsAgreement ta : termAgreements) {
             if (ta == null || ta.termId() == null) {
-                throw new IllegalArgumentException("약관 ID(termId)는 필수입니다.");
+                throw new UserValidationException(UserErrorCode.MISSING_TERMS_ID);
             }
 
             UserTerms current = existingMap.get(ta.termId());

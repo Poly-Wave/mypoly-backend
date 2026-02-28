@@ -5,7 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication(scanBasePackages = {
         "com.polywave.billservice",
-        "com.polywave.security"
+        "com.polywave.security",
+        "com.polywave.common"
 })
 public class BillServiceApplication {
 

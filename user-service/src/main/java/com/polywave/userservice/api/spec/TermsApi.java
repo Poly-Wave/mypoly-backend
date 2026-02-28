@@ -1,13 +1,14 @@
 package com.polywave.userservice.api.spec;
 
-import com.polywave.userservice.api.dto.ApiResponse;
 import com.polywave.userservice.api.dto.TermsListResponse;
 import com.polywave.userservice.api.dto.TermsResponse;
-import com.polywave.userservice.api.example.CommonApiExamples;
+import com.polywave.common.example.CommonApiExamples;
 import com.polywave.userservice.api.example.TermsApiExamples;
+import com.polywave.common.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,11 +25,11 @@ public interface TermsApi {
                         - 본문이 필요하면 `GET /terms/{termsId}/html`을 사용하세요.
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "성공 응답 예시", value = TermsApiExamples.EXAMPLE_TERMS_LIST_OK))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping
-        ResponseEntity<ApiResponse<TermsListResponse>> getLatestTerms();
+        ResponseEntity<TermsListResponse> getLatestTerms();
 
         @Operation(summary = "약관 메타데이터 단건 조회", description = """
                         약관 ID로 약관의 메타데이터를 조회합니다.
@@ -37,12 +38,12 @@ public interface TermsApi {
                         - 본문이 필요하면 `GET /terms/{termsId}/html`을 사용하세요.
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "성공 응답 예시", value = TermsApiExamples.EXAMPLE_TERMS_META_OK))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "약관을 찾을 수 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "404 예시", value = TermsApiExamples.EXAMPLE_TERMS_NOT_FOUND))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "약관을 찾을 수 없음", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "약관을 찾을 수 없음", value = TermsApiExamples.EXAMPLE_TERMS_NOT_FOUND))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping("/{termsId}")
-        ResponseEntity<ApiResponse<TermsResponse>> getTermsMeta(@PathVariable Long termsId);
+        ResponseEntity<TermsResponse> getTermsMeta(@PathVariable Long termsId);
 
         @Operation(summary = "약관 본문(HTML) 조회", description = """
                         약관의 본문을 **HTML(text/html)** 로 반환합니다.
@@ -51,9 +52,9 @@ public interface TermsApi {
                         - 응답은 JSON(ApiResponse)이 아니라 순수 HTML 문자열입니다.
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공(HTML 반환)", content = @Content(mediaType = "text/html", examples = @ExampleObject(name = "HTML 예시", value = "<h1>서비스 이용약관</h1>..."))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "약관을 찾을 수 없음", content = @Content(mediaType = "application/json")),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json"))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공(HTML 반환)"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "약관을 찾을 수 없음", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "약관을 찾을 수 없음", value = TermsApiExamples.EXAMPLE_TERMS_NOT_FOUND))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping(value = "/{termsId}/html", produces = MediaType.TEXT_HTML_VALUE)
         ResponseEntity<String> getTermsHtml(@PathVariable Long termsId);
