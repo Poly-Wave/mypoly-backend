@@ -77,18 +77,19 @@ public class UserServiceClient {
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
         Supplier<String> supplier = () -> {
-            try {
-                var response = restTemplate.exchange(url, HttpMethod.GET, entity,
-                        OnboardingStatusResponse.class);
-                return response.getBody().getOnboardingStatus();
-            } catch (Exception e) {
-                log.warn("user-service 온보딩 상태 조회 실패 (재시도 가능): userId={}, url={}", userId, url, e);
-                throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
-            }
+            var response = restTemplate.exchange(url, HttpMethod.GET, entity,
+                    OnboardingStatusResponse.class);
+            return response.getBody().getOnboardingStatus();
         };
 
         Supplier<String> retrySupplier = Retry.decorateSupplier(userServiceRetry, supplier);
-        return userServiceCircuitBreaker.executeSupplier(retrySupplier);
+
+        try {
+            return userServiceCircuitBreaker.executeSupplier(retrySupplier);
+        } catch (Exception e) {
+            log.error("user-service 온보딩 상태 조회 최종 실패 (서킷브레이커 또는 재시도 한도 초과): userId={}, url={}", userId, url, e);
+            throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
+        }
     }
 
     public void updateOnboardingStatus(Long userId, String onboardingStatus) {
@@ -110,14 +111,9 @@ public class UserServiceClient {
 
         // Resilience4j를 사용하여 서킷브레이커와 재시도 적용
         Supplier<Void> supplier = () -> {
-            try {
-                restTemplate.exchange(url, HttpMethod.PATCH, entity, Void.class);
-                log.debug("user-service 온보딩 상태 업데이트 성공: userId={}, status={}", userId, onboardingStatus);
-                return null;
-            } catch (Exception e) {
-                log.warn("user-service 호출 실패 (재시도 가능): userId={}, status={}, url={}", userId, onboardingStatus, url, e);
-                throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
-            }
+            restTemplate.exchange(url, HttpMethod.PATCH, entity, Void.class);
+            log.debug("user-service 온보딩 상태 업데이트 성공: userId={}, status={}", userId, onboardingStatus);
+            return null;
         };
 
         Supplier<Void> retrySupplier = Retry.decorateSupplier(userServiceRetry, supplier);
