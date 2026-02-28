@@ -4,6 +4,7 @@ import com.polywave.userservice.api.dto.SocialLoginResponse;
 import com.polywave.userservice.api.dto.SocialTokenLoginRequest;
 import com.polywave.userservice.api.dto.SocialTokenSignupRequest;
 import com.polywave.userservice.api.example.AuthApiExamples;
+import com.polywave.common.dto.ErrorResponse;
 import com.polywave.common.example.CommonApiExamples;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,9 +35,12 @@ public interface SocialTokenAuthApi {
                         """)
         @ApiResponses({
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "JWT 발급 성공"),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "지원하지 않는 provider/tokenType 또는 요청 값 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "지원하지 않는 요청 예시", value = AuthApiExamples.EXAMPLE_UNSUPPORTED_SOCIAL_LOGIN))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "소셜 토큰 검증 실패(만료/위조/aud 불일치 등)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "카카오 토큰 실패 예시", value = AuthApiExamples.EXAMPLE_INVALID_KAKAO_TOKEN))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "지원하지 않는 provider/tokenType 또는 요청 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = {
+                                        @ExampleObject(name = "지원하지 않는 소셜 로그인 수단", value = AuthApiExamples.EXAMPLE_UNSUPPORTED_SOCIAL_LOGIN),
+                                        @ExampleObject(name = "사용자를 찾을 수 없음", value = AuthApiExamples.EXAMPLE_USER_NOT_FOUND)
+                        })),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "소셜 토큰 검증 실패(만료/위조/aud 불일치 등)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "유효하지 않은 소셜 토큰", value = AuthApiExamples.EXAMPLE_INVALID_SOCIAL_TOKEN))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @PostMapping("/{provider}/token")
         ResponseEntity<SocialLoginResponse> loginWithToken(
@@ -62,8 +66,17 @@ public interface SocialTokenAuthApi {
                         """)
         @ApiResponses({
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "회원가입 및 JWT 발급 성공"),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "약관 누락, 닉네임 중복/규칙 위반, 유효하지 않은 Provider 등 잘못된 요청"),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "소셜 토큰 만료 또는 위조 내역 발견")
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "약관 누락, 닉네임 중복/규칙 위반, 잘못된 요청 등", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = {
+                                        @ExampleObject(name = "필수 약관 동의 누락", value = AuthApiExamples.EXAMPLE_MISSING_TERMS_AGREE),
+                                        @ExampleObject(name = "약관을 찾을 수 없음", value = AuthApiExamples.EXAMPLE_TERMS_NOT_FOUND),
+                                        @ExampleObject(name = "금칙어 포함 닉네임", value = AuthApiExamples.EXAMPLE_FORBIDDEN_NICKNAME)
+                        })),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "소셜 토큰 만료 또는 위조 내역 발견", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = {
+                                        @ExampleObject(name = "유효하지 않은 소셜 토큰", value = AuthApiExamples.EXAMPLE_INVALID_SOCIAL_TOKEN)
+                        })),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "닉네임 또는 유저 이미 존재", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = {
+                                        @ExampleObject(name = "이미 사용중인 닉네임", value = AuthApiExamples.EXAMPLE_DUPLICATE_NICKNAME)
+                        }))
         })
         @PostMapping("/{provider}/signup")
         ResponseEntity<SocialLoginResponse> signupWithToken(

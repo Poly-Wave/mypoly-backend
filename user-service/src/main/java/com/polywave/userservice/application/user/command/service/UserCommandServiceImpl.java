@@ -3,6 +3,8 @@ package com.polywave.userservice.application.user.command.service;
 import com.polywave.userservice.application.user.command.UserUpdateProfileCommand;
 import com.polywave.userservice.domain.OnBoardingStatus;
 import com.polywave.userservice.domain.User;
+import com.polywave.userservice.common.exception.InvalidOnboardingStatusException;
+import com.polywave.userservice.common.exception.UserNotFoundException;
 import com.polywave.userservice.repository.command.UserCommandRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +20,11 @@ public class UserCommandServiceImpl implements UserCommandService {
         @Override
         public void updateUserProfile(Long userId, UserUpdateProfileCommand command) {
                 User user = userCommandRepository.findById(userId)
-                                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                                .orElseThrow(() -> new UserNotFoundException());
+
+                if (user.getOnboardingStatus() != OnBoardingStatus.CATEGORY) {
+                        throw new InvalidOnboardingStatusException();
+                }
 
                 String combinedAddress = String.format("%s %s %s",
                                 command.sido(),
@@ -39,7 +45,7 @@ public class UserCommandServiceImpl implements UserCommandService {
         @Override
         public void updateUserOnboardingStatus(Long userId, OnBoardingStatus onBoardingStatus) {
                 User user = userCommandRepository.findById(userId)
-                                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                                .orElseThrow(() -> new UserNotFoundException());
 
                 user.updateOnBoardingStatus(onBoardingStatus);
         }

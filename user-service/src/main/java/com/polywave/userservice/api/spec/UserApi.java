@@ -8,6 +8,7 @@ import com.polywave.userservice.api.dto.NicknameAvailabilityResponse;
 import com.polywave.userservice.api.dto.RandomNicknameResponse;
 import com.polywave.userservice.api.dto.UpdateOnboardingStatusRequest;
 import com.polywave.userservice.api.dto.UserUpdateProfileRequest;
+import com.polywave.common.dto.ErrorResponse;
 import com.polywave.common.example.CommonApiExamples;
 import com.polywave.userservice.api.example.UserApiExamples;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,10 +39,12 @@ public interface UserApi {
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "검증 실패 예시", value = UserApiExamples.EXAMPLE_VALIDATION_ERROR))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "401 예시", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "403 예시", value = CommonApiExamples.EXAMPLE_FORBIDDEN))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 불량", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = {
+                                        @ExampleObject(name = "요청 값 검증 실패", value = UserApiExamples.EXAMPLE_VALIDATION_ERROR)
+                        })),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "인증 필요", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "권한 없음", value = CommonApiExamples.EXAMPLE_FORBIDDEN))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping("/nicknames/availability")
         ResponseEntity<NicknameAvailabilityResponse> checkNicknameAvailability(
@@ -56,9 +59,13 @@ public interface UserApi {
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "생성 성공"),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "401 예시", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "403 예시", value = CommonApiExamples.EXAMPLE_FORBIDDEN))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "인증 필요", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "권한 없음", value = CommonApiExamples.EXAMPLE_FORBIDDEN))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류 (닉네임 생성 실패 등)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = {
+                                        @ExampleObject(name = "닉네임 생성 실패", value = UserApiExamples.EXAMPLE_NICKNAME_GENERATION_FAILED),
+                                        @ExampleObject(name = "닉네임 소스 데이터 없음", value = UserApiExamples.EXAMPLE_NICKNAME_DATA_NOT_FOUND),
+                                        @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)
+                        }))
         })
         @GetMapping("/nicknames/random")
         ResponseEntity<RandomNicknameResponse> getRandomNickname();
@@ -73,9 +80,9 @@ public interface UserApi {
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "검색 성공"),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "검증 실패 예시", value = UserApiExamples.EXAMPLE_VALIDATION_ERROR))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "401 예시", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "요청 값 검증 실패", value = UserApiExamples.EXAMPLE_VALIDATION_ERROR))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "인증 필요", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping("/addresses")
         ResponseEntity<AddressSearchResponse> searchAddress(
@@ -83,6 +90,8 @@ public interface UserApi {
 
         @Operation(summary = "사용자 프로필 수정", description = """
                         사용자의 성별, 생년월일, 거주지역(시도/시군구/읍면동) 정보를 수정합니다.
+                        - 온보딩 상태가 CATEGORY일 때만 수정 가능합니다.
+                        - 수정 성공 시 온보딩 상태는 COMPLETE로 자동 변경됩니다.
 
                         인증
                         - JWT 인증이 필요합니다.
@@ -90,9 +99,12 @@ public interface UserApi {
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "수정 성공"),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "검증 실패 예시", value = UserApiExamples.EXAMPLE_VALIDATION_ERROR))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "401 예시", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 불량", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = {
+                                        @ExampleObject(name = "요청 값 검증 실패", value = UserApiExamples.EXAMPLE_VALIDATION_ERROR),
+                                        @ExampleObject(name = "온보딩 상태 (CATEGORY 아님) 오류", value = UserApiExamples.EXAMPLE_INVALID_ONBOARDING_STATUS_FOR_PROFILE_UPDATE)
+                        })),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "인증 필요", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @PatchMapping("/me/profile")
         ResponseEntity<Void> updateProfile(
@@ -109,10 +121,11 @@ public interface UserApi {
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "업데이트 성공"),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "검증 실패 예시", value = UserApiExamples.EXAMPLE_UPDATE_ONBOARDING_STATUS_VALIDATION_ERROR))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "401 예시", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "본인만 수정 가능", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "403 예시", value = CommonApiExamples.EXAMPLE_FORBIDDEN))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "요청 값 검증 실패", value = UserApiExamples.EXAMPLE_UPDATE_ONBOARDING_STATUS_VALIDATION_ERROR))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "인증 필요", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "본인만 수정 가능", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "권한 없음", value = CommonApiExamples.EXAMPLE_FORBIDDEN))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자 없음", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "사용자를 찾을 수 없음", value = UserApiExamples.EXAMPLE_USER_NOT_FOUND))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @PatchMapping("/{userId}/onboarding-status")
         ResponseEntity<Void> updateOnboardingStatus(
@@ -125,9 +138,9 @@ public interface UserApi {
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "401 예시", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "404 예시", value = UserApiExamples.EXAMPLE_USER_NOT_FOUND))),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "인증 필요", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자 없음", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "사용자를 찾을 수 없음", value = UserApiExamples.EXAMPLE_USER_NOT_FOUND))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @GetMapping("/{userId}/onboarding-status")
         ResponseEntity<com.polywave.userservice.api.dto.OnboardingStatusResponse> getOnboardingStatus(

@@ -16,8 +16,7 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
 
     public KakaoAccessTokenVerifier(
             KakaoApiClient kakaoApiClient,
-            @Value("${social.kakao.expected-app-id:}") String expectedAppId
-    ) {
+            @Value("${social.kakao.expected-app-id:}") String expectedAppId) {
         this.kakaoApiClient = kakaoApiClient;
         this.expectedAppId = expectedAppId;
     }
@@ -39,14 +38,14 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
 
         Long expiresIn = getLong(tokenInfo, "expires_in");
         if (expiresIn == null || expiresIn <= 0) {
-            throw new InvalidSocialTokenException("카카오 토큰이 만료되었거나 유효하지 않습니다.");
+            throw new InvalidSocialTokenException();
         }
 
         // app_id 체크(옵션): 값이 설정되어 있으면 강제 검증
         Long appId = getLong(tokenInfo, "app_id");
         if (expectedAppId != null && !expectedAppId.isBlank()) {
             if (appId == null || !expectedAppId.equals(String.valueOf(appId))) {
-                throw new InvalidSocialTokenException("카카오 토큰의 app_id가 우리 앱과 일치하지 않습니다.");
+                throw new InvalidSocialTokenException();
             }
         }
 
@@ -55,7 +54,7 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
 
         Object idObj = me.get("id");
         if (idObj == null) {
-            throw new InvalidSocialTokenException("카카오 사용자 식별자(id) 조회 실패");
+            throw new InvalidSocialTokenException();
         }
 
         String providerUserId = String.valueOf(idObj);
@@ -65,9 +64,11 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
     }
 
     private static Long getLong(Map<String, Object> map, String key) {
-        if (map == null) return null;
+        if (map == null)
+            return null;
         Object v = map.get(key);
-        if (v == null) return null;
+        if (v == null)
+            return null;
         try {
             return Long.parseLong(String.valueOf(v));
         } catch (Exception ignored) {
@@ -77,14 +78,17 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> getMap(Map<String, Object> src, String key) {
-        if (src == null) return null;
+        if (src == null)
+            return null;
         Object v = src.get(key);
-        if (v instanceof Map<?, ?> m) return (Map<String, Object>) m;
+        if (v instanceof Map<?, ?> m)
+            return (Map<String, Object>) m;
         return null;
     }
 
     private static String getString(Map<String, Object> src, String key) {
-        if (src == null) return null;
+        if (src == null)
+            return null;
         Object v = src.get(key);
         return v == null ? null : String.valueOf(v);
     }
@@ -92,11 +96,13 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
     private static String extractProfileImageUrl(Map<String, Object> attributes) {
         // kakao_account.profile.profile_image_url 우선
         String url = getString(getMap(getMap(attributes, "kakao_account"), "profile"), "profile_image_url");
-        if (url != null) return url;
+        if (url != null)
+            return url;
 
         // properties.profile_image fallback
         url = getString(getMap(attributes, "properties"), "profile_image");
-        if (url != null) return url;
+        if (url != null)
+            return url;
 
         // profile_image fallback
         return getString(getMap(getMap(attributes, "kakao_account"), "profile"), "profile_image");

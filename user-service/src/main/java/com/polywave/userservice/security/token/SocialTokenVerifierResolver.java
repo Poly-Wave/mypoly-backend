@@ -17,8 +17,6 @@ public class SocialTokenVerifierResolver {
                 .filter(v -> v.provider().equalsIgnoreCase(provider))
                 .filter(v -> v.supports(tokenType))
                 .findFirst()
-                .orElseThrow(() -> new UnsupportedSocialLoginException(
-                        "지원하지 않는 소셜 로그인 요청입니다. provider=" + provider + ", tokenType=" + tokenType
-                ));
+                .orElseThrow(() -> new UnsupportedSocialLoginException());
     }
 }

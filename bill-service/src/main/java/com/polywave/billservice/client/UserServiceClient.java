@@ -2,6 +2,8 @@ package com.polywave.billservice.client;
 
 import com.polywave.billservice.client.dto.OnboardingStatusResponse;
 import com.polywave.billservice.client.dto.UpdateOnboardingStatusRequest;
+import com.polywave.billservice.common.exception.BillErrorCode;
+import com.polywave.billservice.common.exception.BillServiceClientException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
 import jakarta.servlet.http.HttpServletRequest;
@@ -62,6 +64,14 @@ public class UserServiceClient {
         String url = userServiceUrl + userId + "/onboarding-status";
 
         HttpHeaders headers = new HttpHeaders();
+
+        // 현재 요청의 JWT를 Authorization 헤더로 전달
+        String bearerToken = resolveBearerToken();
+        if (bearerToken == null) {
+            log.error("JWT 토큰을 찾을 수 없습니다. user-service 호출 실패: userId={}", userId);
+            throw new BillServiceClientException(BillErrorCode.MISSING_JWT_TOKEN);
+        }
+
         headers.set(AUTHORIZATION_HEADER, "Bearer " + resolveBearerToken());
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
@@ -73,7 +83,7 @@ public class UserServiceClient {
                 return response.getBody().getOnboardingStatus();
             } catch (Exception e) {
                 log.warn("user-service 온보딩 상태 조회 실패 (재시도 가능): userId={}, url={}", userId, url, e);
-                throw new RuntimeException("user-service 조회 실패", e);
+                throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
             }
         };
 
@@ -91,7 +101,7 @@ public class UserServiceClient {
         String bearerToken = resolveBearerToken();
         if (bearerToken == null) {
             log.error("JWT 토큰을 찾을 수 없습니다. user-service 호출 실패: userId={}, status={}", userId, onboardingStatus);
-            throw new IllegalStateException("JWT 토큰이 없어 user-service 호출에 실패했습니다.");
+            throw new BillServiceClientException(BillErrorCode.MISSING_JWT_TOKEN);
         }
         headers.set(AUTHORIZATION_HEADER, "Bearer " + bearerToken);
 
@@ -106,7 +116,7 @@ public class UserServiceClient {
                 return null;
             } catch (Exception e) {
                 log.warn("user-service 호출 실패 (재시도 가능): userId={}, status={}, url={}", userId, onboardingStatus, url, e);
-                throw new RuntimeException("user-service 호출 실패", e);
+                throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
             }
         };
 
@@ -117,8 +127,8 @@ public class UserServiceClient {
         } catch (Exception e) {
             log.error("user-service 온보딩 상태 업데이트 최종 실패 (서킷브레이커 또는 재시도 한도 초과): userId={}, status={}, url={}",
                     userId, onboardingStatus, url, e);
-            // MSA에서 다른 서비스 호출 실패 시 로직: 현재는 로그만 남기고 예외 전파하지 않음
-            // 필요 시 보상 트랜잭션 등 적용 가능
+            // MSA에서 다른 서비스 호출 실패 시 에러 전파하여 트랜잭션 롤백 유도
+            throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
         }
     }
 

@@ -1,5 +1,7 @@
 package com.polywave.security;
 
+import com.polywave.common.exception.JwtSecretConfigurationException;
+import com.polywave.common.exception.CommonErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -22,12 +24,11 @@ public class JwtUtil {
     public JwtUtil(
             @Value("${JWT_SECRET}") String secret,
             // 기존 user-service가 24시간이었으니 default도 24h로 맞춤
-            @Value("${JWT_EXPIRATION_MILLIS:86400000}") long expirationMillis
-    ) {
+            @Value("${JWT_EXPIRATION_MILLIS:86400000}") long expirationMillis) {
         byte[] keyBytes = decodeSecret(secret);
 
         if (keyBytes.length < 32) {
-            throw new IllegalArgumentException("JWT_SECRET 길이가 너무 짧습니다. 최소 32bytes(256bit) 이상 필요합니다.");
+            throw new JwtSecretConfigurationException(CommonErrorCode.JWT_SECRET_KEY_TOO_SHORT);
         }
 
         this.key = Keys.hmacShaKeyFor(keyBytes);
@@ -67,7 +68,7 @@ public class JwtUtil {
 
     private static byte[] decodeSecret(String secret) {
         if (secret == null || secret.isBlank()) {
-            throw new IllegalArgumentException("JWT_SECRET 환경변수가 비어있습니다.");
+            throw new JwtSecretConfigurationException(CommonErrorCode.JWT_SECRET_KEY_MISSING);
         }
 
         // 기존 user-service와 호환: base64 decode 시도 -> 실패하면 raw bytes

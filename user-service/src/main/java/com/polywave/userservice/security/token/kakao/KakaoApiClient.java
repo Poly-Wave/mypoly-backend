@@ -37,14 +37,14 @@ public class KakaoApiClient {
                     "/v1/user/access_token_info",
                     HttpMethod.GET,
                     entity,
-                    new ParameterizedTypeReference<>() {}
-            );
+                    new ParameterizedTypeReference<>() {
+                    });
 
             return resp.getBody();
         } catch (RestClientResponseException e) {
-            throw new InvalidSocialTokenException("카카오 토큰 검증 실패(access_token_info): " + e.getStatusCode());
+            throw new InvalidSocialTokenException();
         } catch (Exception e) {
-            throw new InvalidSocialTokenException("카카오 토큰 검증 실패(access_token_info)");
+            throw new InvalidSocialTokenException();
         }
     }
 
@@ -59,14 +59,14 @@ public class KakaoApiClient {
                     "/v2/user/me",
                     HttpMethod.GET,
                     entity,
-                    new ParameterizedTypeReference<>() {}
-            );
+                    new ParameterizedTypeReference<>() {
+                    });
 
             return resp.getBody();
         } catch (RestClientResponseException e) {
-            throw new InvalidSocialTokenException("카카오 사용자 조회 실패(user/me): " + e.getStatusCode());
+            throw new InvalidSocialTokenException();
         } catch (Exception e) {
-            throw new InvalidSocialTokenException("카카오 사용자 조회 실패(user/me)");
+            throw new InvalidSocialTokenException();
         }
     }
 }

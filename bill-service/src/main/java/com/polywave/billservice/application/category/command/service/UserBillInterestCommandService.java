@@ -3,6 +3,7 @@ package com.polywave.billservice.application.category.command.service;
 import com.polywave.billservice.client.UserServiceClient;
 import com.polywave.billservice.domain.BillCategory;
 import com.polywave.billservice.domain.UserBillInterest;
+import com.polywave.billservice.common.exception.InvalidOnboardingStatusException;
 import com.polywave.billservice.repository.command.CategoryCommandRepository;
 import com.polywave.billservice.repository.command.UserBillInterestCommandRepository;
 import java.util.List;
@@ -43,15 +44,21 @@ public class UserBillInterestCommandService {
     }
 
     /**
-     * 온보딩 단계: 카테고리 설정 완료상태로 변경
-     * 이미 완료된 사용자라면 예외 발생
+     * 온보딩 상태 검증
+     * 진행 가능한 상태가 아니면 예외 발생
      */
-    @Transactional
-    public void completeCategoryOnboarding(Long userId) {
+    public void verifyOnboardingStatus(Long userId) {
         String currentStatus = userServiceClient.getOnboardingStatus(userId);
         if (!List.of("SIGNUP", "ONBOARDING").contains(currentStatus)) {
-            throw new IllegalArgumentException("이미 온보딩 기능이 완료되었거나 접근할 수 없는 상태입니다.");
+            throw new InvalidOnboardingStatusException();
         }
+    }
+
+    /**
+     * 온보딩 단계: 카테고리 설정 완료상태로 변경
+     */
+    @Transactional
+    public void updateOnboardingStatusToCategory(Long userId) {
         userServiceClient.updateOnboardingStatus(userId, ONBOARDING_STATUS_CATEGORY);
     }
 

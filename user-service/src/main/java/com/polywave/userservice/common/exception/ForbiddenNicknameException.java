@@ -1,7 +1,9 @@
 package com.polywave.userservice.common.exception;
 
-public class ForbiddenNicknameException extends RuntimeException {
+import com.polywave.common.exception.BusinessException;
+
+public class ForbiddenNicknameException extends BusinessException {
     public ForbiddenNicknameException() {
-        super("금칙어가 포함된 닉네임입니다.");
+        super(UserErrorCode.FORBIDDEN_NICKNAME);
     }
 }

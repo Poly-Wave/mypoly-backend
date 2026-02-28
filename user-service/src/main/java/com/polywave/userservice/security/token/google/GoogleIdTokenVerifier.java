@@ -21,8 +21,7 @@ public class GoogleIdTokenVerifier implements SocialTokenVerifier {
     public GoogleIdTokenVerifier(
             @Value("${social.google.client-id:}") String clientId,
             @Value("${social.google.issuer:https://accounts.google.com}") String issuer,
-            @Value("${social.google.jwk-set-uri:https://www.googleapis.com/oauth2/v3/certs}") String jwkSetUri
-    ) {
+            @Value("${social.google.jwk-set-uri:https://www.googleapis.com/oauth2/v3/certs}") String jwkSetUri) {
         if (clientId == null || clientId.isBlank()) {
             this.enabled = false;
             this.jwtDecoder = null;
@@ -59,11 +58,11 @@ public class GoogleIdTokenVerifier implements SocialTokenVerifier {
             String sub = jwt.getSubject();
             String picture = jwt.getClaimAsString("picture");
             if (sub == null || sub.isBlank()) {
-                throw new InvalidSocialTokenException("구글 id_token 검증 실패(sub 누락)");
+                throw new InvalidSocialTokenException();
             }
             return new SocialVerifiedUser("google", sub, picture);
         } catch (JwtException e) {
-            throw new InvalidSocialTokenException("구글 id_token 검증 실패: " + e.getMessage());
+            throw new InvalidSocialTokenException();
         }
     }
 }

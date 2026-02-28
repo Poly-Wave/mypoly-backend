@@ -2,7 +2,8 @@ package com.polywave.userservice.api.example;
 
 public final class AuthApiExamples {
 
-    private AuthApiExamples() {}
+  private AuthApiExamples() {
+  }
 
   // ===== 요청 예시 =====
   public static final String EXAMPLE_SOCIAL_TOKEN_LOGIN_REQUEST_ACCESS_TOKEN = """
@@ -42,16 +43,45 @@ public final class AuthApiExamples {
       }
       """;
 
-  // ===== 실패 응답 예시 =====
   public static final String EXAMPLE_UNSUPPORTED_SOCIAL_LOGIN = """
       {
-        "code": "BAD_REQUEST"
+        "code": "UNAUTHORIZED"
       }
       """;
 
-  public static final String EXAMPLE_INVALID_KAKAO_TOKEN = """
+  public static final String EXAMPLE_INVALID_SOCIAL_TOKEN = """
       {
-        "code": "UNAUTHORIZED"
+        "code": "INVALID_SOCIAL_TOKEN"
+      }
+      """;
+
+  public static final String EXAMPLE_USER_NOT_FOUND = """
+      {
+        "code": "USER_NOT_FOUND"
+      }
+      """;
+
+  public static final String EXAMPLE_TERMS_NOT_FOUND = """
+      {
+        "code": "TERMS_NOT_FOUND"
+      }
+      """;
+
+  public static final String EXAMPLE_MISSING_TERMS_AGREE = """
+      {
+        "code": "MISSING_TERMS_AGREE"
+      }
+      """;
+
+  public static final String EXAMPLE_FORBIDDEN_NICKNAME = """
+      {
+        "code": "FORBIDDEN_NICKNAME"
+      }
+      """;
+
+  public static final String EXAMPLE_DUPLICATE_NICKNAME = """
+      {
+        "code": "DUPLICATE_NICKNAME"
       }
       """;
 

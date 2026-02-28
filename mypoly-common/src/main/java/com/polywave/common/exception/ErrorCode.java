@@ -1,14 +1,12 @@
 package com.polywave.common.exception;
 
+import org.springframework.http.HttpStatus;
+
 /**
- * 공통 에러 코드 상수
- * enum으로 관리하여 타입 안정성 및 확장성 도모
+ * 프로젝트 내 모든 커스텀 예외에서 공통으로 사용할 에러 코드 규격
  */
-public enum ErrorCode {
-    UNAUTHORIZED,
-    FORBIDDEN,
-    NOT_FOUND,
-    BAD_REQUEST,
-    INTERNAL_SERVER_ERROR,
-    VALIDATION_ERROR
+public interface ErrorCode {
+    HttpStatus getHttpStatus();
+
+    String getCode();
 }

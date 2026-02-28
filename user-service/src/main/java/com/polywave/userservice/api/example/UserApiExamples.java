@@ -36,7 +36,13 @@ public final class UserApiExamples {
 
   public static final String EXAMPLE_FORBIDDEN_NICKNAME = """
       {
-        "code": "BAD_REQUEST"
+        "code": "FORBIDDEN_NICKNAME"
+      }
+      """;
+
+  public static final String EXAMPLE_INVALID_ONBOARDING_STATUS_FOR_PROFILE_UPDATE = """
+      {
+        "code": "INVALID_ONBOARDING_STATUS_FOR_PROFILE_UPDATE"
       }
       """;
 
@@ -99,6 +105,18 @@ public final class UserApiExamples {
   public static final String EXAMPLE_GET_ONBOARDING_STATUS_OK = """
       {
         "onboardingStatus": "COMPLETE"
+      }
+      """;
+
+  public static final String EXAMPLE_NICKNAME_GENERATION_FAILED = """
+      {
+        "code": "NICKNAME_GENERATION_FAILED"
+      }
+      """;
+
+  public static final String EXAMPLE_NICKNAME_DATA_NOT_FOUND = """
+      {
+        "code": "NICKNAME_DATA_NOT_FOUND"
       }
       """;
 }

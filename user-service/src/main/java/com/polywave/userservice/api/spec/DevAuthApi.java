@@ -3,11 +3,13 @@ package com.polywave.userservice.api.spec;
 import com.polywave.userservice.api.dto.SocialLoginResponse;
 import com.polywave.userservice.api.example.AuthApiExamples;
 import com.polywave.common.example.CommonApiExamples;
+import com.polywave.common.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -29,11 +31,11 @@ public interface DevAuthApi {
                         """)
         @ApiResponses({
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "JWT 발급 성공"),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "DEV 키 설정/불일치", content = @Content(mediaType = "application/json", examples = {
-                                        @ExampleObject(name = "DEV 키 미설정 예시", value = AuthApiExamples.EXAMPLE_DEV_AUTH_KEY_NOT_SET),
-                                        @ExampleObject(name = "DEV 키 불일치 예시", value = AuthApiExamples.EXAMPLE_DEV_AUTH_KEY_MISMATCH)
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "DEV 키 설정/불일치", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = {
+                                        @ExampleObject(name = "DEV 키 미설정", value = AuthApiExamples.EXAMPLE_DEV_AUTH_KEY_NOT_SET),
+                                        @ExampleObject(name = "DEV 키 불일치", value = AuthApiExamples.EXAMPLE_DEV_AUTH_KEY_MISMATCH)
                         })),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "서버 오류 예시", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
         })
         @PostMapping("/login")
         ResponseEntity<SocialLoginResponse> devLogin(

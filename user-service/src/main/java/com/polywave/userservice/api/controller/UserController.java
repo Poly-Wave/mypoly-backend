@@ -13,8 +13,9 @@ import com.polywave.userservice.application.nickname.query.service.NicknameQuery
 import com.polywave.userservice.application.user.query.result.OnboardingStatusResult;
 import com.polywave.userservice.application.user.query.service.UserQueryService;
 import lombok.RequiredArgsConstructor;
+import com.polywave.userservice.common.exception.UserErrorCode;
+import com.polywave.userservice.common.exception.UserValidationException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -60,7 +61,7 @@ public class UserController implements UserApi {
                         UpdateOnboardingStatusRequest request,
                         @LoginUser Long authenticatedUserId) {
                 if (!authenticatedUserId.equals(userId)) {
-                        throw new AccessDeniedException("본인만 수정할 수 있습니다.");
+                        throw new UserValidationException(UserErrorCode.FORBIDDEN_NOT_OWNER);
                 }
                 userCommandService.updateUserOnboardingStatus(userId, request.onboardingStatus());
                 return ResponseEntity.ok().build();

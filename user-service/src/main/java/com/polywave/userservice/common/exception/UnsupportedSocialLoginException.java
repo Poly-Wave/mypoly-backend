@@ -1,7 +1,9 @@
 package com.polywave.userservice.common.exception;
 
-public class UnsupportedSocialLoginException extends RuntimeException {
-    public UnsupportedSocialLoginException(String message) {
-        super(message);
+import com.polywave.common.exception.BusinessException;
+
+public class UnsupportedSocialLoginException extends BusinessException {
+    public UnsupportedSocialLoginException() {
+        super(UserErrorCode.UNSUPPORTED_SOCIAL_LOGIN);
     }
 }

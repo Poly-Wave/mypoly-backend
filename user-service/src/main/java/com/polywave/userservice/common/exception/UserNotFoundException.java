@@ -1,7 +1,9 @@
 package com.polywave.userservice.common.exception;
 
-public class UserNotFoundException extends RuntimeException {
+import com.polywave.common.exception.BusinessException;
+
+public class UserNotFoundException extends BusinessException {
     public UserNotFoundException() {
-        super("사용자를 찾을 수 없습니다.");
+        super(UserErrorCode.USER_NOT_FOUND);
     }
 }

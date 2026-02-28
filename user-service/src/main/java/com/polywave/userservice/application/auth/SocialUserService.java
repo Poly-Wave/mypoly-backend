@@ -8,6 +8,8 @@ import com.polywave.userservice.repository.command.UserCommandRepository;
 import com.polywave.userservice.repository.command.UserOauthCommandRepository;
 import com.polywave.userservice.repository.query.UserOauthQueryRepository;
 import lombok.RequiredArgsConstructor;
+import com.polywave.common.exception.BusinessException;
+import com.polywave.userservice.common.exception.UserErrorCode;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,8 +26,7 @@ public class SocialUserService {
     public SocialUserResult login(SocialLoginCommand command) {
         UserOauth userOauth = userOauthQueryRepository
                 .findByProviderAndProviderUserId(command.provider(), command.providerUserId())
-                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND")); // 클라이언트가 400 또는 특정 코드로 분기처리할 수 있도록
-                                                                                    // 예외 투척
+                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
         User user = userOauth.getUser();
 
@@ -42,7 +43,7 @@ public class SocialUserService {
         userOauthQueryRepository
                 .findByProviderAndProviderUserId(command.provider(), command.providerUserId())
                 .ifPresent(u -> {
-                    throw new IllegalArgumentException("USER_ALREADY_EXISTS");
+                    throw new BusinessException(UserErrorCode.USER_ALREADY_EXISTS);
                 });
 
         UserOauth userOauth = createSocialUser(command);

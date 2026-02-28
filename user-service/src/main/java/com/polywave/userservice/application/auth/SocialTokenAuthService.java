@@ -9,6 +9,7 @@ import com.polywave.userservice.application.auth.result.SocialUserResult;
 import com.polywave.userservice.application.user.command.service.UserCommandService;
 import com.polywave.userservice.domain.OnBoardingStatus;
 import com.polywave.userservice.security.token.SocialTokenVerifierResolver;
+import com.polywave.userservice.common.exception.ForbiddenNicknameException;
 import com.polywave.userservice.security.token.SocialVerifiedUser;
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
 import com.polywave.userservice.application.nickname.query.service.NicknameQueryService;
@@ -63,7 +64,7 @@ public class SocialTokenAuthService {
                 NicknameAvailabilityResult nicknameResult = nicknameQueryService
                                 .isNicknameAvailable(command.nickname());
                 if (!nicknameResult.available()) {
-                        throw new IllegalArgumentException("사용할 수 없는 닉네임입니다.");
+                        throw new ForbiddenNicknameException();
                 }
 
                 // 3. 소셜 유저 생성 (User, UserOauth)

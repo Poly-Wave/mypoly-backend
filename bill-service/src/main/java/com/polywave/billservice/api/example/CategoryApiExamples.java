@@ -27,4 +27,22 @@ public final class CategoryApiExamples {
         "code": "VALIDATION_ERROR"
       }
       """;
+
+  public static final String EXAMPLE_INVALID_ONBOARDING_STATUS = """
+      {
+        "code": "INVALID_ONBOARDING_STATUS"
+      }
+      """;
+
+  public static final String EXAMPLE_USER_SERVICE_API_FAILED = """
+      {
+        "code": "USER_SERVICE_API_FAILED"
+      }
+      """;
+
+  public static final String EXAMPLE_MISSING_JWT_TOKEN = """
+      {
+        "code": "MISSING_JWT_TOKEN"
+      }
+      """;
 }
