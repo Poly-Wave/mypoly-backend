@@ -10,6 +10,7 @@ import com.polywave.billservice.application.category.query.service.CategoryQuery
 import com.polywave.security.annotation.LoginUser;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,12 +21,20 @@ public class CategoryController implements CategoryApi {
         private final CategoryQueryService categoryQueryService;
         private final UserBillInterestAppService userBillInterestAppService;
 
+        @Value("${bill.category.icon-base-url}")
+        private String iconBaseUrl;
+
+        private static final String ICON_PREFIX = "bill-categories";
+
         @Override
         public ResponseEntity<List<CategoryResponse>> getCategories() {
                 List<CategoryResult> results = categoryQueryService.getActiveCategories();
 
                 List<CategoryResponse> categories = results.stream()
-                                .map(CategoryResponse::from)
+                                .map(dto -> {
+                                        String iconUrl = iconBaseUrl + "/" + ICON_PREFIX + "/" + dto.code() + ".png";
+                                        return CategoryResponse.from(dto, iconUrl);
+                                })
                                 .toList();
 
                 return ResponseEntity.ok(categories);
