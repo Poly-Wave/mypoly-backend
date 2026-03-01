@@ -3,7 +3,7 @@ package com.polywave.userservice.api.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
-@Schema(description = "주소 검색 결과 응답")
+@Schema(description = "주소 검색 결과 응답", requiredProperties = {"totalCount", "currentPage", "countPerPage", "addresses"})
 public record AddressSearchResponse(
         @Schema(description = "전체 검색 결과 수", example = "1")
         int totalCount,

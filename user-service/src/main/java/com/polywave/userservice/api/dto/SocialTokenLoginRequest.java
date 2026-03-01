@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-@Schema(description = "SDK 로그인 후 앱이 전달하는 소셜 토큰 로그인 요청")
+@Schema(description = "SDK 로그인 후 앱이 전달하는 소셜 토큰 로그인 요청", requiredProperties = {"tokenType", "token"})
 public record SocialTokenLoginRequest(
         @Schema(description = "토큰 타입", example = "ACCESS_TOKEN")
         @NotNull(message = "tokenType은 필수입니다.")

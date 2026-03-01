@@ -8,7 +8,7 @@ import java.time.LocalDate;
  * 약관 상세(본문 포함) 응답 DTO
  * - WebView 표시 등 본문이 필요한 경우에만 사용
  */
-@Schema(description = "약관 상세 응답(본문 포함)")
+@Schema(description = "약관 상세 응답(본문 포함)", requiredProperties = {"id", "name", "title", "version", "required", "content", "effectiveFrom"})
 public record TermsDetailResponse(
         @Schema(description = "약관 ID", example = "1")
         Long id,

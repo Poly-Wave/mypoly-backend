@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-@Schema(description = "닉네임 사용 가능 여부 조회 요청(쿼리 파라미터)")
+@Schema(description = "닉네임 사용 가능 여부 조회 요청(쿼리 파라미터)", requiredProperties = {"nickname"})
 public record NicknameAvailabilityRequest(
         @Schema(
                 description = "검사할 닉네임",

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
-@Schema(description = "사용자 간략 정보 수정 요청")
+@Schema(description = "사용자 간략 정보 수정 요청", requiredProperties = {"gender", "birthDate", "sido", "sigungu", "emdName"})
 public record UserUpdateProfileRequest(
                 @NotNull(message = "성별은 필수입니다.") @Schema(description = "성별", example = "MAN, WOMAN") Gender gender,
 
