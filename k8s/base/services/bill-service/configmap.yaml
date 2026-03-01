@@ -9,3 +9,6 @@ data:
   SERVER_FORWARD_HEADERS_STRATEGY: "framework"
 
   DB_URL: "jdbc:postgresql://mypoly-postgres:5432/mypoly"
+
+  # Bill Category Icons (GCS Public)
+  BILL_CATEGORY_ICON_BASE_URL: "https://storage.googleapis.com/mypoly-assets-dev"

@@ -7,8 +7,20 @@ public final class CategoryApiExamples {
 
   public static final String EXAMPLE_GET_CATEGORIES_OK = """
       [
-        { "id": 1, "code": "DIGITAL", "name": "디지털" },
-        { "id": 2, "code": "SECURITY", "name": "보안" }
+        {
+          "id": 1,
+          "code": "DIGITAL",
+          "name": "디지털",
+          "displayOrder": 1,
+          "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.png"
+        },
+        {
+          "id": 2,
+          "code": "SECURITY",
+          "name": "보안",
+          "displayOrder": 2,
+          "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/SECURITY.png"
+        }
       ]
       """;
 
