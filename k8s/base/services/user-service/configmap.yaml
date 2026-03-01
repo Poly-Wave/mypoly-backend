@@ -8,11 +8,18 @@ data:
   SERVER_PORT: "8080"
   SERVER_FORWARD_HEADERS_STRATEGY: "framework"
 
-  # DEV audiences (Android/iOS 등)
-  GOOGLE_ALLOWED_AUDIENCES: "714490493102-d26i4c6magpkh6f4brhi2dvml3d0idbd.apps.googleusercontent.com,714490493102-7t2uuej1thbk0oghfsf23bo9fgbjknsp.apps.googleusercontent.com,714490493102-jn4as4kqgt0c6chgd2vvlc7j6jkviv8i.apps.googleusercontent.com"
+  # DEV audiences (Android/iOS)
+  #SPRING_PROFILES_ACTIVE: "local"
+  #GOOGLE_ALLOWED_AUDIENCES: "714490493102-d26i4c6magpkh6f4brhi2dvml3d0idbd.apps.googleusercontent.com,714490493102-7t2uuej1thbk0oghfsf23bo9fgbjknsp.apps.googleusercontent.com,714490493102-jn4as4kqgt0c6chgd2vvlc7j6jkviv8i.apps.googleusercontent.com"
+  #APPLE_ALLOWED_AUDIENCES: "kr.kro.mypoly.app.dev"
 
-  # PROD audiences (Android/iOS 등)
+  # PROD audiences (Android/iOS)
   #SPRING_PROFILES_ACTIVE: "prod"
   #GOOGLE_ALLOWED_AUDIENCES: "714490493102-p61nemv3dskpkcd20r8mpnsthfhuo528.apps.googleusercontent.com,714490493102-8ncso7nlnftree69t40l5kgm8e06a77j.apps.googleusercontent.com,714490493102-u23e0teledqoucbaudstq25v3sq35qdf.apps.googleusercontent.com"
+  #APPLE_ALLOWED_AUDIENCES: "kr.kro.mypoly.app"
+
+  # DEV PROD 모두
+  GOOGLE_ALLOWED_AUDIENCES: "714490493102-d26i4c6magpkh6f4brhi2dvml3d0idbd.apps.googleusercontent.com,714490493102-7t2uuej1thbk0oghfsf23bo9fgbjknsp.apps.googleusercontent.com,714490493102-jn4as4kqgt0c6chgd2vvlc7j6jkviv8i.apps.googleusercontent.com,714490493102-p61nemv3dskpkcd20r8mpnsthfhuo528.apps.googleusercontent.com,714490493102-8ncso7nlnftree69t40l5kgm8e06a77j.apps.googleusercontent.com,714490493102-u23e0teledqoucbaudstq25v3sq35qdf.apps.googleusercontent.com"
+  APPLE_ALLOWED_AUDIENCES: "kr.kro.mypoly.app.dev,kr.kro.mypoly.app"
 
   DB_URL: "jdbc:postgresql://mypoly-postgres:5432/mypoly"
