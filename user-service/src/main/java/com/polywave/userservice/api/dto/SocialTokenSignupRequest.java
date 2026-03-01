@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
-@Schema(description = "통합 회원가입 요청 정보 (소셜 토큰 + 닉네임 + 약관 동의)")
+@Schema(description = "통합 회원가입 요청 정보 (소셜 토큰 + 닉네임 + 약관 동의)", requiredProperties = {"tokenType", "token", "nickname", "termAgreements"})
 public record SocialTokenSignupRequest(
         @Schema(description = "토큰 타입", example = "ACCESS_TOKEN")
         @NotNull(message = "tokenType은 필수입니다.")

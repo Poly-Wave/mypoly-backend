@@ -2,7 +2,7 @@ package com.polywave.userservice.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "소셜 로그인 성공 응답(JWT 포함)")
+@Schema(description = "소셜 로그인 성공 응답(JWT 포함)", requiredProperties = {"userId", "provider", "providerUserId", "jwt"})
 public record SocialLoginResponse(
         @Schema(description = "MyPoly 내부 유저 ID", example = "123")
         Long userId,

@@ -8,7 +8,7 @@ import java.time.LocalDate;
  * 약관 메타데이터 응답 DTO
  * - 목록/상세 메타(/terms, /terms/{id})에서는 content(본문)를 내려주지 않음
  */
-@Schema(description = "약관 메타데이터 응답")
+@Schema(description = "약관 메타데이터 응답", requiredProperties = {"id", "name", "title", "version", "required", "effectiveFrom"})
 public record TermsResponse(
         @Schema(description = "약관 ID", example = "1")
         Long id,
