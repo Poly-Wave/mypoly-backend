@@ -26,12 +26,21 @@ spec:
               value: /users
 
           envFrom:
+            # 서비스 자체 설정
             - configMapRef:
                 name: user-service-config
             - secretRef:
-                name: mypoly-db-secret
-            - secretRef:
                 name: user-service-secret
+
+            # 공통 DB
+            - secretRef:
+                name: mypoly-db-secret
+
+            # 공통 JWT 설정/시크릿 (Access/Refresh)
+            - configMapRef:
+                name: mypoly-jwt-config
+            - secretRef:
+                name: mypoly-jwt-secret
 
           readinessProbe:
             httpGet:

@@ -1,16 +1,23 @@
 package com.polywave.userservice.api.controller;
 
+import com.polywave.security.JwtUtil;
+import com.polywave.security.RefreshJwtUtil;
 import com.polywave.userservice.api.dto.SocialLoginResponse;
 import com.polywave.userservice.api.dto.SocialTokenLoginRequest;
 import com.polywave.userservice.api.dto.SocialTokenSignupRequest;
+import com.polywave.userservice.api.dto.TokenRefreshRequest;
+import com.polywave.userservice.api.dto.TokenRefreshResponse;
 import com.polywave.userservice.api.spec.SocialTokenAuthApi;
 import com.polywave.userservice.application.auth.SocialTokenAuthService;
 import com.polywave.userservice.application.auth.command.SocialTokenLoginCommand;
 import com.polywave.userservice.application.auth.command.SocialTokenSignupCommand;
 import com.polywave.userservice.application.auth.result.SocialLoginResult;
 import com.polywave.userservice.application.userterms.command.TermsAgreement;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,6 +27,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class SocialTokenAuthController implements SocialTokenAuthApi {
 
         private final SocialTokenAuthService socialTokenAuthService;
+
+        private final JwtUtil jwtUtil;
+        private final RefreshJwtUtil refreshJwtUtil;
 
         @Override
         public ResponseEntity<SocialLoginResponse> loginWithToken(String provider,
@@ -36,7 +46,8 @@ public class SocialTokenAuthController implements SocialTokenAuthApi {
                                 result.providerUserId(),
                                 result.nickname(),
                                 result.profileImageUrl(),
-                                result.jwt());
+                                result.jwt(),
+                                result.refreshToken());
                 return ResponseEntity.ok(data);
         }
 
@@ -59,8 +70,23 @@ public class SocialTokenAuthController implements SocialTokenAuthApi {
                                 result.providerUserId(),
                                 result.nickname(),
                                 result.profileImageUrl(),
-                                result.jwt());
-                return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                                result.jwt(),
+                                result.refreshToken());
+                return ResponseEntity.status(HttpStatus.CREATED)
                                 .body(data);
+        }
+
+        @Override
+        public ResponseEntity<TokenRefreshResponse> refresh(@Valid @RequestBody TokenRefreshRequest request) {
+                String refreshToken = request.refreshToken();
+
+                if (!refreshJwtUtil.validateRefreshToken(refreshToken)) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                }
+
+                Long userId = refreshJwtUtil.extractUserId(refreshToken);
+                String newJwt = jwtUtil.createToken(userId);
+
+                return ResponseEntity.ok(new TokenRefreshResponse(newJwt));
         }
 }

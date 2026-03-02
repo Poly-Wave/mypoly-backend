@@ -2,7 +2,10 @@ package com.polywave.userservice.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "소셜 로그인 성공 응답(JWT 포함)", requiredProperties = {"userId", "provider", "providerUserId", "jwt"})
+@Schema(
+        description = "소셜 로그인 성공 응답(Access/Refresh 토큰 포함)",
+        requiredProperties = {"userId", "provider", "providerUserId", "jwt", "refreshToken"}
+)
 public record SocialLoginResponse(
         @Schema(description = "MyPoly 내부 유저 ID", example = "123")
         Long userId,
@@ -23,6 +26,12 @@ public record SocialLoginResponse(
                 description = "Access Token(JWT). 다른 서비스(bill-service 등) 호출 시 Authorization 헤더로 전달",
                 example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
         )
-        String jwt
+        String jwt,
+
+        @Schema(
+                description = "Refresh Token(JWT). Access 만료 시 /auth/refresh 로 새 Access 발급에 사용",
+                example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        )
+        String refreshToken
 ) {
 }

@@ -7,5 +7,6 @@ resources:
   - api-mypoly-cert.yaml
 
   - infra/postgres
+  - infra/jwt
   - services/user-service
   - services/bill-service

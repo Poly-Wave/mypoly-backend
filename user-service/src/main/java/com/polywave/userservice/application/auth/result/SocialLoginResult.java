@@ -6,5 +6,7 @@ public record SocialLoginResult(
     String providerUserId,
     String nickname,
     String profileImageUrl,
-    String jwt) {
+    String jwt,
+    String refreshToken
+) {
 }

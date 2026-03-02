@@ -1,20 +1,21 @@
 package com.polywave.userservice.application.auth;
 
 import com.polywave.security.JwtUtil;
+import com.polywave.security.RefreshJwtUtil;
 import com.polywave.userservice.application.auth.command.SocialLoginCommand;
 import com.polywave.userservice.application.auth.command.SocialTokenLoginCommand;
 import com.polywave.userservice.application.auth.command.SocialTokenSignupCommand;
 import com.polywave.userservice.application.auth.result.SocialLoginResult;
 import com.polywave.userservice.application.auth.result.SocialUserResult;
-import com.polywave.userservice.application.user.command.service.UserCommandService;
-import com.polywave.userservice.domain.OnBoardingStatus;
-import com.polywave.userservice.security.token.SocialTokenVerifierResolver;
-import com.polywave.userservice.common.exception.ForbiddenNicknameException;
-import com.polywave.userservice.security.token.SocialVerifiedUser;
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
 import com.polywave.userservice.application.nickname.query.service.NicknameQueryService;
+import com.polywave.userservice.application.user.command.service.UserCommandService;
 import com.polywave.userservice.application.userterms.command.UserAgreementCommand;
 import com.polywave.userservice.application.userterms.command.service.UserTermsCommandService;
+import com.polywave.userservice.common.exception.ForbiddenNicknameException;
+import com.polywave.userservice.domain.OnBoardingStatus;
+import com.polywave.userservice.security.token.SocialTokenVerifierResolver;
+import com.polywave.userservice.security.token.SocialVerifiedUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +29,12 @@ public class SocialTokenAuthService {
         private final NicknameQueryService nicknameQueryService;
         private final UserTermsCommandService userTermsCommandService;
         private final UserCommandService userCommandService;
+
+        /** Access Token 발급/검증 유틸 */
         private final JwtUtil jwtUtil;
+
+        /** Refresh Token 발급/검증 유틸 */
+        private final RefreshJwtUtil refreshJwtUtil;
 
         @Transactional
         public SocialLoginResult login(SocialTokenLoginCommand command) {
@@ -43,6 +49,7 @@ public class SocialTokenAuthService {
                                 verified.profileImageUrl()));
 
                 String jwt = jwtUtil.createToken(user.userId());
+                String refreshToken = refreshJwtUtil.createRefreshToken(user.userId());
 
                 return new SocialLoginResult(
                                 user.userId(),
@@ -50,7 +57,8 @@ public class SocialTokenAuthService {
                                 user.providerUserId(),
                                 user.nickname(),
                                 user.profileImageUrl(),
-                                jwt);
+                                jwt,
+                                refreshToken);
         }
 
         @Transactional
@@ -82,8 +90,9 @@ public class SocialTokenAuthService {
                 // 5. 온보딩 상태값 변경
                 userCommandService.updateUserOnboardingStatus(user.userId(), OnBoardingStatus.SIGNUP);
 
-                // 6. JWT 토큰 발급
+                // 6. 토큰 발급 (Access/Refresh)
                 String jwt = jwtUtil.createToken(user.userId());
+                String refreshToken = refreshJwtUtil.createRefreshToken(user.userId());
 
                 return new SocialLoginResult(
                                 user.userId(),
@@ -91,6 +100,7 @@ public class SocialTokenAuthService {
                                 user.providerUserId(),
                                 user.nickname(),
                                 user.profileImageUrl(),
-                                jwt);
+                                jwt,
+                                refreshToken);
         }
 }
