@@ -1,6 +1,7 @@
 package com.polywave.userservice.api.controller;
 
 import com.polywave.security.JwtUtil;
+import com.polywave.security.RefreshJwtUtil;
 import com.polywave.userservice.api.dto.SocialLoginResponse;
 import com.polywave.userservice.api.spec.DevAuthApi;
 import com.polywave.userservice.application.auth.SocialUserService;
@@ -21,14 +22,18 @@ public class DevAuthController implements DevAuthApi {
     private final String expectedDevKey;
     private final SocialUserService socialUserService;
     private final JwtUtil jwtUtil;
+    private final RefreshJwtUtil refreshJwtUtil;
 
     public DevAuthController(
             @Value("${social.dev-auth.key:}") String expectedDevKey,
             SocialUserService socialUserService,
-            JwtUtil jwtUtil) {
+            JwtUtil jwtUtil,
+            RefreshJwtUtil refreshJwtUtil
+    ) {
         this.expectedDevKey = expectedDevKey;
         this.socialUserService = socialUserService;
         this.jwtUtil = jwtUtil;
+        this.refreshJwtUtil = refreshJwtUtil;
     }
 
     @Override
@@ -44,9 +49,11 @@ public class DevAuthController implements DevAuthApi {
                 "dev",
                 "swagger",
                 null,
-                null));
+                null
+        ));
 
         String jwt = jwtUtil.createToken(user.userId());
+        String refreshToken = refreshJwtUtil.createRefreshToken(user.userId());
 
         SocialLoginResponse data = new SocialLoginResponse(
                 user.userId(),
@@ -54,7 +61,9 @@ public class DevAuthController implements DevAuthApi {
                 user.providerUserId(),
                 user.nickname(),
                 user.profileImageUrl(),
-                jwt);
+                jwt,
+                refreshToken
+        );
 
         return ResponseEntity.ok(data);
     }

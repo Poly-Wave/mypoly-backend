@@ -1,6 +1,7 @@
 package com.polywave.userservice.application.user.query.service.impl;
 
 import com.polywave.userservice.application.user.query.result.OnboardingStatusResult;
+import com.polywave.userservice.application.user.query.result.UserMeResult;
 import com.polywave.userservice.application.user.query.service.UserQueryService;
 import com.polywave.userservice.domain.OnBoardingStatus;
 import com.polywave.userservice.common.exception.UserNotFoundException;
@@ -23,5 +24,14 @@ public class UserQueryServiceImpl implements UserQueryService {
             throw new UserNotFoundException();
         }
         return new OnboardingStatusResult(status);
+    }
+
+    @Override
+    public UserMeResult getMe(Long userId) {
+        UserMeResult result = userQueryRepository.findUserMeByUserId(userId);
+        if (result == null) {
+            throw new UserNotFoundException();
+        }
+        return result;
     }
 }

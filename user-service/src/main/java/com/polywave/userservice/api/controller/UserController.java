@@ -28,6 +28,28 @@ public class UserController implements UserApi {
         private final UserCommandService userCommandService;
 
         @Override
+        public ResponseEntity<UserMeResponse> getMe(@LoginUser Long userId) {
+                var result = userQueryService.getMe(userId);
+
+                return ResponseEntity.ok(
+                                UserMeResponse.of(
+                                                result.userId(),
+                                                result.provider(),
+                                                result.providerUserId(),
+                                                result.nickname(),
+                                                result.onboardingStatus(),
+                                                result.gender(),
+                                                result.birthDate(),
+                                                result.profileImageUrl(),
+                                                result.sido(),
+                                                result.sigungu(),
+                                                result.emdName(),
+                                                result.address()
+                                )
+                );
+        }
+
+        @Override
         public ResponseEntity<NicknameAvailabilityResponse> checkNicknameAvailability(
                         NicknameAvailabilityRequest request) {
                 NicknameAvailabilityResult result = nicknameQueryService.isNicknameAvailable(request.nickname());

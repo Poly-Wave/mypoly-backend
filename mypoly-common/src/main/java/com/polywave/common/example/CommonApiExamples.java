@@ -6,6 +6,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CommonApiExamples {
 
+    public static final String EXAMPLE_BAD_REQUEST = """
+            {
+              "code": "BAD_REQUEST"
+            }
+            """;
+
     public static final String EXAMPLE_UNAUTHORIZED = """
             {
               "code": "UNAUTHORIZED"
