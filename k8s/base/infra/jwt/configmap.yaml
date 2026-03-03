@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mypoly-jwt-config
+  namespace: mypoly
+data:
+  # Access Token 만료 (테스트용: 1분)
+  JWT_EXPIRATION_MILLIS: "60000"
+
+  # Refresh Token 만료 (30일)
+  REFRESH_JWT_EXPIRATION_MILLIS: "2592000000"
