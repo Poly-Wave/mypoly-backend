@@ -12,8 +12,8 @@ CREATE TABLE bill_categories (
     is_active     BOOLEAN      NOT NULL DEFAULT TRUE,
 
     -- 카테고리 아이콘 경로(자동 생성)
-    -- ex) bill-categories/DIGITAL.png
-    icon_key      VARCHAR(255) GENERATED ALWAYS AS ('bill-categories/' || code || '.png') STORED,
+    -- ex) bill-categories/DIGITAL.webp
+    icon_key      VARCHAR(255) GENERATED ALWAYS AS ('bill-categories/' || code || '.webp') STORED,
 
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),

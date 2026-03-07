@@ -17,7 +17,7 @@ public record CategoryResponse(
         @Schema(description = "표시 순서", example = "1")
         Integer displayOrder,
 
-        @Schema(description = "아이콘 URL", example = "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.png")
+        @Schema(description = "아이콘 URL", example = "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp")
         String iconUrl
 ) {
     public static CategoryResponse from(CategoryResult dto, String iconUrl) {
