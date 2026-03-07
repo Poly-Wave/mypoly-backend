@@ -7,4 +7,6 @@ public interface UserCommandService {
     void updateUserProfile(Long userId, UserUpdateProfileCommand command);
 
     void updateUserOnboardingStatus(Long userId, OnBoardingStatus onBoardingStatus);
+
+    void deleteUser(Long userId);
 }
