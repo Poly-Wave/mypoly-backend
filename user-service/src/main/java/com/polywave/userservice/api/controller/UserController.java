@@ -53,7 +53,7 @@ public class UserController implements UserApi {
         public ResponseEntity<NicknameAvailabilityResponse> checkNicknameAvailability(
                         NicknameAvailabilityRequest request) {
                 NicknameAvailabilityResult result = nicknameQueryService.isNicknameAvailable(request.nickname());
-                return ResponseEntity.ok(NicknameAvailabilityResponse.of(result.available()));
+                return ResponseEntity.ok(NicknameAvailabilityResponse.of(result.available(), result.status()));
         }
 
         @Override

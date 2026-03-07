@@ -4,6 +4,7 @@ import com.polywave.userservice.application.nickname.generator.RandomNicknameGen
 import com.polywave.userservice.application.nickname.policy.NicknameNormalizer;
 import com.polywave.userservice.application.nickname.policy.NicknamePolicyService;
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
+import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityStatus;
 import com.polywave.userservice.application.nickname.query.result.RandomNicknameResult;
 import com.polywave.userservice.repository.query.UserQueryRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +25,12 @@ public class NicknameQueryServiceImpl implements NicknameQueryService {
         String nickname = NicknameNormalizer.normalize(rawNickname);
 
         if (nicknamePolicyService.isForbidden(nickname)) {
-            return new NicknameAvailabilityResult(false);
+            return new NicknameAvailabilityResult(false, NicknameAvailabilityStatus.FORBIDDEN);
         }
 
         boolean available = !userQueryRepository.existsByNickname(nickname);
-        return new NicknameAvailabilityResult(available);
+        return new NicknameAvailabilityResult(available,
+                available ? NicknameAvailabilityStatus.AVAILABLE : NicknameAvailabilityStatus.DUPLICATED);
     }
 
     @Override
