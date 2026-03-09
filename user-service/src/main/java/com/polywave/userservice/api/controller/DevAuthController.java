@@ -7,6 +7,7 @@ import com.polywave.userservice.api.spec.DevAuthApi;
 import com.polywave.userservice.application.auth.SocialUserService;
 import com.polywave.userservice.application.auth.command.SocialLoginCommand;
 import com.polywave.userservice.application.auth.result.SocialUserResult;
+import com.polywave.userservice.application.session.AuthSessionService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
@@ -21,17 +22,20 @@ public class DevAuthController implements DevAuthApi {
 
     private final String expectedDevKey;
     private final SocialUserService socialUserService;
+    private final AuthSessionService authSessionService;
     private final JwtUtil jwtUtil;
     private final RefreshJwtUtil refreshJwtUtil;
 
     public DevAuthController(
             @Value("${social.dev-auth.key:}") String expectedDevKey,
             SocialUserService socialUserService,
+            AuthSessionService authSessionService,
             JwtUtil jwtUtil,
             RefreshJwtUtil refreshJwtUtil
     ) {
         this.expectedDevKey = expectedDevKey;
         this.socialUserService = socialUserService;
+        this.authSessionService = authSessionService;
         this.jwtUtil = jwtUtil;
         this.refreshJwtUtil = refreshJwtUtil;
     }
@@ -52,8 +56,10 @@ public class DevAuthController implements DevAuthApi {
                 null
         ));
 
-        String jwt = jwtUtil.createToken(user.userId());
-        String refreshToken = refreshJwtUtil.createRefreshToken(user.userId());
+        // dev 로그인도 일반 로그인과 동일하게 sid를 새로 발급한다.
+        String sessionId = authSessionService.issueNewSession(user.userId());
+        String jwt = jwtUtil.createToken(user.userId(), sessionId);
+        String refreshToken = refreshJwtUtil.createRefreshToken(user.userId(), sessionId);
 
         SocialLoginResponse data = new SocialLoginResponse(
                 user.userId(),

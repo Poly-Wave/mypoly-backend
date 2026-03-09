@@ -42,13 +42,15 @@ public class RefreshJwtUtil {
         this.expirationMillis = expirationMillis;
     }
 
-    public String createRefreshToken(Long userId) {
+    public String createRefreshToken(Long userId, String sessionId) {
         Instant now = Instant.now();
         Instant expiry = now.plusMillis(expirationMillis);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
                 .claim("typ", "refresh")
+                // refresh token도 현재 세션 식별자(sid)를 함께 보관
+                .claim("sid", sessionId)
                 .setIssuedAt(Date.from(now))
                 .setExpiration(Date.from(expiry))
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -62,7 +64,8 @@ public class RefreshJwtUtil {
                     .getBody();
 
             Object typ = claims.get("typ");
-            return "refresh".equals(typ);
+            Object sid = claims.get("sid");
+            return "refresh".equals(typ) && sid != null;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
@@ -76,6 +79,17 @@ public class RefreshJwtUtil {
                 .getBody();
 
         return Long.parseLong(claims.getSubject());
+    }
+
+    public String extractSessionId(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        Object sid = claims.get("sid");
+        return sid == null ? null : sid.toString();
     }
 
     private static byte[] decodeSecret(String secret) {
