@@ -32,7 +32,7 @@ public class UserServiceSessionValidationService implements SessionValidationSer
 
     private final RestTemplate restTemplate;
 
-    @Value("${user-service.internal-url:http://user-service:80}")
+    @Value("${user-service.internal-url:http://user-service:80/users}")
     private String userServiceInternalUrl;
 
     @Override
