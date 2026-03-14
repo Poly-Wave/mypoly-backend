@@ -10,4 +10,6 @@ public interface UserQueryRepository {
     OnBoardingStatus findOnboardingStatusByUserId(Long userId);
 
     UserMeResult findUserMeByUserId(Long userId);
+
+    boolean existsValidSession(Long userId, String sessionId);
 }

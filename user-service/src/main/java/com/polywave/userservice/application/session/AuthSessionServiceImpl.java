@@ -3,6 +3,7 @@ package com.polywave.userservice.application.session;
 import com.polywave.userservice.common.exception.UserNotFoundException;
 import com.polywave.userservice.domain.User;
 import com.polywave.userservice.repository.command.UserCommandRepository;
+import com.polywave.userservice.repository.query.UserQueryRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthSessionServiceImpl implements AuthSessionService {
 
     private final UserCommandRepository userCommandRepository;
+    private final UserQueryRepository userQueryRepository;
 
     @Override
     @Transactional
@@ -28,8 +30,6 @@ public class AuthSessionServiceImpl implements AuthSessionService {
     @Override
     @Transactional(readOnly = true)
     public boolean isValidSession(Long userId, String sessionId) {
-        return userCommandRepository.findById(userId)
-                .map(user -> sessionId != null && sessionId.equals(user.getAuthSessionId()))
-                .orElse(false);
+        return userQueryRepository.existsValidSession(userId, sessionId);
     }
 }
