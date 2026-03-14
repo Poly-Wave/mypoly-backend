@@ -35,12 +35,14 @@ public class JwtUtil {
         this.expirationMillis = expirationMillis;
     }
 
-    public String createToken(Long userId) {
+    public String createToken(Long userId, String sessionId) {
         Instant now = Instant.now();
         Instant expiry = now.plusMillis(expirationMillis);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
+                // 단일 기기 로그인 정책을 위해 access token에도 현재 세션 식별자(sid)를 포함
+                .claim("sid", sessionId)
                 .setIssuedAt(Date.from(now))
                 .setExpiration(Date.from(expiry))
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -64,6 +66,17 @@ public class JwtUtil {
                 .getBody();
 
         return Long.parseLong(claims.getSubject());
+    }
+
+    public String extractSessionId(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        Object sid = claims.get("sid");
+        return sid == null ? null : sid.toString();
     }
 
     private static byte[] decodeSecret(String secret) {

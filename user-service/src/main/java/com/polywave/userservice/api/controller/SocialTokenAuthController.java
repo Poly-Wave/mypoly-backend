@@ -12,6 +12,7 @@ import com.polywave.userservice.application.auth.SocialTokenAuthService;
 import com.polywave.userservice.application.auth.command.SocialTokenLoginCommand;
 import com.polywave.userservice.application.auth.command.SocialTokenSignupCommand;
 import com.polywave.userservice.application.auth.result.SocialLoginResult;
+import com.polywave.userservice.application.session.AuthSessionService;
 import com.polywave.userservice.application.userterms.command.TermsAgreement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class SocialTokenAuthController implements SocialTokenAuthApi {
 
         private final SocialTokenAuthService socialTokenAuthService;
+        private final AuthSessionService authSessionService;
 
         private final JwtUtil jwtUtil;
         private final RefreshJwtUtil refreshJwtUtil;
@@ -85,7 +87,16 @@ public class SocialTokenAuthController implements SocialTokenAuthApi {
                 }
 
                 Long userId = refreshJwtUtil.extractUserId(refreshToken);
-                String newJwt = jwtUtil.createToken(userId);
+                String sessionId = refreshJwtUtil.extractSessionId(refreshToken);
+
+                // refresh token도 현재 유효 세션과 일치해야만 access token 재발급 허용
+                // -> 다른 기기 로그인 후 기존 기기의 refresh 재사용 차단
+                if (!authSessionService.isValidSession(userId, sessionId)) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                }
+
+                // 현재 정책은 refresh 시 sid를 회전시키지 않고 유지한다.
+                String newJwt = jwtUtil.createToken(userId, sessionId);
 
                 return ResponseEntity.ok(new TokenRefreshResponse(newJwt));
         }

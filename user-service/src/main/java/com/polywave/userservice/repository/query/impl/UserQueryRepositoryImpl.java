@@ -79,4 +79,22 @@ public class UserQueryRepositoryImpl implements UserQueryRepository {
                 t.get(u.address)
         );
     }
+
+    @Override
+    public boolean existsValidSession(Long userId, String sessionId) {
+        if (sessionId == null) {
+            return false;
+        }
+
+        Integer result = jpaQueryFactory
+                .selectOne()
+                .from(QUser.user)
+                .where(
+                        QUser.user.id.eq(userId),
+                        QUser.user.authSessionId.eq(sessionId)
+                )
+                .fetchFirst();
+
+        return result != null;
+    }
 }

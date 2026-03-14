@@ -44,6 +44,16 @@ public class User extends BaseEntity {
     @Column(length = 10)
     private OnBoardingStatus onboardingStatus;
 
+    /**
+     * 현재 사용자가 서버에서 인정하는 "유효 세션" 식별자.
+     *
+     * - 로그인 성공 시 새 sid 발급 후 이 컬럼을 갱신
+     * - access/refresh token 모두 동일 sid를 포함
+     * - 이후 요청 시 token sid와 이 컬럼 값을 비교하여 단일 기기 로그인 정책을 강제
+     */
+    @Column(length = 64)
+    private String authSessionId;
+
     public void changeNickname(String nickname) {
         this.nickname = nickname;
     }
@@ -60,5 +70,9 @@ public class User extends BaseEntity {
 
     public void updateOnBoardingStatus(OnBoardingStatus status) {
         this.onboardingStatus = status;
+    }
+
+    public void updateAuthSessionId(String authSessionId) {
+        this.authSessionId = authSessionId;
     }
 }

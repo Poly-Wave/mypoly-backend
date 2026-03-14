@@ -12,14 +12,14 @@ public final class CategoryApiExamples {
           "code": "DIGITAL",
           "name": "디지털",
           "displayOrder": 1,
-          "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.png"
+          "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp"
         },
         {
           "id": 2,
           "code": "SECURITY",
           "name": "보안",
           "displayOrder": 2,
-          "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/SECURITY.png"
+          "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/SECURITY.webp"
         }
       ]
       """;
