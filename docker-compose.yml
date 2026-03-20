@@ -30,7 +30,7 @@ services:
       context: .
       dockerfile: user-service/Dockerfile
     #image: mypoly-user-service:latest
-    image: ghcr.io/poly-wave/mypoly-user-service:0.3
+    image: ghcr.io/poly-wave/mypoly-user-service:0.4
     container_name: mypoly-user-service
     restart: unless-stopped
 
@@ -67,7 +67,7 @@ services:
       context: .
       dockerfile: bill-service/Dockerfile
     #image: mypoly-bill-service:latest
-    image: ghcr.io/poly-wave/mypoly-bill-service:0.3
+    image: ghcr.io/poly-wave/mypoly-bill-service:0.4
     container_name: mypoly-bill-service
     restart: unless-stopped
 
@@ -90,6 +90,29 @@ services:
 
     ports:
       - "${BILL_SERVICE_PORT:-8081}:8080"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+  bill-batch:
+    build:
+      context: ./bill-batch
+      dockerfile: Dockerfile
+    image: ghcr.io/poly-wave/mypoly-bill-batch:0.1
+    container_name: mypoly-bill-batch
+
+    env_file:
+      - ./.env
+      - ./bill-batch/.env
+
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_SCHEMA: ${DB_SCHEMA:-bill_service}
 
     depends_on:
       db:

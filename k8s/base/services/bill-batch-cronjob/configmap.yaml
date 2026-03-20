@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bill-batch-config
+  namespace: mypoly
+data:
+  DB_HOST: "mypoly-postgres"
+  DB_PORT: "5432"
+  DB_SCHEMA: "bill_service"
+
+  BILL_BATCH_JOB_TYPE: "DAILY_BILL_COLLECT"
+  BILL_BATCH_TRIGGER_TYPE: "CRON"
+  BILL_BATCH_LOOKBACK_DAYS: "2"
+  BILL_BATCH_PAGE_SIZE: "100"
+  BILL_BATCH_SLEEP_MS: "150"
+  BILL_BATCH_AI_SLEEP_MS: "1000"
+
+  GEMINI_MODEL: "gemini-1.5-flash"
+  GEMINI_TEMPERATURE: "0.2"
+  PROMPT_VERSION: "v1-mypoly-17cats"
+
+  IMAGE_TAG: "0.1"
+  GIT_COMMIT_SHA: "manual"

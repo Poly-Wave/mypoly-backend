@@ -1,6 +1,7 @@
 # 서비스별 환경변수 파일
 user-service/.env
 bill-service/.env
+bill-batch/.env
 
 # Environment
 .env
