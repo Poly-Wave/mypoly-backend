@@ -43,7 +43,7 @@ class AiRepository:
         temperature: float,
         analysis_input: Dict[str, Any],
         error_message: str,
-    ):
+    ) -> int:
         version = self.get_next_analysis_version(bill_id)
 
         with self.conn.cursor() as cur:
@@ -70,6 +70,7 @@ class AiRepository:
                     NULL, NULL, %s, %s, %s, %s,
                     %s, NULL, %s, FALSE, now(), now()
                 )
+                RETURNING id
                 """,
                 (
                     bill_id,
@@ -82,6 +83,7 @@ class AiRepository:
                     error_message[:5000],
                 ),
             )
+            return cur.fetchone()["id"]
 
     def insert_success_analysis(
         self,

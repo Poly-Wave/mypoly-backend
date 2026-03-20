@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from typing import Any, Dict, List, Tuple
 
 from psycopg2.extras import Json
@@ -26,8 +26,6 @@ class BillRepository:
     def upsert_bill(self, bill: Dict[str, Any]) -> Tuple[int, str]:
         existing = self._find_by_external_bill_id(bill["external_bill_id"])
         summary_hash = sha256_hex(bill.get("summary_raw"))
-
-        now = datetime.utcnow()
 
         comparable = {
             "bill_no": bill.get("bill_no"),
@@ -66,6 +64,13 @@ class BillRepository:
                         current_proc_stage_order,
                         current_pass_gubn,
                         current_general_result,
+                        ai_status,
+                        ai_retry_count,
+                        last_ai_attempt_at,
+                        next_ai_retry_at,
+                        last_ai_error_code,
+                        last_ai_error_message,
+                        last_ai_analysis_id,
                         source_payload,
                         first_collected_at,
                         last_collected_at,
@@ -76,6 +81,7 @@ class BillRepository:
                         %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s,
                         %s, %s, %s, %s, %s,
+                        'PENDING', 0, NULL, NULL, NULL, NULL, NULL,
                         %s,
                         now(), now(), now(), now(), now()
                     )
@@ -113,6 +119,13 @@ class BillRepository:
             ]
         )
 
+        ai_input_changed = any(
+            [
+                existing.get("official_title") != bill.get("official_title"),
+                existing.get("summary_raw_hash") != summary_hash,
+            ]
+        )
+
         no_change = all(existing.get(key) == value for key, value in comparable.items())
         if no_change:
             with self.conn.cursor() as cur:
@@ -147,6 +160,13 @@ class BillRepository:
                     current_pass_gubn = %s,
                     current_general_result = %s,
                     source_payload = %s,
+                    ai_status = CASE WHEN %s THEN 'PENDING' ELSE ai_status END,
+                    ai_retry_count = CASE WHEN %s THEN 0 ELSE ai_retry_count END,
+                    last_ai_attempt_at = CASE WHEN %s THEN NULL ELSE last_ai_attempt_at END,
+                    next_ai_retry_at = CASE WHEN %s THEN NULL ELSE next_ai_retry_at END,
+                    last_ai_error_code = CASE WHEN %s THEN NULL ELSE last_ai_error_code END,
+                    last_ai_error_message = CASE WHEN %s THEN NULL ELSE last_ai_error_message END,
+                    last_ai_analysis_id = CASE WHEN %s THEN NULL ELSE last_ai_analysis_id END,
                     last_collected_at = now(),
                     last_status_changed_at = CASE WHEN %s THEN now() ELSE last_status_changed_at END,
                     updated_at = now()
@@ -168,6 +188,13 @@ class BillRepository:
                     bill.get("current_pass_gubn"),
                     bill.get("current_general_result"),
                     Json(bill.get("source_payload", {})),
+                    ai_input_changed,
+                    ai_input_changed,
+                    ai_input_changed,
+                    ai_input_changed,
+                    ai_input_changed,
+                    ai_input_changed,
+                    ai_input_changed,
                     status_changed,
                     existing["id"],
                 ),
@@ -241,15 +268,118 @@ class BillRepository:
                 ),
             )
 
-    def get_summary_hash(self, bill_id: int):
+    def reset_stale_processing(self, timeout_minutes: int) -> int:
         with self.conn.cursor() as cur:
             cur.execute(
                 f"""
-                SELECT summary_raw_hash
+                UPDATE {self.schema}.bills
+                SET
+                    ai_status = 'RETRY_WAIT',
+                    next_ai_retry_at = now(),
+                    updated_at = now()
+                WHERE ai_status = 'PROCESSING'
+                  AND last_ai_attempt_at IS NOT NULL
+                  AND last_ai_attempt_at < now() - (%s || ' minutes')::interval
+                """,
+                (timeout_minutes,),
+            )
+            return cur.rowcount
+
+    def get_pending_ai_bills(self, limit: int, min_proposal_date: date) -> List[Dict[str, Any]]:
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                SELECT *
                 FROM {self.schema}.bills
+                WHERE proposal_date IS NOT NULL
+                  AND proposal_date >= %s
+                  AND ai_status IN ('PENDING', 'RETRY_WAIT')
+                  AND (next_ai_retry_at IS NULL OR next_ai_retry_at <= now())
+                ORDER BY proposal_date ASC, id ASC
+                LIMIT %s
+                """,
+                (min_proposal_date, limit),
+            )
+            return cur.fetchall()
+
+    def mark_ai_processing(self, bill_id: int):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                UPDATE {self.schema}.bills
+                SET
+                    ai_status = 'PROCESSING',
+                    last_ai_attempt_at = now(),
+                    updated_at = now()
                 WHERE id = %s
                 """,
                 (bill_id,),
             )
-            row = cur.fetchone()
-            return row["summary_raw_hash"] if row else None
+
+    def mark_ai_success(self, bill_id: int, analysis_id: int):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                UPDATE {self.schema}.bills
+                SET
+                    ai_status = 'SUCCESS',
+                    next_ai_retry_at = NULL,
+                    last_ai_error_code = NULL,
+                    last_ai_error_message = NULL,
+                    last_ai_analysis_id = %s,
+                    updated_at = now()
+                WHERE id = %s
+                """,
+                (analysis_id, bill_id),
+            )
+
+    def mark_ai_retry_wait(self, bill_id: int, error_code: str, error_message: str, wait_minutes: int):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                UPDATE {self.schema}.bills
+                SET
+                    ai_status = 'RETRY_WAIT',
+                    ai_retry_count = ai_retry_count + 1,
+                    next_ai_retry_at = now() + (%s || ' minutes')::interval,
+                    last_ai_error_code = %s,
+                    last_ai_error_message = %s,
+                    updated_at = now()
+                WHERE id = %s
+                """,
+                (wait_minutes, error_code, error_message[:5000], bill_id),
+            )
+
+    def mark_ai_permanent_failed(self, bill_id: int, error_code: str, error_message: str):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                UPDATE {self.schema}.bills
+                SET
+                    ai_status = 'PERMANENT_FAILED',
+                    ai_retry_count = ai_retry_count + 1,
+                    next_ai_retry_at = NULL,
+                    last_ai_error_code = %s,
+                    last_ai_error_message = %s,
+                    updated_at = now()
+                WHERE id = %s
+                """,
+                (error_code, error_message[:5000], bill_id),
+            )
+
+    def mark_ai_skipped(self, bill_id: int, analysis_id: int | None):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                UPDATE {self.schema}.bills
+                SET
+                    ai_status = 'SUCCESS',
+                    next_ai_retry_at = NULL,
+                    last_ai_error_code = NULL,
+                    last_ai_error_message = NULL,
+                    last_ai_analysis_id = COALESCE(%s, last_ai_analysis_id),
+                    updated_at = now()
+                WHERE id = %s
+                """,
+                (analysis_id, bill_id),
+            )

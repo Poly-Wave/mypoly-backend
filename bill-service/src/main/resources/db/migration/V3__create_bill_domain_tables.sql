@@ -21,6 +21,14 @@ CREATE TABLE bills (
     current_pass_gubn            VARCHAR(50),
     current_general_result       VARCHAR(500),
 
+    ai_status                    VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    ai_retry_count               INTEGER NOT NULL DEFAULT 0,
+    last_ai_attempt_at           TIMESTAMPTZ,
+    next_ai_retry_at             TIMESTAMPTZ,
+    last_ai_error_code           VARCHAR(100),
+    last_ai_error_message        TEXT,
+    last_ai_analysis_id          BIGINT,
+
     source_payload               JSONB,
 
     first_collected_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -30,7 +38,9 @@ CREATE TABLE bills (
     created_at                   TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at                   TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    CONSTRAINT uk_bills_external_bill_id UNIQUE (external_bill_id)
+    CONSTRAINT uk_bills_external_bill_id UNIQUE (external_bill_id),
+    CONSTRAINT ck_bills_ai_status
+        CHECK (ai_status IN ('PENDING', 'PROCESSING', 'SUCCESS', 'RETRY_WAIT', 'PERMANENT_FAILED', 'SKIPPED'))
 );
 
 CREATE INDEX idx_bills_bill_no ON bills (bill_no);
@@ -38,6 +48,9 @@ CREATE INDEX idx_bills_proposal_date ON bills (proposal_date DESC);
 CREATE INDEX idx_bills_stage_order ON bills (current_proc_stage_order);
 CREATE INDEX idx_bills_pass_gubn ON bills (current_pass_gubn);
 CREATE INDEX idx_bills_last_collected_at ON bills (last_collected_at DESC);
+CREATE INDEX idx_bills_ai_status ON bills (ai_status);
+CREATE INDEX idx_bills_next_ai_retry_at ON bills (next_ai_retry_at);
+CREATE INDEX idx_bills_proposal_date_ai_status ON bills (proposal_date DESC, ai_status);
 
 -- 2. bill_proposers
 CREATE TABLE bill_proposers (
@@ -193,6 +206,10 @@ CREATE INDEX idx_bill_ai_analyses_generated_at ON bill_ai_analyses (generated_at
 CREATE UNIQUE INDEX uk_bill_ai_analyses_current_per_bill
 ON bill_ai_analyses (bill_id)
 WHERE is_current = TRUE;
+
+ALTER TABLE bills
+ADD CONSTRAINT fk_bills_last_ai_analysis
+FOREIGN KEY (last_ai_analysis_id) REFERENCES bill_ai_analyses(id) ON DELETE SET NULL;
 
 -- 7. bill_ai_categories
 CREATE TABLE bill_ai_categories (

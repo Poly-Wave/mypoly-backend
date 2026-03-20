@@ -1,6 +1,7 @@
 import json
 import time
-from typing import Any, Dict
+from dataclasses import dataclass
+from typing import Any, Dict, List
 
 import requests
 
@@ -58,6 +59,17 @@ P, M, U, T, N, S, O, R
 """.strip()
 
 
+@dataclass
+class GeminiApiError(Exception):
+    code: str
+    message: str
+    retryable: bool
+    quota_exhausted: bool = False
+
+    def __str__(self) -> str:
+        return f"{self.code}: {self.message}"
+
+
 class GeminiClient:
     def __init__(self, settings: Settings):
         self.settings = settings
@@ -80,7 +92,11 @@ class GeminiClient:
         start = text.find("{")
         end = text.rfind("}")
         if start == -1 or end == -1 or end < start:
-            raise ValueError(f"Gemini response is not valid JSON: {text[:500]}")
+            raise GeminiApiError(
+                code="INVALID_RESPONSE",
+                message=f"Gemini response is not valid JSON: {text[:500]}",
+                retryable=True,
+            )
 
         return text[start:end + 1]
 
@@ -102,7 +118,7 @@ class GeminiClient:
             "against": normalize_side(vote_obj.get("against", {})),
         }
 
-    def analyze_bill(self, title: str, body: str) -> Dict[str, Any]:
+    def _build_payload(self, title: str, body: str) -> Dict[str, Any]:
         prompt = f"""
 [입력 제목]
 {title}
@@ -111,29 +127,69 @@ class GeminiClient:
 {body}
 """.strip()
 
-        last_error = None
+        return {
+            "systemInstruction": {
+                "parts": [{"text": SYSTEM_PROMPT}]
+            },
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{"text": prompt}]
+                }
+            ],
+            "generationConfig": {
+                "temperature": self.settings.gemini_temperature,
+                "responseMimeType": "application/json",
+            }
+        }
+
+    def _classify_http_error(self, response: requests.Response) -> GeminiApiError:
+        body_head = response.text[:500]
+
+        if response.status_code == 429:
+            return GeminiApiError(
+                code="RESOURCE_EXHAUSTED",
+                message=f"status=429 body={body_head}",
+                retryable=True,
+                quota_exhausted=True,
+            )
+
+        if response.status_code == 400 and "API_KEY_INVALID" in response.text:
+            return GeminiApiError(
+                code="API_KEY_INVALID",
+                message=f"status=400 body={body_head}",
+                retryable=False,
+            )
+
+        if response.status_code in (500, 502, 503, 504):
+            return GeminiApiError(
+                code="TEMPORARY_SERVER_ERROR",
+                message=f"status={response.status_code} body={body_head}",
+                retryable=True,
+            )
+
+        if 400 <= response.status_code < 500:
+            return GeminiApiError(
+                code="INVALID_REQUEST",
+                message=f"status={response.status_code} body={body_head}",
+                retryable=False,
+            )
+
+        return GeminiApiError(
+            code="HTTP_ERROR",
+            message=f"status={response.status_code} body={body_head}",
+            retryable=True,
+        )
+
+    def analyze_bill(self, title: str, body: str) -> Dict[str, Any]:
+        model = self.settings.gemini_model or "gemini-2.5-flash"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        payload = self._build_payload(title=title, body=body)
+
+        errors: List[GeminiApiError] = []
 
         for attempt in range(len(self.keys)):
             api_key = self._next_key()
-            model = self.settings.gemini_model or "gemini-2.5-flash"
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-
-            payload = {
-                "systemInstruction": {
-                    "parts": [{"text": SYSTEM_PROMPT}]
-                },
-                "contents": [
-                    {
-                        "role": "user",
-                        "parts": [{"text": prompt}]
-                    }
-                ],
-                "generationConfig": {
-                    "temperature": self.settings.gemini_temperature,
-                    "responseMimeType": "application/json",
-                }
-            }
-
             headers = {
                 "x-goog-api-key": api_key,
                 "Content-Type": "application/json",
@@ -158,28 +214,38 @@ class GeminiClient:
                     flush=True,
                 )
 
-                if response.status_code in (429, 500, 502, 503, 504):
-                    last_error = RuntimeError(
-                        f"Gemini temporary failure: status={response.status_code}, body={response.text[:500]}"
-                    )
+                if response.status_code >= 400:
+                    err = self._classify_http_error(response)
+                    errors.append(err)
                     time.sleep(self.settings.bill_batch_ai_sleep_ms / 1000.0)
                     continue
 
-                response.raise_for_status()
                 data = response.json()
 
                 candidates = data.get("candidates") or []
                 if not candidates:
-                    raise ValueError(f"No candidates in Gemini response: {data}")
+                    raise GeminiApiError(
+                        code="INVALID_RESPONSE",
+                        message=f"No candidates in Gemini response: {str(data)[:500]}",
+                        retryable=True,
+                    )
 
                 content = candidates[0].get("content") or {}
                 parts = content.get("parts") or []
                 if not parts:
-                    raise ValueError(f"No parts in Gemini response: {data}")
+                    raise GeminiApiError(
+                        code="INVALID_RESPONSE",
+                        message=f"No parts in Gemini response: {str(data)[:500]}",
+                        retryable=True,
+                    )
 
                 text = str(parts[0].get("text", "")).strip()
                 if not text:
-                    raise ValueError(f"Empty text in Gemini response: {data}")
+                    raise GeminiApiError(
+                        code="INVALID_RESPONSE",
+                        message=f"Empty text in Gemini response: {str(data)[:500]}",
+                        retryable=True,
+                    )
 
                 json_text = self._extract_json_text(text)
                 parsed = json.loads(json_text)
@@ -190,11 +256,11 @@ class GeminiClient:
                 categories = [str(v).strip() for v in categories if str(v).strip()]
 
                 if not headline:
-                    raise ValueError("headline is empty")
+                    raise GeminiApiError(code="INVALID_RESPONSE", message="headline is empty", retryable=True)
                 if not summary:
-                    raise ValueError("summary is empty")
+                    raise GeminiApiError(code="INVALID_RESPONSE", message="summary is empty", retryable=True)
                 if not categories:
-                    raise ValueError("categories is empty")
+                    raise GeminiApiError(code="INVALID_RESPONSE", message="categories is empty", retryable=True)
 
                 return {
                     "headline": headline,
@@ -204,9 +270,57 @@ class GeminiClient:
                     "raw_response": parsed,
                 }
 
-            except Exception as exc:
-                last_error = exc
+            except GeminiApiError as exc:
+                errors.append(exc)
                 print(f"[GEMINI][ERROR] {exc}", flush=True)
                 time.sleep(self.settings.bill_batch_ai_sleep_ms / 1000.0)
+                continue
+            except requests.RequestException as exc:
+                err = GeminiApiError(
+                    code="NETWORK_ERROR",
+                    message=str(exc),
+                    retryable=True,
+                )
+                errors.append(err)
+                print(f"[GEMINI][ERROR] {err}", flush=True)
+                time.sleep(self.settings.bill_batch_ai_sleep_ms / 1000.0)
+                continue
+            except Exception as exc:
+                err = GeminiApiError(
+                    code="UNEXPECTED_ERROR",
+                    message=str(exc),
+                    retryable=True,
+                )
+                errors.append(err)
+                print(f"[GEMINI][ERROR] {err}", flush=True)
+                time.sleep(self.settings.bill_batch_ai_sleep_ms / 1000.0)
+                continue
 
-        raise RuntimeError(f"All Gemini keys failed: {last_error}")
+        if any(err.quota_exhausted for err in errors):
+            raise GeminiApiError(
+                code="RESOURCE_EXHAUSTED",
+                message=f"All Gemini keys exhausted or quota blocked. last={errors[-1] if errors else 'unknown'}",
+                retryable=True,
+                quota_exhausted=True,
+            )
+
+        non_retryable = [err for err in errors if not err.retryable]
+        if non_retryable:
+            last = non_retryable[-1]
+            raise GeminiApiError(
+                code=last.code,
+                message=last.message,
+                retryable=False,
+            )
+
+        last = errors[-1] if errors else GeminiApiError(
+            code="UNKNOWN_ERROR",
+            message="Gemini request failed without detailed error",
+            retryable=True,
+        )
+        raise GeminiApiError(
+            code=last.code,
+            message=last.message,
+            retryable=last.retryable,
+            quota_exhausted=last.quota_exhausted,
+        )

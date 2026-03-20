@@ -1,6 +1,6 @@
 import re
 import time
-from datetime import date
+from datetime import date, datetime
 from typing import Any, Dict, Iterator, List
 from urllib.parse import urlencode
 from xml.etree import ElementTree as ET
@@ -10,25 +10,22 @@ import requests
 from app.config import Settings
 
 
-BILL_INFO_API = "https://apis.data.go.kr/9710000/BillInfoService2/getBillInfoList"
-
-
 def parse_api_date(value: str | None):
     if not value:
         return None
+
     value = value.strip()
     if not value:
         return None
 
     try:
         if len(value) == 8:
-            from datetime import datetime
             return datetime.strptime(value, "%Y%m%d").date()
         if len(value) == 10:
-            from datetime import datetime
             return datetime.strptime(value, "%Y-%m-%d").date()
     except Exception:
         return None
+
     return None
 
 
@@ -94,20 +91,18 @@ class BillInfoApiClient:
         self.settings = settings
         self.service_key = settings.bill_service_key.strip()
 
-    def _build_url(self, page: int, start_date: date, end_date: date) -> str:
-        # 공공데이터포털 서비스키는 이미 URL-encoded 형태로 제공되는 경우가 많아서
-        # urlencode 시 %가 다시 %25로 이중 인코딩되지 않도록 safe='%' 로 유지한다.
+    def _build_url(self, page: int) -> str:
         query = urlencode(
             {
                 "ServiceKey": self.service_key,
                 "numOfRows": self.settings.bill_batch_page_size,
                 "pageNo": page,
-                "proposeDtFrom": start_date.strftime("%Y%m%d"),
-                "proposeDtTo": end_date.strftime("%Y%m%d"),
+                "start_ord": self.settings.bill_start_ord,
+                "end_ord": self.settings.bill_end_ord,
             },
             safe="%",
         )
-        return f"{BILL_INFO_API}?{query}"
+        return f"{self.settings.bill_api_base_url}/getBillInfoList?{query}"
 
     def _parse_response(self, response: requests.Response) -> ET.Element:
         try:
@@ -134,16 +129,17 @@ class BillInfoApiClient:
 
     def iter_bills(self, start_date: date, end_date: date) -> Iterator[Dict[str, Any]]:
         page = 1
+        min_proposal_date = parse_api_date(self.settings.min_proposal_date)
 
-        while True:
-            url = self._build_url(page=page, start_date=start_date, end_date=end_date)
+        while page <= self.settings.bill_batch_max_pages:
+            url = self._build_url(page=page)
             masked_url = url.replace(self.service_key, "***SERVICE_KEY***")
             print(
-                f"[BILL_API] request page={page} range={start_date}~{end_date} url={masked_url}",
+                f"[BILL_API] request page={page} target_range={start_date}~{end_date} url={masked_url}",
                 flush=True,
             )
 
-            response = requests.get(url, timeout=30)
+            response = requests.get(url, timeout=self.settings.bill_batch_request_timeout_sec)
             print(
                 f"[BILL_API] response page={page} status={response.status_code} body_head={response.text[:300]!r}",
                 flush=True,
@@ -166,6 +162,9 @@ class BillInfoApiClient:
                 print(f"[BILL_API] no items on page={page}, stop pagination", flush=True)
                 break
 
+            page_bills: List[Dict[str, Any]] = []
+            page_dates: List[date] = []
+
             for item in items:
                 raw = item_to_dict(item)
 
@@ -177,6 +176,9 @@ class BillInfoApiClient:
                 official_title = (item.findtext("billName", "") or "").strip()
                 if not official_title:
                     continue
+
+                if proposal_date:
+                    page_dates.append(proposal_date)
 
                 bill_no = (item.findtext("billNo", "") or "").strip()
                 proposer_kind = (item.findtext("proposerKind", "") or "").strip()
@@ -211,28 +213,56 @@ class BillInfoApiClient:
                 general_result = (item.findtext("generalResult", "") or "").strip()
                 summary_raw = (item.findtext("summary", "") or "").strip()
 
-                detail_url = (
-                    f"https://likms.assembly.go.kr/bill/billDetail.do?billId={external_bill_id}"
+                detail_url = f"https://likms.assembly.go.kr/bill/billDetail.do?billId={external_bill_id}"
+
+                page_bills.append(
+                    {
+                        "external_bill_id": external_bill_id,
+                        "bill_no": bill_no,
+                        "official_title": official_title,
+                        "proposal_date": proposal_date,
+                        "proposer_kind": proposer_kind,
+                        "representative_proposer_name": representative_proposer_name,
+                        "proposer_count": proposer_count,
+                        "summary_raw": summary_raw,
+                        "detail_url": detail_url,
+                        "current_proc_stage_code": proc_stage_code,
+                        "current_proc_stage_name": proc_stage_name,
+                        "current_proc_stage_order": calculate_proc_stage_order(proc_stage_name or proc_stage_code),
+                        "current_pass_gubn": pass_gubn,
+                        "current_general_result": general_result,
+                        "status_proc_date": proc_date,
+                        "source_payload": raw,
+                    }
                 )
 
-                yield {
-                    "external_bill_id": external_bill_id,
-                    "bill_no": bill_no,
-                    "official_title": official_title,
-                    "proposal_date": proposal_date,
-                    "proposer_kind": proposer_kind,
-                    "representative_proposer_name": representative_proposer_name,
-                    "proposer_count": proposer_count,
-                    "summary_raw": summary_raw,
-                    "detail_url": detail_url,
-                    "current_proc_stage_code": proc_stage_code,
-                    "current_proc_stage_name": proc_stage_name,
-                    "current_proc_stage_order": calculate_proc_stage_order(proc_stage_name or proc_stage_code),
-                    "current_pass_gubn": pass_gubn,
-                    "current_general_result": general_result,
-                    "status_proc_date": proc_date,
-                    "source_payload": raw,
-                }
+            if not page_bills:
+                print(f"[BILL_API] no valid bills on page={page}, stop pagination", flush=True)
+                break
+
+            if page_dates:
+                page_min_date = min(page_dates)
+                page_max_date = max(page_dates)
+                print(
+                    f"[BILL_API] page={page} proposal_date_range={page_min_date}~{page_max_date}",
+                    flush=True,
+                )
+
+                if min_proposal_date and page_max_date < min_proposal_date:
+                    print(
+                        f"[BILL_API] stop pagination because page_max_date={page_max_date} < min_proposal_date={min_proposal_date}",
+                        flush=True,
+                    )
+                    break
+
+            for bill in page_bills:
+                yield bill
 
             page += 1
             time.sleep(self.settings.bill_batch_sleep_ms / 1000.0)
+
+        if page > self.settings.bill_batch_max_pages:
+            print(
+                f"[BILL_API] reached max pages={self.settings.bill_batch_max_pages}, stop pagination",
+                flush=True,
+            )
