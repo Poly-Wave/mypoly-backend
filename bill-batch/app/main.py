@@ -1,4 +1,5 @@
 import argparse
+import traceback
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -27,14 +28,18 @@ def main():
     args = parse_args()
     settings = Settings.from_env()
 
-    runner = BatchRunner(settings)
-    result = runner.run(
-        from_date=parse_date(args.from_date),
-        to_date=parse_date(args.to_date),
-        trigger_type=args.trigger_type,
-    )
-
-    print(result)
+    try:
+        runner = BatchRunner(settings)
+        result = runner.run(
+            from_date=parse_date(args.from_date),
+            to_date=parse_date(args.to_date),
+            trigger_type=args.trigger_type,
+        )
+        print(result, flush=True)
+    except Exception as exc:
+        print(f"[FATAL] {exc}", flush=True)
+        traceback.print_exc()
+        raise
 
 
 if __name__ == "__main__":

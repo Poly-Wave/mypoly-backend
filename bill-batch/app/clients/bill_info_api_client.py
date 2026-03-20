@@ -1,8 +1,8 @@
 import re
 import time
 from datetime import date
-from typing import Any, Dict, List
-from urllib.parse import unquote
+from typing import Any, Dict, Iterator, List
+from urllib.parse import urlencode
 from xml.etree import ElementTree as ET
 
 import requests
@@ -92,27 +92,78 @@ def item_to_dict(item) -> Dict[str, Any]:
 class BillInfoApiClient:
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.decoded_service_key = unquote(settings.bill_service_key)
+        self.service_key = settings.bill_service_key.strip()
 
-    def fetch_bills(self, start_date: date, end_date: date) -> List[Dict[str, Any]]:
-        page = 1
-        results: List[Dict[str, Any]] = []
-
-        while True:
-            params = {
-                "serviceKey": self.decoded_service_key,
+    def _build_url(self, page: int, start_date: date, end_date: date) -> str:
+        # 공공데이터포털 서비스키는 이미 URL-encoded 형태로 제공되는 경우가 많아서
+        # urlencode 시 %가 다시 %25로 이중 인코딩되지 않도록 safe='%' 로 유지한다.
+        query = urlencode(
+            {
+                "ServiceKey": self.service_key,
                 "numOfRows": self.settings.bill_batch_page_size,
                 "pageNo": page,
                 "proposeDtFrom": start_date.strftime("%Y%m%d"),
                 "proposeDtTo": end_date.strftime("%Y%m%d"),
-            }
+            },
+            safe="%",
+        )
+        return f"{BILL_INFO_API}?{query}"
 
-            response = requests.get(BILL_INFO_API, params=params, timeout=30)
+    def _parse_response(self, response: requests.Response) -> ET.Element:
+        try:
+            return ET.fromstring(response.text)
+        except ET.ParseError as exc:
+            raise RuntimeError(
+                f"Bill API returned non-XML response: status={response.status_code}, body_head={response.text[:500]}"
+            ) from exc
+
+    def _extract_items(self, root: ET.Element) -> List[ET.Element]:
+        items_parent = root.find(".//body/items")
+        if items_parent is None:
+            return []
+        return items_parent.findall("item")
+
+    def _check_api_error(self, root: ET.Element, response: requests.Response):
+        result_code = (root.findtext(".//header/resultCode", "") or "").strip()
+        result_msg = (root.findtext(".//header/resultMsg", "") or "").strip()
+
+        if result_code and result_code not in {"00", "0", "NORMAL SERVICE"}:
+            raise RuntimeError(
+                f"Bill API error: status={response.status_code}, resultCode={result_code}, resultMsg={result_msg}, body_head={response.text[:500]}"
+            )
+
+    def iter_bills(self, start_date: date, end_date: date) -> Iterator[Dict[str, Any]]:
+        page = 1
+
+        while True:
+            url = self._build_url(page=page, start_date=start_date, end_date=end_date)
+            masked_url = url.replace(self.service_key, "***SERVICE_KEY***")
+            print(
+                f"[BILL_API] request page={page} range={start_date}~{end_date} url={masked_url}",
+                flush=True,
+            )
+
+            response = requests.get(url, timeout=30)
+            print(
+                f"[BILL_API] response page={page} status={response.status_code} body_head={response.text[:300]!r}",
+                flush=True,
+            )
             response.raise_for_status()
 
-            root = ET.fromstring(response.text)
-            items = root.findall(".//items/item")
+            root = self._parse_response(response)
+            self._check_api_error(root, response)
+
+            total_count_text = (root.findtext(".//body/totalCount", "") or "").strip()
+            total_count = int(total_count_text) if total_count_text.isdigit() else None
+            items = self._extract_items(root)
+
+            print(
+                f"[BILL_API] parsed page={page} total_count={total_count} item_count={len(items)}",
+                flush=True,
+            )
+
             if not items:
+                print(f"[BILL_API] no items on page={page}, stop pagination", flush=True)
                 break
 
             for item in items:
@@ -164,28 +215,24 @@ class BillInfoApiClient:
                     f"https://likms.assembly.go.kr/bill/billDetail.do?billId={external_bill_id}"
                 )
 
-                results.append(
-                    {
-                        "external_bill_id": external_bill_id,
-                        "bill_no": bill_no,
-                        "official_title": official_title,
-                        "proposal_date": proposal_date,
-                        "proposer_kind": proposer_kind,
-                        "representative_proposer_name": representative_proposer_name,
-                        "proposer_count": proposer_count,
-                        "summary_raw": summary_raw,
-                        "detail_url": detail_url,
-                        "current_proc_stage_code": proc_stage_code,
-                        "current_proc_stage_name": proc_stage_name,
-                        "current_proc_stage_order": calculate_proc_stage_order(proc_stage_name or proc_stage_code),
-                        "current_pass_gubn": pass_gubn,
-                        "current_general_result": general_result,
-                        "status_proc_date": proc_date,
-                        "source_payload": raw,
-                    }
-                )
+                yield {
+                    "external_bill_id": external_bill_id,
+                    "bill_no": bill_no,
+                    "official_title": official_title,
+                    "proposal_date": proposal_date,
+                    "proposer_kind": proposer_kind,
+                    "representative_proposer_name": representative_proposer_name,
+                    "proposer_count": proposer_count,
+                    "summary_raw": summary_raw,
+                    "detail_url": detail_url,
+                    "current_proc_stage_code": proc_stage_code,
+                    "current_proc_stage_name": proc_stage_name,
+                    "current_proc_stage_order": calculate_proc_stage_order(proc_stage_name or proc_stage_code),
+                    "current_pass_gubn": pass_gubn,
+                    "current_general_result": general_result,
+                    "status_proc_date": proc_date,
+                    "source_payload": raw,
+                }
 
             page += 1
             time.sleep(self.settings.bill_batch_sleep_ms / 1000.0)
-
-        return results

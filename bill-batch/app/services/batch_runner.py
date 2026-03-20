@@ -1,5 +1,4 @@
 from datetime import date, timedelta
-from typing import Any, Dict
 
 from app.clients.bill_info_api_client import BillInfoApiClient
 from app.clients.gemini_client import GeminiClient
@@ -32,6 +31,11 @@ class BatchRunner:
         trigger_type = trigger_type or self.settings.bill_batch_trigger_type
         start_date, end_date = self._resolve_dates(from_date, to_date)
 
+        print(
+            f"[BATCH] start trigger_type={trigger_type} start_date={start_date} end_date={end_date}",
+            flush=True,
+        )
+
         conn = get_connection(self.settings)
         conn.autocommit = False
 
@@ -51,16 +55,22 @@ class BatchRunner:
                 git_commit_sha=self.settings.git_commit_sha,
             )
             conn.commit()
+            print(f"[BATCH] batch_run_id={batch_run_id} created", flush=True)
 
             found = inserted = updated = skipped = failed = 0
 
             category_map = category_repo.get_active_category_map()
-            bills = api_client.fetch_bills(start_date, end_date)
-            found = len(bills)
+            print(f"[BATCH] active_categories={len(category_map)}", flush=True)
 
-            for bill in bills:
+            for bill in api_client.iter_bills(start_date, end_date):
+                found += 1
                 external_bill_id = bill["external_bill_id"]
                 bill_id = None
+
+                print(
+                    f"[BATCH] processing idx={found} external_bill_id={external_bill_id} title={bill.get('official_title')!r}",
+                    flush=True,
+                )
 
                 try:
                     bill_id, action = bill_repo.upsert_bill(bill)
@@ -105,6 +115,10 @@ class BatchRunner:
                         )
                         skipped += 1
                         conn.commit()
+                        print(
+                            f"[BATCH] ai skipped external_bill_id={external_bill_id} reason=same_source_hash",
+                            flush=True,
+                        )
                         continue
 
                     ai_input = {
@@ -112,6 +126,7 @@ class BatchRunner:
                         "summary_raw": bill.get("summary_raw") or "",
                     }
 
+                    print(f"[BATCH] ai analyze external_bill_id={external_bill_id}", flush=True)
                     ai_output = gemini_client.analyze_bill(
                         title=ai_input["official_title"],
                         body=ai_input["summary_raw"],
@@ -153,9 +168,17 @@ class BatchRunner:
                     )
 
                     conn.commit()
+                    print(
+                        f"[BATCH] committed external_bill_id={external_bill_id} bill_id={bill_id} action={action} analysis_id={analysis_id}",
+                        flush=True,
+                    )
 
                 except Exception as exc:
                     failed += 1
+                    print(
+                        f"[BATCH][ERROR] external_bill_id={external_bill_id} bill_id={bill_id} error={exc}",
+                        flush=True,
+                    )
                     try:
                         if bill_id:
                             ai_input = {
@@ -208,7 +231,7 @@ class BatchRunner:
             )
             conn.commit()
 
-            return {
+            result = {
                 "batch_run_id": batch_run_id,
                 "run_status": run_status,
                 "records_found": found,
@@ -219,6 +242,9 @@ class BatchRunner:
                 "from_date": str(start_date),
                 "to_date": str(end_date),
             }
+            print(f"[BATCH] finish result={result}", flush=True)
+            return result
 
         finally:
             conn.close()
+            print("[BATCH] connection closed", flush=True)
