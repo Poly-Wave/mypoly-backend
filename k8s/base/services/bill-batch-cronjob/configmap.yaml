@@ -15,7 +15,7 @@ data:
   BILL_BATCH_SLEEP_MS: "150"
   BILL_BATCH_AI_SLEEP_MS: "1000"
 
-  GEMINI_MODEL: "gemini-1.5-flash"
+  GEMINI_MODEL: "gemini-2.5-flash"
   GEMINI_TEMPERATURE: "0.2"
   PROMPT_VERSION: "v1-mypoly-17cats"
 

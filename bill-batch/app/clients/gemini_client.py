@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import requests
 
@@ -55,7 +55,7 @@ P, M, U, T, N, S, O, R
 - 값은 항상 정수 1
 - 입력에 없는 사실을 추정하지 않는다
 - 법률안, 개정법률안 같은 형식 단어는 headline/summary에서 남발하지 않는다
-"""
+""".strip()
 
 
 class GeminiClient:
@@ -80,7 +80,7 @@ class GeminiClient:
         start = text.find("{")
         end = text.rfind("}")
         if start == -1 or end == -1 or end < start:
-            raise ValueError(f"Gemini response is not valid JSON: {text}")
+            raise ValueError(f"Gemini response is not valid JSON: {text[:500]}")
 
         return text[start:end + 1]
 
@@ -90,8 +90,11 @@ class GeminiClient:
         def normalize_side(side: Dict[str, Any]) -> Dict[str, int]:
             normalized = {}
             for key, value in (side or {}).items():
-                if key in allowed_axes and int(value) > 0:
-                    normalized[key] = 1
+                try:
+                    if key in allowed_axes and int(value) > 0:
+                        normalized[key] = 1
+                except Exception:
+                    continue
             return normalized
 
         return {
@@ -110,9 +113,10 @@ class GeminiClient:
 
         last_error = None
 
-        for _ in range(len(self.keys)):
+        for attempt in range(len(self.keys)):
             api_key = self._next_key()
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.settings.gemini_model}:generateContent?key={api_key}"
+            model = self.settings.gemini_model or "gemini-2.5-flash"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
             payload = {
                 "systemInstruction": {
@@ -130,8 +134,29 @@ class GeminiClient:
                 }
             }
 
+            headers = {
+                "x-goog-api-key": api_key,
+                "Content-Type": "application/json",
+            }
+
+            masked_key = f"{api_key[:6]}...{api_key[-4:]}" if len(api_key) >= 10 else "***"
+            print(
+                f"[GEMINI] request attempt={attempt + 1}/{len(self.keys)} model={model} key={masked_key}",
+                flush=True,
+            )
+
             try:
-                response = requests.post(url, json=payload, timeout=60)
+                response = requests.post(
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=60,
+                )
+
+                print(
+                    f"[GEMINI] response status={response.status_code} body_head={response.text[:300]!r}",
+                    flush=True,
+                )
 
                 if response.status_code in (429, 500, 502, 503, 504):
                     last_error = RuntimeError(
@@ -143,10 +168,19 @@ class GeminiClient:
                 response.raise_for_status()
                 data = response.json()
 
-                text = (
-                    data["candidates"][0]["content"]["parts"][0]["text"]
-                    .strip()
-                )
+                candidates = data.get("candidates") or []
+                if not candidates:
+                    raise ValueError(f"No candidates in Gemini response: {data}")
+
+                content = candidates[0].get("content") or {}
+                parts = content.get("parts") or []
+                if not parts:
+                    raise ValueError(f"No parts in Gemini response: {data}")
+
+                text = str(parts[0].get("text", "")).strip()
+                if not text:
+                    raise ValueError(f"Empty text in Gemini response: {data}")
+
                 json_text = self._extract_json_text(text)
                 parsed = json.loads(json_text)
 
@@ -162,17 +196,17 @@ class GeminiClient:
                 if not categories:
                     raise ValueError("categories is empty")
 
-                normalized = {
+                return {
                     "headline": headline,
                     "summary": summary,
                     "categories": categories[:2],
                     "vote": self._normalize_vote(parsed.get("vote", {})),
                     "raw_response": parsed,
                 }
-                return normalized
 
             except Exception as exc:
                 last_error = exc
+                print(f"[GEMINI][ERROR] {exc}", flush=True)
                 time.sleep(self.settings.bill_batch_ai_sleep_ms / 1000.0)
 
         raise RuntimeError(f"All Gemini keys failed: {last_error}")

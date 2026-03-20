@@ -4,7 +4,7 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 
-from app.config import Settings
+from app.config import load_settings
 from app.services.batch_runner import BatchRunner
 
 
@@ -25,10 +25,10 @@ def parse_date(value: str | None):
 def main():
     load_dotenv()
 
-    args = parse_args()
-    settings = Settings.from_env()
-
     try:
+        args = parse_args()
+        settings = load_settings()
+
         runner = BatchRunner(settings)
         result = runner.run(
             from_date=parse_date(args.from_date),
@@ -36,6 +36,7 @@ def main():
             trigger_type=args.trigger_type,
         )
         print(result, flush=True)
+
     except Exception as exc:
         print(f"[FATAL] {exc}", flush=True)
         traceback.print_exc()
