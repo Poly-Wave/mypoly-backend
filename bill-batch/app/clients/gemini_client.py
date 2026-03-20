@@ -1,7 +1,7 @@
 import json
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -70,16 +70,48 @@ class GeminiApiError(Exception):
         return f"{self.code}: {self.message}"
 
 
+@dataclass
+class GeminiKeyState:
+    key: str
+    state: str = "AVAILABLE"  # AVAILABLE | INVALID | EXHAUSTED
+    last_error_code: Optional[str] = None
+    last_error_message: Optional[str] = None
+
+    @property
+    def masked(self) -> str:
+        if len(self.key) >= 10:
+            return f"{self.key[:6]}...{self.key[-4:]}"
+        return "***"
+
+
 class GeminiClient:
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.keys = settings.gemini_keys
+        self.key_states: List[GeminiKeyState] = [
+            GeminiKeyState(key=key) for key in settings.gemini_keys
+        ]
         self.index = 0
 
-    def _next_key(self) -> str:
-        key = self.keys[self.index % len(self.keys)]
-        self.index += 1
-        return key
+    def _available_key_count(self) -> int:
+        return sum(1 for ks in self.key_states if ks.state == "AVAILABLE")
+
+    def _state_summary(self) -> str:
+        available = sum(1 for ks in self.key_states if ks.state == "AVAILABLE")
+        invalid = sum(1 for ks in self.key_states if ks.state == "INVALID")
+        exhausted = sum(1 for ks in self.key_states if ks.state == "EXHAUSTED")
+        return f"available={available} invalid={invalid} exhausted={exhausted}"
+
+    def _next_available_key_state(self) -> Optional[GeminiKeyState]:
+        if not self.key_states:
+            return None
+
+        total = len(self.key_states)
+        for _ in range(total):
+            ks = self.key_states[self.index % total]
+            self.index += 1
+            if ks.state == "AVAILABLE":
+                return ks
+        return None
 
     def _extract_json_text(self, text: str) -> str:
         text = text.strip()
@@ -181,23 +213,51 @@ class GeminiClient:
             retryable=True,
         )
 
+    def _mark_key_invalid(self, ks: GeminiKeyState, err: GeminiApiError):
+        ks.state = "INVALID"
+        ks.last_error_code = err.code
+        ks.last_error_message = err.message
+        print(
+            f"[GEMINI] disable invalid key={ks.masked} reason={err.code} summary={self._state_summary()}",
+            flush=True,
+        )
+
+    def _mark_key_exhausted(self, ks: GeminiKeyState, err: GeminiApiError):
+        ks.state = "EXHAUSTED"
+        ks.last_error_code = err.code
+        ks.last_error_message = err.message
+        print(
+            f"[GEMINI] mark exhausted key={ks.masked} reason={err.code} summary={self._state_summary()}",
+            flush=True,
+        )
+
     def analyze_bill(self, title: str, body: str) -> Dict[str, Any]:
         model = self.settings.gemini_model or "gemini-2.5-flash"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         payload = self._build_payload(title=title, body=body)
 
+        if self._available_key_count() == 0:
+            raise GeminiApiError(
+                code="NO_AVAILABLE_KEYS",
+                message=f"No available Gemini keys for this run. {self._state_summary()}",
+                retryable=True,
+                quota_exhausted=True,
+            )
+
         errors: List[GeminiApiError] = []
 
-        for attempt in range(len(self.keys)):
-            api_key = self._next_key()
+        while True:
+            ks = self._next_available_key_state()
+            if ks is None:
+                break
+
             headers = {
-                "x-goog-api-key": api_key,
+                "x-goog-api-key": ks.key,
                 "Content-Type": "application/json",
             }
 
-            masked_key = f"{api_key[:6]}...{api_key[-4:]}" if len(api_key) >= 10 else "***"
             print(
-                f"[GEMINI] request attempt={attempt + 1}/{len(self.keys)} model={model} key={masked_key}",
+                f"[GEMINI] request model={model} key={ks.masked} summary={self._state_summary()}",
                 flush=True,
             )
 
@@ -217,6 +277,12 @@ class GeminiClient:
                 if response.status_code >= 400:
                     err = self._classify_http_error(response)
                     errors.append(err)
+
+                    if err.code == "API_KEY_INVALID":
+                        self._mark_key_invalid(ks, err)
+                    elif err.quota_exhausted:
+                        self._mark_key_exhausted(ks, err)
+
                     time.sleep(self.settings.bill_batch_ai_sleep_ms / 1000.0)
                     continue
 
@@ -296,10 +362,11 @@ class GeminiClient:
                 time.sleep(self.settings.bill_batch_ai_sleep_ms / 1000.0)
                 continue
 
-        if any(err.quota_exhausted for err in errors):
+        if self._available_key_count() == 0:
+            last = errors[-1] if errors else None
             raise GeminiApiError(
                 code="RESOURCE_EXHAUSTED",
-                message=f"All Gemini keys exhausted or quota blocked. last={errors[-1] if errors else 'unknown'}",
+                message=f"All Gemini keys unavailable for this run. {self._state_summary()}. last={last}",
                 retryable=True,
                 quota_exhausted=True,
             )
