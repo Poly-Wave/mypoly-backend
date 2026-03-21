@@ -11,10 +11,29 @@ public final class TermsApiExamples {
         "terms": [
           {
             "id": 1,
-            "name": "SERVICE_TERMS",
+            "name": "TERMS_OF_SERVICE",
             "title": "서비스 이용약관",
             "version": 1,
             "required": true,
+            "isMarketing": false,
+            "effectiveFrom": "2026-01-01"
+          },
+          {
+            "id": 2,
+            "name": "PRIVACY_POLICY",
+            "title": "개인정보 처리방침",
+            "version": 1,
+            "required": true,
+            "isMarketing": false,
+            "effectiveFrom": "2026-01-01"
+          },
+          {
+            "id": 3,
+            "name": "MARKETING_CONSENT",
+            "title": "광고성 정보 수신 동의",
+            "version": 1,
+            "required": false,
+            "isMarketing": true,
             "effectiveFrom": "2026-01-01"
           }
         ]
@@ -23,11 +42,12 @@ public final class TermsApiExamples {
 
   public static final String EXAMPLE_TERMS_META_OK = """
       {
-        "id": 1,
-        "name": "SERVICE_TERMS",
-        "title": "서비스 이용약관",
+        "id": 3,
+        "name": "MARKETING_CONSENT",
+        "title": "광고성 정보 수신 동의",
         "version": 1,
-        "required": true,
+        "required": false,
+        "isMarketing": true,
         "effectiveFrom": "2026-01-01"
       }
       """;
