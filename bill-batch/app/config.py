@@ -17,7 +17,7 @@ def _require_env(*names: str) -> str:
         if value:
             return value
     joined = ", ".join(names)
-    raise ValueError(f"Environment variable one of [{joined}] is required")
+    raise ValueError(f"필수 환경변수가 없습니다. 다음 중 하나는 반드시 설정해야 합니다: [{joined}]")
 
 
 def _load_gemini_keys(max_keys: int = 20) -> List[str]:
@@ -88,7 +88,7 @@ class Settings:
     def from_env(cls, require_gemini_keys: bool = True) -> "Settings":
         gemini_keys = _load_gemini_keys(max_keys=20)
         if require_gemini_keys and not gemini_keys:
-            raise ValueError("At least one GEMINI_API_KEY or GEMINI_API_KEY_* is required")
+            raise ValueError("GEMINI_API_KEY 또는 GEMINI_API_KEY_* 중 최소 1개는 반드시 설정해야 합니다")
 
         return cls(
             db_host=_require_env("DB_HOST"),

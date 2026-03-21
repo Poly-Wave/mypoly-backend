@@ -132,8 +132,7 @@ class BillRepository:
                 cur.execute(
                     f"""
                     UPDATE {self.schema}.bills
-                    SET last_collected_at = now(),
-                        updated_at = now()
+                    SET last_collected_at = now()
                     WHERE id = %s
                     """,
                     (existing["id"],),
@@ -141,6 +140,17 @@ class BillRepository:
             return existing["id"], "NO_CHANGE"
 
         with self.conn.cursor() as cur:
+            if ai_input_changed:
+                cur.execute(
+                    f"""
+                    UPDATE {self.schema}.bill_ai_analyses
+                    SET is_current = FALSE
+                    WHERE bill_id = %s
+                      AND is_current = TRUE
+                    """,
+                    (existing["id"],),
+                )
+
             cur.execute(
                 f"""
                 UPDATE {self.schema}.bills
@@ -264,26 +274,19 @@ class BillRepository:
                     bill.get("current_pass_gubn"),
                     bill.get("current_general_result"),
                     bill.get("status_proc_date"),
-                    Json(bill.get("source_payload", {})),
+                    Json(
+                        {
+                            "current_proc_stage_code": bill.get("current_proc_stage_code"),
+                            "current_proc_stage_name": bill.get("current_proc_stage_name"),
+                            "current_proc_stage_order": bill.get("current_proc_stage_order"),
+                            "current_pass_gubn": bill.get("current_pass_gubn"),
+                            "current_general_result": bill.get("current_general_result"),
+                            "status_proc_date": str(bill.get("status_proc_date")) if bill.get("status_proc_date") else None,
+                            "source_payload": bill.get("source_payload", {}),
+                        }
+                    ),
                 ),
             )
-
-    def reset_stale_processing(self, timeout_minutes: int) -> int:
-        with self.conn.cursor() as cur:
-            cur.execute(
-                f"""
-                UPDATE {self.schema}.bills
-                SET
-                    ai_status = 'RETRY_WAIT',
-                    next_ai_retry_at = now(),
-                    updated_at = now()
-                WHERE ai_status = 'PROCESSING'
-                  AND last_ai_attempt_at IS NOT NULL
-                  AND last_ai_attempt_at < now() - (%s || ' minutes')::interval
-                """,
-                (timeout_minutes,),
-            )
-            return cur.rowcount
 
     def get_pending_ai_bills(self, limit: int, min_proposal_date: date) -> List[Dict[str, Any]]:
         with self.conn.cursor() as cur:
@@ -295,7 +298,7 @@ class BillRepository:
                   AND proposal_date >= %s
                   AND ai_status IN ('PENDING', 'RETRY_WAIT')
                   AND (next_ai_retry_at IS NULL OR next_ai_retry_at <= now())
-                ORDER BY proposal_date ASC, id ASC
+                ORDER BY proposal_date DESC, id DESC
                 LIMIT %s
                 """,
                 (min_proposal_date, limit),
@@ -307,9 +310,10 @@ class BillRepository:
             cur.execute(
                 f"""
                 UPDATE {self.schema}.bills
-                SET
-                    ai_status = 'PROCESSING',
+                SET ai_status = 'PROCESSING',
+                    ai_retry_count = ai_retry_count + 1,
                     last_ai_attempt_at = now(),
+                    next_ai_retry_at = NULL,
                     updated_at = now()
                 WHERE id = %s
                 """,
@@ -321,12 +325,27 @@ class BillRepository:
             cur.execute(
                 f"""
                 UPDATE {self.schema}.bills
-                SET
-                    ai_status = 'SUCCESS',
+                SET ai_status = 'SUCCESS',
+                    last_ai_analysis_id = %s,
                     next_ai_retry_at = NULL,
                     last_ai_error_code = NULL,
                     last_ai_error_message = NULL,
-                    last_ai_analysis_id = %s,
+                    updated_at = now()
+                WHERE id = %s
+                """,
+                (analysis_id, bill_id),
+            )
+
+    def mark_ai_skipped(self, bill_id: int, analysis_id: int | None):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                UPDATE {self.schema}.bills
+                SET ai_status = 'SUCCESS',
+                    last_ai_analysis_id = COALESCE(%s, last_ai_analysis_id),
+                    next_ai_retry_at = NULL,
+                    last_ai_error_code = NULL,
+                    last_ai_error_message = NULL,
                     updated_at = now()
                 WHERE id = %s
                 """,
@@ -338,16 +357,14 @@ class BillRepository:
             cur.execute(
                 f"""
                 UPDATE {self.schema}.bills
-                SET
-                    ai_status = 'RETRY_WAIT',
-                    ai_retry_count = ai_retry_count + 1,
+                SET ai_status = 'RETRY_WAIT',
                     next_ai_retry_at = now() + (%s || ' minutes')::interval,
                     last_ai_error_code = %s,
                     last_ai_error_message = %s,
                     updated_at = now()
                 WHERE id = %s
                 """,
-                (wait_minutes, error_code, error_message[:5000], bill_id),
+                (str(wait_minutes), error_code, error_message[:2000], bill_id),
             )
 
     def mark_ai_permanent_failed(self, bill_id: int, error_code: str, error_message: str):
@@ -355,31 +372,33 @@ class BillRepository:
             cur.execute(
                 f"""
                 UPDATE {self.schema}.bills
-                SET
-                    ai_status = 'PERMANENT_FAILED',
-                    ai_retry_count = ai_retry_count + 1,
+                SET ai_status = 'PERMANENT_FAILED',
                     next_ai_retry_at = NULL,
                     last_ai_error_code = %s,
                     last_ai_error_message = %s,
                     updated_at = now()
                 WHERE id = %s
                 """,
-                (error_code, error_message[:5000], bill_id),
+                (error_code, error_message[:2000], bill_id),
             )
 
-    def mark_ai_skipped(self, bill_id: int, analysis_id: int | None):
+    def reset_stale_processing(self, timeout_minutes: int) -> int:
         with self.conn.cursor() as cur:
             cur.execute(
                 f"""
                 UPDATE {self.schema}.bills
-                SET
-                    ai_status = 'SUCCESS',
-                    next_ai_retry_at = NULL,
-                    last_ai_error_code = NULL,
-                    last_ai_error_message = NULL,
-                    last_ai_analysis_id = COALESCE(%s, last_ai_analysis_id),
+                SET ai_status = 'RETRY_WAIT',
+                    next_ai_retry_at = now(),
+                    last_ai_error_code = 'PROCESSING_TIMEOUT',
+                    last_ai_error_message = %s,
                     updated_at = now()
-                WHERE id = %s
+                WHERE ai_status = 'PROCESSING'
+                  AND last_ai_attempt_at IS NOT NULL
+                  AND last_ai_attempt_at < now() - (%s || ' minutes')::interval
                 """,
-                (analysis_id, bill_id),
+                (
+                    f"AI 처리 중 타임아웃이 발생했습니다. {timeout_minutes}분 이상 PROCESSING 상태로 유지되었습니다",
+                    str(timeout_minutes),
+                ),
             )
+            return cur.rowcount

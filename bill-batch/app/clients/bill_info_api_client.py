@@ -109,7 +109,7 @@ class BillInfoApiClient:
             return ET.fromstring(response.text)
         except ET.ParseError as exc:
             raise RuntimeError(
-                f"Bill API returned non-XML response: status={response.status_code}, body_head={response.text[:500]}"
+                f"Bill API 응답이 XML 형식이 아닙니다. status={response.status_code}, body_head={response.text[:500]}"
             ) from exc
 
     def _extract_items(self, root: ET.Element) -> List[ET.Element]:
@@ -124,10 +124,10 @@ class BillInfoApiClient:
 
         if result_code and result_code not in {"00", "0", "NORMAL SERVICE"}:
             raise RuntimeError(
-                f"Bill API error: status={response.status_code}, resultCode={result_code}, resultMsg={result_msg}, body_head={response.text[:500]}"
+                f"Bill API 오류가 발생했습니다. status={response.status_code}, resultCode={result_code}, resultMsg={result_msg}, body_head={response.text[:500]}"
             )
 
-    def iter_bills(self, start_date: date, end_date: date) -> Iterator[Dict[str, Any]]:
+    def iter_bills(self) -> Iterator[Dict[str, Any]]:
         page = 1
         min_proposal_date = parse_api_date(self.settings.min_proposal_date)
 
@@ -135,13 +135,13 @@ class BillInfoApiClient:
             url = self._build_url(page=page)
             masked_url = url.replace(self.service_key, "***SERVICE_KEY***")
             print(
-                f"[BILL_API] request page={page} target_range={start_date}~{end_date} url={masked_url}",
+                f"[BILL_API] 요청 시작 page={page} min_proposal_date={min_proposal_date} url={masked_url}",
                 flush=True,
             )
 
             response = requests.get(url, timeout=self.settings.bill_batch_request_timeout_sec)
             print(
-                f"[BILL_API] response page={page} status={response.status_code} body_head={response.text[:300]!r}",
+                f"[BILL_API] 응답 수신 page={page} status={response.status_code} body_head={response.text[:300]!r}",
                 flush=True,
             )
             response.raise_for_status()
@@ -154,12 +154,12 @@ class BillInfoApiClient:
             items = self._extract_items(root)
 
             print(
-                f"[BILL_API] parsed page={page} total_count={total_count} item_count={len(items)}",
+                f"[BILL_API] 파싱 완료 page={page} total_count={total_count} item_count={len(items)}",
                 flush=True,
             )
 
             if not items:
-                print(f"[BILL_API] no items on page={page}, stop pagination", flush=True)
+                print(f"[BILL_API] page={page} 에 조회된 항목이 없어 페이지 순회를 종료합니다", flush=True)
                 break
 
             page_bills: List[Dict[str, Any]] = []
@@ -237,20 +237,20 @@ class BillInfoApiClient:
                 )
 
             if not page_bills:
-                print(f"[BILL_API] no valid bills on page={page}, stop pagination", flush=True)
+                print(f"[BILL_API] page={page} 에 유효한 의안 데이터가 없어 페이지 순회를 종료합니다", flush=True)
                 break
 
             if page_dates:
                 page_min_date = min(page_dates)
                 page_max_date = max(page_dates)
                 print(
-                    f"[BILL_API] page={page} proposal_date_range={page_min_date}~{page_max_date}",
+                    f"[BILL_API] page={page} 제안일 범위={page_min_date}~{page_max_date}",
                     flush=True,
                 )
 
                 if min_proposal_date and page_max_date < min_proposal_date:
                     print(
-                        f"[BILL_API] stop pagination because page_max_date={page_max_date} < min_proposal_date={min_proposal_date}",
+                        f"[BILL_API] page_max_date={page_max_date} 가 min_proposal_date={min_proposal_date} 보다 이전이므로 페이지 순회를 종료합니다",
                         flush=True,
                     )
                     break
@@ -259,10 +259,6 @@ class BillInfoApiClient:
                 yield bill
 
             page += 1
-            time.sleep(self.settings.bill_batch_sleep_ms / 1000.0)
 
-        if page > self.settings.bill_batch_max_pages:
-            print(
-                f"[BILL_API] reached max pages={self.settings.bill_batch_max_pages}, stop pagination",
-                flush=True,
-            )
+            if self.settings.bill_batch_sleep_ms > 0:
+                time.sleep(self.settings.bill_batch_sleep_ms / 1000)

@@ -99,7 +99,7 @@ class GeminiClient:
         available = sum(1 for ks in self.key_states if ks.state == "AVAILABLE")
         invalid = sum(1 for ks in self.key_states if ks.state == "INVALID")
         exhausted = sum(1 for ks in self.key_states if ks.state == "EXHAUSTED")
-        return f"available={available} invalid={invalid} exhausted={exhausted}"
+        return f"사용가능={available} 유효하지않음={invalid} 할당량소진={exhausted}"
 
     def _next_available_key_state(self) -> Optional[GeminiKeyState]:
         if not self.key_states:
@@ -126,7 +126,7 @@ class GeminiClient:
         if start == -1 or end == -1 or end < start:
             raise GeminiApiError(
                 code="INVALID_RESPONSE",
-                message=f"Gemini response is not valid JSON: {text[:500]}",
+                message=f"Gemini 응답이 올바른 JSON 형식이 아닙니다: {text[:500]}",
                 retryable=True,
             )
 
@@ -218,7 +218,7 @@ class GeminiClient:
         ks.last_error_code = err.code
         ks.last_error_message = err.message
         print(
-            f"[GEMINI] disable invalid key={ks.masked} reason={err.code} summary={self._state_summary()}",
+            f"[GEMINI] 유효하지 않은 키 비활성화 key={ks.masked} reason={err.code} summary={self._state_summary()}",
             flush=True,
         )
 
@@ -227,7 +227,7 @@ class GeminiClient:
         ks.last_error_code = err.code
         ks.last_error_message = err.message
         print(
-            f"[GEMINI] mark exhausted key={ks.masked} reason={err.code} summary={self._state_summary()}",
+            f"[GEMINI] 할당량 소진 키 표시 key={ks.masked} reason={err.code} summary={self._state_summary()}",
             flush=True,
         )
 
@@ -239,7 +239,7 @@ class GeminiClient:
         if self._available_key_count() == 0:
             raise GeminiApiError(
                 code="NO_AVAILABLE_KEYS",
-                message=f"No available Gemini keys for this run. {self._state_summary()}",
+                message=f"이번 실행에서 사용할 수 있는 Gemini 키가 없습니다. {self._state_summary()}",
                 retryable=True,
                 quota_exhausted=True,
             )
@@ -257,7 +257,7 @@ class GeminiClient:
             }
 
             print(
-                f"[GEMINI] request model={model} key={ks.masked} summary={self._state_summary()}",
+                f"[GEMINI] 요청 시작 model={model} key={ks.masked} summary={self._state_summary()}",
                 flush=True,
             )
 
@@ -270,7 +270,7 @@ class GeminiClient:
                 )
 
                 print(
-                    f"[GEMINI] response status={response.status_code} body_head={response.text[:300]!r}",
+                    f"[GEMINI] 응답 수신 status={response.status_code} body_head={response.text[:300]!r}",
                     flush=True,
                 )
 
@@ -292,7 +292,7 @@ class GeminiClient:
                 if not candidates:
                     raise GeminiApiError(
                         code="INVALID_RESPONSE",
-                        message=f"No candidates in Gemini response: {str(data)[:500]}",
+                        message=f"Gemini 응답에 candidates가 없습니다: {str(data)[:500]}",
                         retryable=True,
                     )
 
@@ -301,7 +301,7 @@ class GeminiClient:
                 if not parts:
                     raise GeminiApiError(
                         code="INVALID_RESPONSE",
-                        message=f"No parts in Gemini response: {str(data)[:500]}",
+                        message=f"Gemini 응답에 parts가 없습니다: {str(data)[:500]}",
                         retryable=True,
                     )
 
@@ -309,7 +309,7 @@ class GeminiClient:
                 if not text:
                     raise GeminiApiError(
                         code="INVALID_RESPONSE",
-                        message=f"Empty text in Gemini response: {str(data)[:500]}",
+                        message=f"Gemini 응답 text가 비어 있습니다: {str(data)[:500]}",
                         retryable=True,
                     )
 
@@ -322,11 +322,11 @@ class GeminiClient:
                 categories = [str(v).strip() for v in categories if str(v).strip()]
 
                 if not headline:
-                    raise GeminiApiError(code="INVALID_RESPONSE", message="headline is empty", retryable=True)
+                    raise GeminiApiError(code="INVALID_RESPONSE", message="headline 값이 비어 있습니다", retryable=True)
                 if not summary:
-                    raise GeminiApiError(code="INVALID_RESPONSE", message="summary is empty", retryable=True)
+                    raise GeminiApiError(code="INVALID_RESPONSE", message="summary 값이 비어 있습니다", retryable=True)
                 if not categories:
-                    raise GeminiApiError(code="INVALID_RESPONSE", message="categories is empty", retryable=True)
+                    raise GeminiApiError(code="INVALID_RESPONSE", message="categories 값이 비어 있습니다", retryable=True)
 
                 return {
                     "headline": headline,
@@ -338,7 +338,7 @@ class GeminiClient:
 
             except GeminiApiError as exc:
                 errors.append(exc)
-                print(f"[GEMINI][ERROR] {exc}", flush=True)
+                print(f"[GEMINI][오류] {exc}", flush=True)
                 time.sleep(self.settings.bill_batch_ai_sleep_ms / 1000.0)
                 continue
             except requests.RequestException as exc:
@@ -348,7 +348,7 @@ class GeminiClient:
                     retryable=True,
                 )
                 errors.append(err)
-                print(f"[GEMINI][ERROR] {err}", flush=True)
+                print(f"[GEMINI][오류] {err}", flush=True)
                 time.sleep(self.settings.bill_batch_ai_sleep_ms / 1000.0)
                 continue
             except Exception as exc:
@@ -358,7 +358,7 @@ class GeminiClient:
                     retryable=True,
                 )
                 errors.append(err)
-                print(f"[GEMINI][ERROR] {err}", flush=True)
+                print(f"[GEMINI][오류] {err}", flush=True)
                 time.sleep(self.settings.bill_batch_ai_sleep_ms / 1000.0)
                 continue
 
@@ -366,7 +366,7 @@ class GeminiClient:
             last = errors[-1] if errors else None
             raise GeminiApiError(
                 code="RESOURCE_EXHAUSTED",
-                message=f"All Gemini keys unavailable for this run. {self._state_summary()}. last={last}",
+                message=f"이번 실행에서 모든 Gemini 키를 사용할 수 없습니다. {self._state_summary()}. last={last}",
                 retryable=True,
                 quota_exhausted=True,
             )
@@ -382,7 +382,7 @@ class GeminiClient:
 
         last = errors[-1] if errors else GeminiApiError(
             code="UNKNOWN_ERROR",
-            message="Gemini request failed without detailed error",
+            message="Gemini 요청이 상세 오류 없이 실패했습니다",
             retryable=True,
         )
         raise GeminiApiError(

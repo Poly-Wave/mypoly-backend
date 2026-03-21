@@ -16,33 +16,18 @@ class BatchRunner:
     def __init__(self, settings: Settings):
         self.settings = settings
 
-    def _resolve_dates(self, from_date: date | None, to_date: date | None) -> tuple[date, date]:
-        min_proposal_date = datetime.strptime(self.settings.min_proposal_date, "%Y-%m-%d").date()
-        today = date.today()
-
-        resolved_from = from_date or min_proposal_date
-        resolved_to = to_date or today
-
-        if resolved_from < min_proposal_date:
-            resolved_from = min_proposal_date
-
-        if resolved_to < resolved_from:
-            raise ValueError(f"Invalid date range: from_date={resolved_from}, to_date={resolved_to}")
-
-        return resolved_from, resolved_to
-
     def _is_collect_target_bill(
         self,
         proposal_date: date | None,
         min_proposal_date: date,
     ) -> tuple[bool, str]:
         if proposal_date is None:
-            return False, "proposal_date_missing"
+            return False, "제안일이 없어 수집 대상에서 제외됨"
 
         if proposal_date < min_proposal_date:
-            return False, f"proposal_date_lt_min({proposal_date}<{min_proposal_date})"
+            return False, f"최소 수집일보다 이전 의안이라 제외됨 ({proposal_date} < {min_proposal_date})"
 
-        return True, "collect_target"
+        return True, "수집 대상"
 
     def _should_mark_permanent_failed(self, retry_count_after_update: int, error: GeminiApiError) -> bool:
         if error.code in {"API_KEY_INVALID", "INVALID_REQUEST", "INVALID_CATEGORY_MAPPING"}:
@@ -69,18 +54,17 @@ class BatchRunner:
         bill_repo: BillRepository,
         api_client: BillInfoApiClient,
         batch_run_id: int,
-        start_date: date,
-        end_date: date,
         min_proposal_date: date,
     ) -> Dict[str, int]:
         api_seen = 0
         eligible_found = 0
         inserted = 0
         updated = 0
-        skipped = 0
+        no_change = 0
+        filtered_out = 0
         failed = 0
 
-        for bill in api_client.iter_bills(start_date, end_date):
+        for bill in api_client.iter_bills():
             api_seen += 1
             external_bill_id = bill["external_bill_id"]
             proposal_date = bill.get("proposal_date")
@@ -91,9 +75,9 @@ class BatchRunner:
             )
 
             if not allowed:
-                skipped += 1
+                filtered_out += 1
                 print(
-                    f"[BATCH][COLLECT] skip api_seen={api_seen} external_bill_id={external_bill_id} "
+                    f"[BATCH][COLLECT] 수집 제외 api_seen={api_seen} external_bill_id={external_bill_id} "
                     f"proposal_date={proposal_date} reason={reason}",
                     flush=True,
                 )
@@ -103,8 +87,10 @@ class BatchRunner:
 
             try:
                 bill_id, action = bill_repo.upsert_bill(bill)
-                bill_repo.replace_proposers(bill_id, bill)
-                bill_repo.insert_status_history_if_needed(bill_id, bill)
+
+                if action in {"INSERT", "UPDATE"}:
+                    bill_repo.replace_proposers(bill_id, bill)
+                    bill_repo.insert_status_history_if_needed(bill_id, bill)
 
                 batch_repo.add_item(
                     batch_run_id=batch_run_id,
@@ -124,11 +110,11 @@ class BatchRunner:
                 elif action == "UPDATE":
                     updated += 1
                 else:
-                    skipped += 1
+                    no_change += 1
 
                 self._commit(batch_repo.conn)
                 print(
-                    f"[BATCH][COLLECT] success external_bill_id={external_bill_id} action={action}",
+                    f"[BATCH][COLLECT] 수집 성공 external_bill_id={external_bill_id} action={action}",
                     flush=True,
                 )
 
@@ -149,14 +135,15 @@ class BatchRunner:
                     },
                 )
                 self._commit(batch_repo.conn)
-                print(f"[BATCH][COLLECT][ERROR] external_bill_id={external_bill_id} error={exc}", flush=True)
+                print(f"[BATCH][COLLECT][오류] external_bill_id={external_bill_id} error={exc}", flush=True)
 
         return {
             "api_seen": api_seen,
             "eligible_found": eligible_found,
             "inserted": inserted,
             "updated": updated,
-            "skipped": skipped,
+            "no_change": no_change,
+            "filtered_out": filtered_out,
             "failed": failed,
         }
 
@@ -175,7 +162,7 @@ class BatchRunner:
         )
         if stale_reset:
             self._commit(batch_repo.conn)
-            print(f"[BATCH][AI] reset stale processing count={stale_reset}", flush=True)
+            print(f"[BATCH][AI] 장시간 처리중 상태 초기화 count={stale_reset}", flush=True)
 
         candidate_bills = bill_repo.get_pending_ai_bills(
             limit=self.settings.bill_batch_max_ai_per_run,
@@ -184,7 +171,7 @@ class BatchRunner:
         category_map = category_repo.get_active_category_map()
 
         print(
-            f"[BATCH][AI] candidate_count={len(candidate_bills)} daily_limit={self.settings.bill_batch_max_ai_per_run}",
+            f"[BATCH][AI] 처리 대상 건수={len(candidate_bills)} 일일 처리 한도={self.settings.bill_batch_max_ai_per_run}",
             flush=True,
         )
 
@@ -220,14 +207,14 @@ class BatchRunner:
                         item_status="SKIPPED",
                         action_type="NO_CHANGE",
                         payload={
-                            "reason": "same_ai_input_hash_existing_current_analysis",
+                            "reason": "현재 분석본과 AI 입력 해시가 동일하여 재분석을 생략했습니다",
                             "analysis_id": current_analysis.get("id"),
                         },
                     )
                     self._commit(batch_repo.conn)
                     skipped += 1
                     print(
-                        f"[BATCH][AI] skipped external_bill_id={external_bill_id} reason=same_ai_input_hash_existing_current_analysis",
+                        f"[BATCH][AI] 재분석 생략 external_bill_id={external_bill_id} reason=현재 분석본과 AI 입력 해시 동일",
                         flush=True,
                     )
                     continue
@@ -248,7 +235,7 @@ class BatchRunner:
                 if not category_ids:
                     raise GeminiApiError(
                         code="INVALID_CATEGORY_MAPPING",
-                        message=f"No valid category mapped from AI output: {ai_output['categories']}",
+                        message=f"AI 결과 카테고리를 내부 카테고리로 매핑할 수 없습니다: {ai_output['categories']}",
                         retryable=False,
                     )
 
@@ -283,7 +270,7 @@ class BatchRunner:
 
                 self._commit(batch_repo.conn)
                 success += 1
-                print(f"[BATCH][AI] success external_bill_id={external_bill_id} analysis_id={analysis_id}", flush=True)
+                print(f"[BATCH][AI] 분석 성공 external_bill_id={external_bill_id} analysis_id={analysis_id}", flush=True)
 
             except GeminiApiError as exc:
                 self._rollback(batch_repo.conn)
@@ -318,14 +305,14 @@ class BatchRunner:
                         action_type=None,
                         error_message=str(exc),
                         payload={
-                            "reason": "quota_exhausted",
+                            "reason": "Gemini 할당량이 소진되어 이번 실행의 AI 처리를 중단했습니다",
                             "analysis_id": analysis_id,
                         },
                     )
                     self._commit(batch_repo.conn)
                     failed += 1
                     quota_exhausted = True
-                    print(f"[BATCH][AI] quota exhausted, stop ai queue external_bill_id={external_bill_id}", flush=True)
+                    print(f"[BATCH][AI] Gemini 할당량 소진으로 AI 큐 처리를 중단합니다 external_bill_id={external_bill_id}", flush=True)
                     break
 
                 if self._should_mark_permanent_failed(retry_count_after_update, exc):
@@ -359,7 +346,7 @@ class BatchRunner:
                 )
                 self._commit(batch_repo.conn)
                 failed += 1
-                print(f"[BATCH][AI][ERROR] external_bill_id={external_bill_id} error={exc}", flush=True)
+                print(f"[BATCH][AI][오류] external_bill_id={external_bill_id} error={exc}", flush=True)
 
             except Exception as exc:
                 self._rollback(batch_repo.conn)
@@ -399,7 +386,7 @@ class BatchRunner:
                 )
                 self._commit(batch_repo.conn)
                 failed += 1
-                print(f"[BATCH][AI][ERROR] external_bill_id={external_bill_id} error={exc}", flush=True)
+                print(f"[BATCH][AI][오류] external_bill_id={external_bill_id} error={exc}", flush=True)
 
         return {
             "attempted": attempted,
@@ -409,19 +396,38 @@ class BatchRunner:
             "quota_exhausted": quota_exhausted,
         }
 
+    def _build_run_message(self, collect_result: Dict[str, int], ai_result: Dict[str, Any]) -> str:
+        return (
+            "수집 결과("
+            f"API조회={collect_result['api_seen']}, "
+            f"수집대상={collect_result['eligible_found']}, "
+            f"신규저장={collect_result['inserted']}, "
+            f"갱신={collect_result['updated']}, "
+            f"변경없음={collect_result['no_change']}, "
+            f"수집제외={collect_result['filtered_out']}, "
+            f"실패={collect_result['failed']}"
+            ") "
+            "AI 결과("
+            f"시도={ai_result['attempted']}, "
+            f"성공={ai_result['success']}, "
+            f"생략={ai_result['skipped']}, "
+            f"실패={ai_result['failed']}, "
+            f"할당량소진={ai_result['quota_exhausted']}"
+            ")"
+        )
+
     def _commit(self, conn):
         conn.commit()
 
     def _rollback(self, conn):
         conn.rollback()
 
-    def run(self, from_date: date | None = None, to_date: date | None = None, trigger_type: str | None = None):
+    def run(self, trigger_type: str | None = None):
         trigger_type = trigger_type or self.settings.bill_batch_trigger_type
-        start_date, end_date = self._resolve_dates(from_date, to_date)
         min_proposal_date = datetime.strptime(self.settings.min_proposal_date, "%Y-%m-%d").date()
 
         print(
-            f"[BATCH] start trigger_type={trigger_type} start_date={start_date} end_date={end_date} min_proposal_date={min_proposal_date}",
+            f"[BATCH] 배치를 시작합니다 trigger_type={trigger_type} min_proposal_date={min_proposal_date}",
             flush=True,
         )
 
@@ -446,15 +452,13 @@ class BatchRunner:
                 git_commit_sha=self.settings.git_commit_sha,
             )
             self._commit(conn)
-            print(f"[BATCH] batch_run_id={batch_run_id} created", flush=True)
+            print(f"[BATCH] batch_run_id={batch_run_id} 실행 이력을 생성했습니다", flush=True)
 
             collect_result = self._collect_bills(
                 batch_repo=batch_repo,
                 bill_repo=bill_repo,
                 api_client=api_client,
                 batch_run_id=batch_run_id,
-                start_date=start_date,
-                end_date=end_date,
                 min_proposal_date=min_proposal_date,
             )
 
@@ -468,37 +472,25 @@ class BatchRunner:
                 min_proposal_date=min_proposal_date,
             )
 
-            total_inserted = collect_result["inserted"] + ai_result["success"]
-            total_updated = collect_result["updated"]
-            total_skipped = collect_result["skipped"] + ai_result["skipped"]
             total_failed = collect_result["failed"] + ai_result["failed"]
 
             if total_failed == 0 and not ai_result["quota_exhausted"]:
                 run_status = "SUCCESS"
-                message = (
-                    f"collect_api_seen={collect_result['api_seen']}, "
-                    f"collect_eligible={collect_result['eligible_found']}, "
-                    f"ai_attempted={ai_result['attempted']}, "
-                    f"ai_success={ai_result['success']}"
-                )
             else:
                 run_status = "PARTIAL_SUCCESS"
-                message = (
-                    f"collect_api_seen={collect_result['api_seen']}, "
-                    f"collect_eligible={collect_result['eligible_found']}, "
-                    f"ai_attempted={ai_result['attempted']}, "
-                    f"ai_success={ai_result['success']}, "
-                    f"ai_failed={ai_result['failed']}, "
-                    f"quota_exhausted={ai_result['quota_exhausted']}"
-                )
+
+            message = self._build_run_message(
+                collect_result=collect_result,
+                ai_result=ai_result,
+            )
 
             batch_repo.finish_run(
                 batch_run_id=batch_run_id,
                 run_status=run_status,
                 records_found=collect_result["eligible_found"],
-                records_inserted=total_inserted,
-                records_updated=total_updated,
-                records_skipped=total_skipped,
+                records_inserted=collect_result["inserted"],
+                records_updated=collect_result["updated"],
+                records_skipped=collect_result["filtered_out"] + ai_result["skipped"],
                 records_failed=total_failed,
                 message=message,
             )
@@ -511,7 +503,7 @@ class BatchRunner:
                 "ai": ai_result,
                 "message": message,
             }
-            print(f"[BATCH] done result={result}", flush=True)
+            print(f"[BATCH] 배치가 종료되었습니다 result={result}", flush=True)
             return result
 
         except Exception as exc:
@@ -528,13 +520,13 @@ class BatchRunner:
                         records_updated=0,
                         records_skipped=0,
                         records_failed=1,
-                        message=str(exc),
+                        message=f"배치 실행 중 오류가 발생했습니다: {exc}",
                     )
                     self._commit(conn)
                 except Exception:
                     self._rollback(conn)
 
-            print(f"[BATCH][FATAL] {exc}", flush=True)
             raise
+
         finally:
             conn.close()
