@@ -8,12 +8,12 @@ import java.time.LocalDate;
  * 약관 메타데이터 응답 DTO
  * - 목록/상세 메타(/terms, /terms/{id})에서는 content(본문)를 내려주지 않음
  */
-@Schema(description = "약관 메타데이터 응답", requiredProperties = {"id", "name", "title", "version", "required", "effectiveFrom"})
+@Schema(description = "약관 메타데이터 응답", requiredProperties = {"id", "name", "title", "version", "required", "isMarketing", "effectiveFrom"})
 public record TermsResponse(
         @Schema(description = "약관 ID", example = "1")
         Long id,
 
-        @Schema(description = "약관 이름(내부 식별자)", example = "SERVICE_TERMS")
+        @Schema(description = "약관 이름(내부 식별자)", example = "TERMS_OF_SERVICE")
         String name,
 
         @Schema(description = "표시 제목", example = "서비스 이용약관")
@@ -25,6 +25,9 @@ public record TermsResponse(
         @Schema(description = "필수 여부", example = "true")
         Boolean required,
 
+        @Schema(description = "마케팅 수신 동의 약관 여부", example = "false")
+        Boolean isMarketing,
+
         @Schema(description = "적용 시작일", example = "2026-01-01")
         LocalDate effectiveFrom
 ) {
@@ -35,6 +38,7 @@ public record TermsResponse(
                 termsResult.title(),
                 termsResult.version(),
                 termsResult.required(),
+                termsResult.isMarketing(),
                 termsResult.effectiveFrom()
         );
     }

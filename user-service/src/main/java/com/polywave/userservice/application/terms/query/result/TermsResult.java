@@ -12,6 +12,7 @@ public record TermsResult(
         String title,
         Integer version,
         Boolean required,
+        Boolean isMarketing,
         LocalDate effectiveFrom
 ) {
 }
