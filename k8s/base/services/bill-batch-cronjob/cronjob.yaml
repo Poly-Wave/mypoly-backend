@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bill-batch
+  namespace: mypoly
+spec:
+  schedule: "0 0 * * *"
+  timeZone: "Asia/Seoul"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: bill-batch
+              image: ghcr.io/poly-wave/mypoly-bill-batch:0.1
+              imagePullPolicy: Always
+              envFrom:
+                - configMapRef:
+                    name: bill-batch-config
+                - secretRef:
+                    name: bill-batch-secret
+                - secretRef:
+                    name: mypoly-db-secret
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "256Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "512Mi"

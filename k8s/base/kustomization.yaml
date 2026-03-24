@@ -10,3 +10,4 @@ resources:
   - infra/jwt
   - services/user-service
   - services/bill-service
+  - services/bill-batch-cronjob
