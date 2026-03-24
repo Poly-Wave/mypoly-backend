@@ -8,12 +8,12 @@ import java.time.LocalDate;
  * 약관 상세(본문 포함) 응답 DTO
  * - WebView 표시 등 본문이 필요한 경우에만 사용
  */
-@Schema(description = "약관 상세 응답(본문 포함)", requiredProperties = {"id", "name", "title", "version", "required", "content", "effectiveFrom"})
+@Schema(description = "약관 상세 응답(본문 포함)", requiredProperties = {"id", "name", "title", "version", "required", "isMarketing", "content", "effectiveFrom"})
 public record TermsDetailResponse(
         @Schema(description = "약관 ID", example = "1")
         Long id,
 
-        @Schema(description = "약관 이름(내부 식별자)", example = "SERVICE_TERMS")
+        @Schema(description = "약관 이름(내부 식별자)", example = "TERMS_OF_SERVICE")
         String name,
 
         @Schema(description = "표시 제목", example = "서비스 이용약관")
@@ -24,6 +24,9 @@ public record TermsDetailResponse(
 
         @Schema(description = "필수 여부", example = "true")
         Boolean required,
+
+        @Schema(description = "마케팅 수신 동의 약관 여부", example = "false")
+        Boolean isMarketing,
 
         @Schema(description = "약관 본문(HTML)", example = "<h1>서비스 이용약관</h1>...")
         String content,
@@ -38,6 +41,7 @@ public record TermsDetailResponse(
                 terms.title(),
                 terms.version(),
                 terms.required(),
+                terms.isMarketing(),
                 terms.content(),
                 terms.effectiveFrom()
         );

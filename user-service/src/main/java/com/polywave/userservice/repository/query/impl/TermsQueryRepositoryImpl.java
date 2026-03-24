@@ -15,6 +15,9 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 @Repository
 public class TermsQueryRepositoryImpl implements TermsQueryRepository {
+
+    private static final String MARKETING_CONSENT_NAME = "MARKETING_CONSENT";
+
     private final JPAQueryFactory queryFactory;
 
     @Override
@@ -30,6 +33,7 @@ public class TermsQueryRepositoryImpl implements TermsQueryRepository {
                         term.title,
                         term.version,
                         term.required,
+                        term.name.eq(MARKETING_CONSENT_NAME),
                         term.effectiveFrom
                 ))
                 .from(term)
@@ -57,6 +61,7 @@ public class TermsQueryRepositoryImpl implements TermsQueryRepository {
                         term.title,
                         term.version,
                         term.required,
+                        term.name.eq(MARKETING_CONSENT_NAME),
                         term.effectiveFrom
                 ))
                 .from(term)
@@ -78,6 +83,7 @@ public class TermsQueryRepositoryImpl implements TermsQueryRepository {
                         term.title,
                         term.version,
                         term.required,
+                        term.name.eq(MARKETING_CONSENT_NAME),
                         term.content,
                         term.effectiveFrom
                 ))
