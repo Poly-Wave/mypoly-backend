@@ -1,6 +1,5 @@
 package com.polywave.billservice.application.agenda.query.result;
 
-import java.time.LocalDate;
 
 /**
  * 탭별 안건 목록 조회 결과 한 건.
@@ -9,10 +8,9 @@ import java.time.LocalDate;
 public record AgendaResult(
         Long billId,
         String officialTitle,
-        LocalDate proposalDate,
-        String detailUrl,
         double agreeRatio,
         double disagreeRatio,
-        long totalVoteCount
+        long totalVoteCount,
+        boolean hasVoted
 ) {
 }

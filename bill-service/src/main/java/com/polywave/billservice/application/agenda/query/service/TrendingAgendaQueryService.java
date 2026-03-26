@@ -18,7 +18,7 @@ public class TrendingAgendaQueryService {
 
     private final AgendaQueryRepository agendaQueryRepository;
 
-    public List<AgendaResult> getAgendas(Pageable pageable) {
-        return agendaQueryRepository.findTrendingAgendas(pageable);
+    public List<AgendaResult> getAgendas(Long userId, Pageable pageable) {
+        return agendaQueryRepository.findTrendingAgendas(userId, pageable);
     }
 }

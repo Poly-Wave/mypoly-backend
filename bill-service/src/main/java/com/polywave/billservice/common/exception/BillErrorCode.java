@@ -12,6 +12,12 @@ public enum BillErrorCode implements ErrorCode {
     /** 관심사/카테고리를 요청했으나 해당 사용자의 온보딩 상태가 올바르지 않은 경우 (예: 이미 온보딩 완료) */
     INVALID_ONBOARDING_STATUS(HttpStatus.BAD_REQUEST, "INVALID_ONBOARDING_STATUS"),
 
+    /** 지원하지 않는 아젠다 탭 코드로 조회를 요청한 경우 */
+    INVALID_AGENDA_TAB_CODE(HttpStatus.BAD_REQUEST, "INVALID_AGENDA_TAB_CODE"),
+
+    /** 요청한 의안을 찾을 수 없는 경우 */
+    BILL_NOT_FOUND(HttpStatus.NOT_FOUND, "BILL_NOT_FOUND"),
+
     /** bill-service 내부 혹은 타 서비스 통신 시 필수인 JWT 인증 토큰이 없는 경우 */
     MISSING_JWT_TOKEN(HttpStatus.UNAUTHORIZED, "MISSING_JWT_TOKEN"),
 

@@ -1,8 +1,8 @@
-package com.polywave.billservice.application.agenda.trending;
+package com.polywave.billservice.application.agenda.batch;
 
+import com.polywave.billservice.config.AgendaProperties;
 import com.polywave.billservice.domain.BillTrendingSnapshot;
-import com.polywave.billservice.domain.QAssemblyBillVote;
-import com.polywave.billservice.domain.agenda.TrendingCriteria;
+import com.polywave.billservice.domain.QUserBillVote;
 import com.polywave.billservice.repository.command.BillTrendingSnapshotCommandRepository;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -26,6 +26,7 @@ public class TrendingSnapshotBatchService {
 
     private final JPAQueryFactory queryFactory;
     private final BillTrendingSnapshotCommandRepository snapshotRepository;
+    private final AgendaProperties agendaProperties;
 
     /**
      * 최근 7일간 의안별 투표 완료 수를 집계한 뒤 스냅샷 테이블을 갱신한다.
@@ -34,9 +35,10 @@ public class TrendingSnapshotBatchService {
     @Scheduled(cron = "${bill.agenda.trending.snapshot-cron:0 0 * * * *}")
     @Transactional
     public void run() {
-        Instant cutoff = Instant.now().minus(TrendingCriteria.DAYS, ChronoUnit.DAYS);
+        int days = agendaProperties.trending().days();
+        Instant cutoff = Instant.now().minus(days, ChronoUnit.DAYS);
 
-        QAssemblyBillVote vote = QAssemblyBillVote.assemblyBillVote;
+        QUserBillVote vote = QUserBillVote.userBillVote;
 
         List<TrendingCountRow> rows = queryFactory
                 .select(
@@ -47,7 +49,7 @@ public class TrendingSnapshotBatchService {
                         )
                 )
                 .from(vote)
-                .where(vote.voteDate.isNotNull().and(vote.voteDate.goe(cutoff)))
+                .where(vote.votedAt.goe(cutoff))
                 .groupBy(vote.bill.id)
                 .fetch();
 
@@ -62,7 +64,7 @@ public class TrendingSnapshotBatchService {
                 .toList();
 
         snapshotRepository.saveAll(snapshots);
-        log.info("Trending snapshot updated: {} bills, cutoff={}", snapshots.size(), cutoff);
+        log.info("Trending snapshot updated: {} bills, days={}, cutoff={}", snapshots.size(), days, cutoff);
     }
 
     public record TrendingCountRow(Long billId, Long voteCount) {
