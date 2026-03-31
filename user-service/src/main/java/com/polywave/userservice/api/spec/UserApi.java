@@ -8,6 +8,7 @@ import com.polywave.userservice.api.dto.OnboardingStatusResponse;
 import com.polywave.userservice.api.dto.RandomNicknameResponse;
 import com.polywave.userservice.api.dto.UpdateOnboardingStatusRequest;
 import com.polywave.userservice.api.dto.UserMeResponse;
+import com.polywave.userservice.api.dto.UserUpdateBasicProfileRequest;
 import com.polywave.userservice.api.dto.UserUpdateProfileRequest;
 
 import com.polywave.common.dto.ErrorResponse;
@@ -133,6 +134,34 @@ public interface UserApi {
         ResponseEntity<Void> updateProfile(
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "수정할 프로필 정보", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserUpdateProfileRequest.class), examples = @ExampleObject(name = "요청 예시", value = UserApiExamples.EXAMPLE_UPDATE_PROFILE_REQUEST)))
                         @RequestBody @Valid UserUpdateProfileRequest request,
+                        @Parameter(hidden = true) Long userId);
+
+        @Operation(summary = "내 기본 정보 수정", description = """
+                        로그인한 사용자의 기본 정보를 수정합니다.
+                        - 수정 항목: 별명, 성별, 생년월일, 거주지역(시도/시군구/읍면동)
+                        - 온보딩이 완료된(COMPLETE) 사용자만 호출할 수 있습니다.
+                        - 닉네임 변경 시 금칙어/중복 검사가 적용됩니다.
+                        - 온보딩 상태는 변경되지 않습니다.
+
+                        인증
+                        - JWT 인증이 필요합니다.
+                        - Swagger 우측 상단 Authorize에 `Bearer {jwt}` 입력 후 호출하세요.
+                        """)
+        @io.swagger.v3.oas.annotations.responses.ApiResponses({
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "수정 성공"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 불량", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = {
+                                        @ExampleObject(name = "요청 값 검증 실패", value = UserApiExamples.EXAMPLE_VALIDATION_ERROR),
+                                        @ExampleObject(name = "금칙어 닉네임", value = UserApiExamples.EXAMPLE_FORBIDDEN_NICKNAME),
+                                        @ExampleObject(name = "온보딩 상태 오류", value = UserApiExamples.EXAMPLE_INVALID_ONBOARDING_STATUS_FOR_PROFILE_UPDATE)
+                        })),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이미 사용 중인 별명", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "별명 중복", value = UserApiExamples.EXAMPLE_DUPLICATE_NICKNAME))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "인증 필요", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+        })
+        @PatchMapping("/me/basic-profile")
+        ResponseEntity<Void> updateBasicProfile(
+                        @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "수정할 기본 정보", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserUpdateBasicProfileRequest.class), examples = @ExampleObject(name = "요청 예시", value = UserApiExamples.EXAMPLE_UPDATE_BASIC_PROFILE_REQUEST)))
+                        @RequestBody @Valid UserUpdateBasicProfileRequest request,
                         @Parameter(hidden = true) Long userId);
 
         @Operation(summary = "온보딩 상태 업데이트", description = """

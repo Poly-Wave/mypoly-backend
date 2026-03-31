@@ -87,6 +87,21 @@ public final class UserApiExamples {
       {}
       """;
 
+  public static final String EXAMPLE_UPDATE_BASIC_PROFILE_REQUEST = """
+      {
+        "nickname": "홍길동",
+        "gender": "MAN",
+        "birthDate": "19921123",
+        "sido": "서울특별시",
+        "sigungu": "강남구",
+        "emdName": "역삼동"
+      }
+      """;
+
+  public static final String EXAMPLE_UPDATE_BASIC_PROFILE_OK = """
+      {}
+      """;
+
   public static final String EXAMPLE_UPDATE_ONBOARDING_STATUS_REQUEST = """
       {
         "onboardingStatus": "CATEGORY"
@@ -102,6 +117,7 @@ public final class UserApiExamples {
         "code": "VALIDATION_ERROR"
       }
       """;
+
   public static final String EXAMPLE_GET_ONBOARDING_STATUS_OK = """
       {
         "onboardingStatus": "COMPLETE"
