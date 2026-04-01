@@ -41,7 +41,7 @@ public class UserBillVote {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "bill_id", nullable = false)
-    private AssemblyBill bill;
+    private Bill bill;
 
     @Column(name = "vote_result", length = 50, nullable = false)
     private String voteResult;
@@ -53,7 +53,7 @@ public class UserBillVote {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public static UserBillVote create(Long userId, AssemblyBill bill, String voteResult, Instant votedAt) {
+    public static UserBillVote create(Long userId, Bill bill, String voteResult, Instant votedAt) {
         UserBillVote vote = new UserBillVote();
         vote.userId = userId;
         vote.bill = bill;

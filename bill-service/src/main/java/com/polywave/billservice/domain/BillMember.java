@@ -19,18 +19,18 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor
 @Entity
 @Table(
-        name = "assembly_members",
+        name = "bill_members",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_assembly_members_external_member_id", columnNames = "external_member_id")
+                @UniqueConstraint(name = "uk_members_external_member_id", columnNames = "external_member_id")
         },
         indexes = {
-                @Index(name = "idx_assembly_members_name", columnList = "name"),
-                @Index(name = "idx_assembly_members_party_name", columnList = "party_name"),
-                @Index(name = "idx_assembly_members_mona_cd", columnList = "mona_cd"),
-                @Index(name = "idx_assembly_members_member_no", columnList = "member_no")
+                @Index(name = "idx_members_name", columnList = "name"),
+                @Index(name = "idx_members_party_name", columnList = "party_name"),
+                @Index(name = "idx_members_mona_cd", columnList = "mona_cd"),
+                @Index(name = "idx_members_member_no", columnList = "member_no")
         }
 )
-public class AssemblyMember extends BaseEntity {
+public class BillMember extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

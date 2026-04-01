@@ -16,14 +16,14 @@ import org.hibernate.annotations.CreationTimestamp;
 @NoArgsConstructor
 @Entity
 @Table(
-        name = "assembly_batch_runs",
+        name = "batch_runs",
         indexes = {
-                @Index(name = "idx_assembly_batch_runs_job_type", columnList = "job_type"),
-                @Index(name = "idx_assembly_batch_runs_run_status", columnList = "run_status"),
-                @Index(name = "idx_assembly_batch_runs_started_at", columnList = "started_at")
+                @Index(name = "idx_batch_runs_job_type", columnList = "job_type"),
+                @Index(name = "idx_batch_runs_run_status", columnList = "run_status"),
+                @Index(name = "idx_batch_runs_started_at", columnList = "started_at")
         }
 )
-public class AssemblyBatchRun {
+public class BatchRun {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

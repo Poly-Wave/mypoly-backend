@@ -21,14 +21,14 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor
 @Entity
 @Table(
-        name = "assembly_bill_status_history",
+        name = "bill_status_history",
         indexes = {
-                @Index(name = "idx_assembly_bill_status_history_bill_id", columnList = "bill_id"),
-                @Index(name = "idx_assembly_bill_status_history_proc_date", columnList = "proc_date"),
-                @Index(name = "idx_assembly_bill_status_history_observed_at", columnList = "observed_at")
+                @Index(name = "idx_bill_status_history_bill_id", columnList = "bill_id"),
+                @Index(name = "idx_bill_status_history_proc_date", columnList = "proc_date"),
+                @Index(name = "idx_bill_status_history_observed_at", columnList = "observed_at")
         }
 )
-public class AssemblyBillStatusHistory {
+public class BillStatusHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,7 +36,7 @@ public class AssemblyBillStatusHistory {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "bill_id", nullable = false)
-    private AssemblyBill bill;
+    private Bill bill;
 
     @Column(name = "proc_stage_code", length = 50)
     private String procStageCode;

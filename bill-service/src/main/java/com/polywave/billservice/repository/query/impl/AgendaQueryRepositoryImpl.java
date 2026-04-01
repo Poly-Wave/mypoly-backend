@@ -1,7 +1,7 @@
 package com.polywave.billservice.repository.query.impl;
 
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
-import com.polywave.billservice.domain.QAssemblyBill;
+import com.polywave.billservice.domain.QBill;
 import com.polywave.billservice.domain.QBillTrendingSnapshot;
 import com.polywave.billservice.domain.QUserBillVote;
 import com.polywave.billservice.domain.UserVoteResult;
@@ -9,6 +9,7 @@ import com.polywave.billservice.repository.query.AgendaQueryRepository;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -29,7 +30,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
     @Override
     public List<AgendaResult> findHotDebateAgendas(Long userId, int days, int minVoteCount, Pageable pageable) {
         QUserBillVote vote = QUserBillVote.userBillVote;
-        QAssemblyBill bill = QAssemblyBill.assemblyBill;
+        QBill bill = QBill.bill;
 
         Instant cutoff = Instant.now().minus(days, ChronoUnit.DAYS);
 
@@ -49,13 +50,13 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
         NumberExpression<Long> totalVoteCount = agreeSum.add(disagreeSum).longValue();
         NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
                 Double.class,
-                "cast({0} as double precision) / (cast({0} as double precision) + cast({1} as double precision))",
+                "(1.0 * {0}) / ({0} + {1})",
                 agreeSum,
                 disagreeSum
         );
         NumberExpression<Double> disagreeRatio = Expressions.numberTemplate(
                 Double.class,
-                "cast({1} as double precision) / (cast({0} as double precision) + cast({1} as double precision))",
+                "(1.0 * {1}) / ({0} + {1})",
                 agreeSum,
                 disagreeSum
         );
@@ -64,7 +65,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
         // |찬성% - 반대%| = |agree/(agree+disagree) - 0.5|, 오름차순 → 가장 작을수록 상위
         NumberExpression<Double> controversyScore = Expressions.numberTemplate(
                 Double.class,
-                "abs(cast({0} as double precision) / (cast({0} as double precision) + cast({1} as double precision)) - 0.5)",
+                "abs(((1.0 * {0}) / ({0} + {1})) - 0.5)",
                 agreeSum,
                 disagreeSum
         );
@@ -93,12 +94,16 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
     @Override
     public List<AgendaResult> findTrendingAgendas(Long userId, Pageable pageable) {
         QBillTrendingSnapshot snapshot = QBillTrendingSnapshot.billTrendingSnapshot;
-        QAssemblyBill bill = QAssemblyBill.assemblyBill;
-        var hasVoted = Expressions.booleanTemplate(
-                "exists (select 1 from user_bill_votes ubv where ubv.user_id = {0} and ubv.bill_id = {1})",
-                Expressions.constant(userId),
-                bill.id
-        );
+        QBill bill = QBill.bill;
+        QUserBillVote vote = QUserBillVote.userBillVote;
+        var hasVoted = JPAExpressions
+                .selectOne()
+                .from(vote)
+                .where(
+                        vote.userId.eq(userId),
+                        vote.bill.id.eq(bill.id)
+                )
+                .exists();
 
         return queryFactory
                 .select(

@@ -7,7 +7,7 @@ CREATE TABLE bill_trending_snapshot (
     calculated_at    TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT pk_bill_trending_snapshot PRIMARY KEY (bill_id),
-    CONSTRAINT fk_bill_trending_snapshot_bill FOREIGN KEY (bill_id) REFERENCES assembly_bills(id) ON DELETE CASCADE
+    CONSTRAINT fk_bill_trending_snapshot_bill FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_bill_trending_snapshot_vote_count_7d ON bill_trending_snapshot (vote_count_7d DESC);

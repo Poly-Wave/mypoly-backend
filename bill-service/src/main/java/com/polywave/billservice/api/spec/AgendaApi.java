@@ -36,9 +36,9 @@ public interface AgendaApi {
 
     @Operation(summary = "탭별 안건 목록 조회", description = """
             탭 코드에 해당하는 안건 목록을 반환합니다. 로그인한 사용자만 호출 가능합니다.
-            - hot_debate: 쟁쟁한 (찬반 비율이 팽팽한 순)
-            - personalized: 맞춤형 (준비 중)
-            - trending: 요즘 핫한 (최근 7일 투표 완료 수 순, 배치 선계산)
+            - HOT_DEBATE: 쟁쟁한 (찬반 비율이 팽팽한 순)
+            - PERSONALIZED: 맞춤형 (준비 중)
+            - TRENDING: 요즘 핫한 (최근 7일 투표 완료 수 순, 배치 선계산)
             """)
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
@@ -52,7 +52,7 @@ public interface AgendaApi {
     })
     @GetMapping("/tabs/{tabCode}")
     ResponseEntity<List<AgendaResponse>> getAgendasByTab(
-            @Parameter(description = "탭 코드 (hot_debate, personalized, trending)", required = true)
+            @Parameter(description = "탭 코드 (HOT_DEBATE, PERSONALIZED, TRENDING)", required = true)
             @PathVariable String tabCode,
             @Parameter(hidden = true) Long userId,
             Pageable pageable

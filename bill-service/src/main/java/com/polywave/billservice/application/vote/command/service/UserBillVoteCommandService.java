@@ -1,9 +1,9 @@
 package com.polywave.billservice.application.vote.command.service;
 
 import com.polywave.billservice.common.exception.BillNotFoundException;
-import com.polywave.billservice.domain.AssemblyBill;
+import com.polywave.billservice.domain.Bill;
 import com.polywave.billservice.domain.UserBillVote;
-import com.polywave.billservice.repository.command.AssemblyBillCommandRepository;
+import com.polywave.billservice.repository.command.BillCommandRepository;
 import com.polywave.billservice.repository.command.UserBillVoteCommandRepository;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -14,14 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserBillVoteCommandService {
 
-    private final AssemblyBillCommandRepository assemblyBillCommandRepository;
+    private final BillCommandRepository billCommandRepository;
     private final UserBillVoteCommandRepository userBillVoteCommandRepository;
 
     @Transactional
     public void voteOnBill(Long userId, Long billId, String voteResult, Long existingVoteId) {
         Instant now = Instant.now();
         if (existingVoteId == null) {
-            AssemblyBill bill = assemblyBillCommandRepository.findById(billId)
+            Bill bill = billCommandRepository.findById(billId)
                     .orElseThrow(BillNotFoundException::new);
             UserBillVote newVote = UserBillVote.create(userId, bill, voteResult, now);
             userBillVoteCommandRepository.save(newVote);

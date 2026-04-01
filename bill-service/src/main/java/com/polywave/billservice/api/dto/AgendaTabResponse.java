@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "안건 탭 메타 정보")
 public record AgendaTabResponse(
-        @Schema(description = "탭 코드", example = "hot_debate")
+        @Schema(description = "탭 코드", example = "HOT_DEBATE")
         String code,
 
         @Schema(description = "탭 라벨", example = "쟁쟁한")

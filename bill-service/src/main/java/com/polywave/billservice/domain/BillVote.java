@@ -22,18 +22,18 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor
 @Entity
 @Table(
-        name = "assembly_bill_votes",
+        name = "bill_votes",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_assembly_bill_votes_external_vote_key", columnNames = "external_vote_key")
+                @UniqueConstraint(name = "uk_bill_votes_external_vote_key", columnNames = "external_vote_key")
         },
         indexes = {
-                @Index(name = "idx_assembly_bill_votes_bill_id", columnList = "bill_id"),
-                @Index(name = "idx_assembly_bill_votes_member_id", columnList = "member_id"),
-                @Index(name = "idx_assembly_bill_votes_vote_result", columnList = "vote_result"),
-                @Index(name = "idx_assembly_bill_votes_vote_date", columnList = "vote_date")
+                @Index(name = "idx_bill_votes_bill_id", columnList = "bill_id"),
+                @Index(name = "idx_bill_votes_member_id", columnList = "member_id"),
+                @Index(name = "idx_bill_votes_vote_result", columnList = "vote_result"),
+                @Index(name = "idx_bill_votes_vote_date", columnList = "vote_date")
         }
 )
-public class AssemblyBillVote {
+public class BillVote {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,11 +41,11 @@ public class AssemblyBillVote {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "bill_id", nullable = false)
-    private AssemblyBill bill;
+    private Bill bill;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
-    private AssemblyMember member;
+    private BillMember billMember;
 
     @Column(name = "external_vote_key", length = 200, nullable = false, unique = true)
     private String externalVoteKey;

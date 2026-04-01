@@ -21,14 +21,14 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor
 @Entity
 @Table(
-        name = "assembly_batch_run_items",
+        name = "batch_run_items",
         indexes = {
-                @Index(name = "idx_assembly_batch_run_items_batch_run_id", columnList = "batch_run_id"),
-                @Index(name = "idx_assembly_batch_run_items_item_type", columnList = "item_type"),
-                @Index(name = "idx_assembly_batch_run_items_target_external_id", columnList = "target_external_id")
+                @Index(name = "idx_batch_run_items_batch_run_id", columnList = "batch_run_id"),
+                @Index(name = "idx_batch_run_items_item_type", columnList = "item_type"),
+                @Index(name = "idx_batch_run_items_target_external_id", columnList = "target_external_id")
         }
 )
-public class AssemblyBatchRunItem {
+public class BatchRunItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,7 +36,7 @@ public class AssemblyBatchRunItem {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "batch_run_id", nullable = false)
-    private AssemblyBatchRun batchRun;
+    private BatchRun batchRun;
 
     @Column(name = "item_type", length = 30, nullable = false)
     private String itemType;

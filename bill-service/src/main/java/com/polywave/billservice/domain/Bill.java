@@ -20,19 +20,19 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor
 @Entity
 @Table(
-        name = "assembly_bills",
+        name = "bills",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_assembly_bills_external_bill_id", columnNames = "external_bill_id")
+                @UniqueConstraint(name = "uk_bills_external_bill_id", columnNames = "external_bill_id")
         },
         indexes = {
-                @Index(name = "idx_assembly_bills_bill_no", columnList = "bill_no"),
-                @Index(name = "idx_assembly_bills_proposal_date", columnList = "proposal_date"),
-                @Index(name = "idx_assembly_bills_stage_order", columnList = "current_proc_stage_order"),
-                @Index(name = "idx_assembly_bills_pass_gubn", columnList = "current_pass_gubn"),
-                @Index(name = "idx_assembly_bills_last_collected_at", columnList = "last_collected_at")
+                @Index(name = "idx_bills_bill_no", columnList = "bill_no"),
+                @Index(name = "idx_bills_proposal_date", columnList = "proposal_date"),
+                @Index(name = "idx_bills_stage_order", columnList = "current_proc_stage_order"),
+                @Index(name = "idx_bills_pass_gubn", columnList = "current_pass_gubn"),
+                @Index(name = "idx_bills_last_collected_at", columnList = "last_collected_at")
         }
 )
-public class AssemblyBill extends BaseEntity {
+public class Bill extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

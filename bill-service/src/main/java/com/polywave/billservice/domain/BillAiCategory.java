@@ -20,15 +20,17 @@ import org.hibernate.annotations.CreationTimestamp;
 @NoArgsConstructor
 @Entity
 @Table(
-        name = "assembly_bill_ai_axis_weights",
+        name = "bill_ai_categories",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_assembly_bill_ai_axis_weights_unique", columnNames = {"analysis_id", "opinion_type", "axis_code"})
+                @UniqueConstraint(name = "uk_bill_ai_categories_analysis_id_category_id", columnNames = {"analysis_id", "category_id"}),
+                @UniqueConstraint(name = "uk_bill_ai_categories_analysis_id_rank_order", columnNames = {"analysis_id", "rank_order"})
         },
         indexes = {
-                @Index(name = "idx_assembly_bill_ai_axis_weights_analysis_id", columnList = "analysis_id")
+                @Index(name = "idx_bill_ai_categories_analysis_id", columnList = "analysis_id"),
+                @Index(name = "idx_bill_ai_categories_category_id", columnList = "category_id")
         }
 )
-public class AssemblyBillAiAxisWeight {
+public class BillAiCategory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,16 +38,14 @@ public class AssemblyBillAiAxisWeight {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "analysis_id", nullable = false)
-    private AssemblyBillAiAnalysis analysis;
+    private BillAiAnalysis analysis;
 
-    @Column(name = "opinion_type", length = 20, nullable = false)
-    private String opinionType;  // FOR, AGAINST
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "category_id", nullable = false)
+    private BillCategory category;
 
-    @Column(name = "axis_code", length = 2, nullable = false)
-    private String axisCode;  // P, M, U, T, N, S, O, R
-
-    @Column(name = "weight", nullable = false)
-    private Integer weight = 1;
+    @Column(name = "rank_order", nullable = false)
+    private Integer rankOrder = 1;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -23,17 +23,17 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor
 @Entity
 @Table(
-        name = "assembly_bill_ai_analyses",
+        name = "bill_ai_analyses",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_assembly_bill_ai_analyses_bill_version", columnNames = {"bill_id", "analysis_version"})
+                @UniqueConstraint(name = "uk_bill_ai_analyses_bill_id_analysis_version", columnNames = {"bill_id", "analysis_version"})
         },
         indexes = {
-                @Index(name = "idx_assembly_bill_ai_analyses_bill_id", columnList = "bill_id"),
-                @Index(name = "idx_assembly_bill_ai_analyses_is_current", columnList = "bill_id, is_current"),
-                @Index(name = "idx_assembly_bill_ai_analyses_generated_at", columnList = "generated_at")
+                @Index(name = "idx_bill_ai_analyses_bill_id", columnList = "bill_id"),
+                @Index(name = "idx_bill_ai_analyses_is_current", columnList = "bill_id, is_current"),
+                @Index(name = "idx_bill_ai_analyses_generated_at", columnList = "generated_at")
         }
 )
-public class AssemblyBillAiAnalysis {
+public class BillAiAnalysis {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,7 +41,7 @@ public class AssemblyBillAiAnalysis {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "bill_id", nullable = false)
-    private AssemblyBill bill;
+    private Bill bill;
 
     @Column(name = "analysis_version", nullable = false)
     private Integer analysisVersion;
