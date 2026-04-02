@@ -22,6 +22,7 @@ public interface TermsApi {
                         최신 버전 기준으로 약관 메타데이터 목록을 조회합니다.
 
                         - 본문(content)은 포함하지 않습니다.
+                        - `isMarketing=true` 이면 marketing_agreed 대상 약관입니다.
                         - 본문이 필요하면 `GET /terms/{termsId}/html`을 사용하세요.
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
@@ -35,6 +36,7 @@ public interface TermsApi {
                         약관 ID로 약관의 메타데이터를 조회합니다.
 
                         - 본문(content)은 포함하지 않습니다.
+                        - `isMarketing=true` 이면 marketing_agreed 대상 약관입니다.
                         - 본문이 필요하면 `GET /terms/{termsId}/html`을 사용하세요.
                         """)
         @io.swagger.v3.oas.annotations.responses.ApiResponses({
