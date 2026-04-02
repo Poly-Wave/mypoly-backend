@@ -10,7 +10,7 @@ CREATE TABLE user_bill_votes (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     CONSTRAINT fk_user_bill_votes_bill
-        FOREIGN KEY (bill_id) REFERENCES assembly_bills(id) ON DELETE CASCADE,
+        FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE,
     CONSTRAINT uk_user_bill_votes_user_bill UNIQUE (user_id, bill_id)
 );
 
