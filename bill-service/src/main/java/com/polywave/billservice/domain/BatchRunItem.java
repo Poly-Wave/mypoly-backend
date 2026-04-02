@@ -20,10 +20,10 @@ import org.hibernate.type.SqlTypes;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "batch_run_items", indexes = {
-                @Index(name = "idx_batch_run_items_batch_run_id", columnList = "batch_run_id"),
-                @Index(name = "idx_batch_run_items_item_type", columnList = "item_type"),
-                @Index(name = "idx_batch_run_items_target_external_id", columnList = "target_external_id")
+@Table(name = "bill_batch_run_items", indexes = {
+                @Index(name = "idx_bill_batch_run_items_batch_run_id", columnList = "batch_run_id"),
+                @Index(name = "idx_bill_batch_run_items_item_type", columnList = "item_type"),
+                @Index(name = "idx_bill_batch_run_items_target_external_id", columnList = "target_external_id")
 })
 public class BatchRunItem {
 
