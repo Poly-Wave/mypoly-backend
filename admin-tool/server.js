@@ -12,13 +12,22 @@ app.use(express.json());
 
 router.use(express.static(path.join(__dirname, 'public')));
 
+// ── 필수 환경변수 체크 ──
+const requiredEnv = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USERNAME', 'DB_PASSWORD'];
+
+for (const key of requiredEnv) {
+  if (!process.env[key]) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+}
+
 // ── PostgreSQL 접속 설정 ──
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || process.env.POSTGRES_DB || 'mypoly',
-  user: process.env.DB_USER || process.env.DB_USERNAME || process.env.POSTGRES_USER || 'mypoly',
-  password: process.env.DB_PASSWORD || process.env.POSTGRES_PASSWORD || 'mypoly1234',
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT, 10),
+  database: process.env.DB_NAME,
+  user: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
 });
 
 // ── 시스템 스키마 제외 목록 ──
@@ -102,7 +111,6 @@ router.get('/api/schemas/:schema/tables/:table/relationships', async (req, res) 
   try {
     const { schema, table } = req.params;
 
-    // 이 테이블이 참조하는 FK (outgoing)
     const outgoing = await pool.query(`
       SELECT
         kcu.column_name       AS from_column,
@@ -122,7 +130,6 @@ router.get('/api/schemas/:schema/tables/:table/relationships', async (req, res) 
         AND tc.table_name = $2
     `, [schema, table]);
 
-    // 이 테이블을 참조하는 FK (incoming)
     const incoming = await pool.query(`
       SELECT
         kcu.table_schema      AS from_schema,
@@ -167,7 +174,7 @@ router.get('/api/schemas/:schema/tables/:table/count', async (req, res) => {
     }
 
     const { rows } = await pool.query(query, params);
-    res.json({ total: parseInt(rows[0].total) });
+    res.json({ total: parseInt(rows[0].total, 10) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -177,15 +184,14 @@ router.get('/api/schemas/:schema/tables/:table/count', async (req, res) => {
 router.get('/api/schemas/:schema/tables/:table/data', async (req, res) => {
   try {
     const { schema, table } = req.params;
-    const page = parseInt(req.query.page || '1');
-    const limit = Math.min(parseInt(req.query.limit || '50'), 200);
+    const page = parseInt(req.query.page || '1', 10);
+    const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
     const offset = (page - 1) * limit;
     const sortBy = req.query.sortBy || '';
     const sortDir = (req.query.sortDir || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
     const search = req.query.search || '';
     const searchColumn = req.query.searchColumn || '';
 
-    // 컬럼 존재 검증
     const colCheck = await pool.query(`
       SELECT column_name FROM information_schema.columns
       WHERE table_schema = $1 AND table_name = $2
@@ -329,5 +335,5 @@ if (basePath) {
 const PORT = process.env.ADMIN_PORT || 3000;
 app.listen(PORT, () => {
   const servedPath = basePath || '/';
-  console.log(`\n  🚀 MyPoly DB Admin running at http://localhost:${PORT}${servedPath}\n`);
+  console.log(`\n  MyPoly DB Admin running at http://localhost:${PORT}${servedPath}\n`);
 });
