@@ -4,8 +4,8 @@ metadata:
   name: mypoly-jwt-config
   namespace: mypoly
 data:
-  # Access Token 만료 (테스트용: 1분)
-  JWT_EXPIRATION_MILLIS: "180000"
+  # Access Token 만료 (30분)
+  JWT_EXPIRATION_MILLIS: "1800000"
 
   # Refresh Token 만료 (30일)
   REFRESH_JWT_EXPIRATION_MILLIS: "2592000000"

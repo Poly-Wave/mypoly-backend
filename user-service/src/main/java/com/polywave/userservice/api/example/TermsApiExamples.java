@@ -15,7 +15,17 @@ public final class TermsApiExamples {
             "title": "서비스 이용약관",
             "version": 1,
             "required": true,
+            "isMarketing": false,
             "effectiveFrom": "2026-01-01"
+          },
+          {
+            "id": 3,
+            "name": "MARKETING_CONSENT",
+            "title": "광고성 정보 수신 동의",
+            "version": 1,
+            "required": false,
+            "isMarketing": true,
+            "effectiveFrom": "2026-01-15"
           }
         ]
       }
@@ -28,6 +38,7 @@ public final class TermsApiExamples {
         "title": "서비스 이용약관",
         "version": 1,
         "required": true,
+        "isMarketing": false,
         "effectiveFrom": "2026-01-01"
       }
       """;

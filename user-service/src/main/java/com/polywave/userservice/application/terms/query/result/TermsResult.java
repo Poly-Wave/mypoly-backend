@@ -14,4 +14,9 @@ public record TermsResult(
         Boolean required,
         LocalDate effectiveFrom
 ) {
+    private static final String MARKETING_TERMS_NAME = "MARKETING_CONSENT";
+
+    public boolean isMarketing() {
+        return MARKETING_TERMS_NAME.equals(name);
+    }
 }

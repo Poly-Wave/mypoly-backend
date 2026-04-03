@@ -5,6 +5,7 @@ import com.polywave.userservice.api.dto.*;
 import com.polywave.userservice.api.spec.UserApi;
 import com.polywave.userservice.application.address.query.result.AddressSearchResult;
 import com.polywave.userservice.application.address.query.service.AddressQueryService;
+import com.polywave.userservice.application.user.command.UserUpdateBasicProfileCommand;
 import com.polywave.userservice.application.user.command.UserUpdateProfileCommand;
 import com.polywave.userservice.application.user.command.service.UserCommandService;
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
@@ -74,6 +75,23 @@ public class UserController implements UserApi {
                                 request.sigungu(),
                                 request.emdName());
                 userCommandService.updateUserProfile(userId, updateProfileCommmand);
+                return ResponseEntity.ok().build();
+        }
+
+        @Override
+        public ResponseEntity<Void> updateBasicProfile(
+                        UserUpdateBasicProfileRequest request,
+                        @LoginUser Long userId) {
+
+                UserUpdateBasicProfileCommand command = new UserUpdateBasicProfileCommand(
+                                request.nickname(),
+                                request.gender(),
+                                request.birthDate(),
+                                request.sido(),
+                                request.sigungu(),
+                                request.emdName());
+
+                userCommandService.updateUserBasicProfile(userId, command);
                 return ResponseEntity.ok().build();
         }
 

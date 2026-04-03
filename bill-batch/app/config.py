@@ -20,7 +20,7 @@ def _require_env(*names: str) -> str:
     raise ValueError(f"필수 환경변수가 없습니다. 다음 중 하나는 반드시 설정해야 합니다: [{joined}]")
 
 
-def _load_gemini_keys(max_keys: int = 20) -> List[str]:
+def _load_gemini_keys(max_keys: int = 40) -> List[str]:
     keys: List[str] = []
 
     for i in range(1, max_keys + 1):
@@ -86,7 +86,7 @@ class Settings:
 
     @classmethod
     def from_env(cls, require_gemini_keys: bool = True) -> "Settings":
-        gemini_keys = _load_gemini_keys(max_keys=20)
+        gemini_keys = _load_gemini_keys(max_keys=40)
         if require_gemini_keys and not gemini_keys:
             raise ValueError("GEMINI_API_KEY 또는 GEMINI_API_KEY_* 중 최소 1개는 반드시 설정해야 합니다")
 
