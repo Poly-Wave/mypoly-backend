@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: admin-tool-config
+  namespace: mypoly
+data:
+  ADMIN_PORT: "3000"
+  ADMIN_BASE_PATH: "/db-admin"
+  DB_HOST: "mypoly-postgres"
+  DB_PORT: "5432"
