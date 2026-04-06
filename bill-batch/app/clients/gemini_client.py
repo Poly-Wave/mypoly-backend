@@ -177,6 +177,7 @@ class GeminiClient:
 
     def _classify_http_error(self, response: requests.Response) -> GeminiApiError:
         body_head = response.text[:500]
+        body_text = response.text or ""
 
         if response.status_code == 429:
             return GeminiApiError(
@@ -186,10 +187,21 @@ class GeminiClient:
                 quota_exhausted=True,
             )
 
-        if response.status_code == 400 and "API_KEY_INVALID" in response.text:
+        if response.status_code == 400 and "API_KEY_INVALID" in body_text:
             return GeminiApiError(
                 code="API_KEY_INVALID",
                 message=f"status=400 body={body_head}",
+                retryable=False,
+            )
+
+        if response.status_code == 403 and (
+            "CONSUMER_SUSPENDED" in body_text
+            or "has been suspended" in body_text
+            or "PERMISSION_DENIED" in body_text
+        ):
+            return GeminiApiError(
+                code="API_KEY_SUSPENDED",
+                message=f"status=403 body={body_head}",
                 retryable=False,
             )
 
@@ -278,10 +290,13 @@ class GeminiClient:
                     err = self._classify_http_error(response)
                     errors.append(err)
 
-                    if err.code == "API_KEY_INVALID":
+                    if err.code in ("API_KEY_INVALID", "API_KEY_SUSPENDED"):
                         self._mark_key_invalid(ks, err)
                     elif err.quota_exhausted:
                         self._mark_key_exhausted(ks, err)
+                    elif not err.retryable and 400 <= response.status_code < 500:
+                        # 키 자체 문제로 의심되는 비재시도 4xx는 재선택되지 않도록 제외
+                        self._mark_key_invalid(ks, err)
 
                     time.sleep(self.settings.bill_batch_ai_sleep_ms / 1000.0)
                     continue
@@ -322,11 +337,23 @@ class GeminiClient:
                 categories = [str(v).strip() for v in categories if str(v).strip()]
 
                 if not headline:
-                    raise GeminiApiError(code="INVALID_RESPONSE", message="headline 값이 비어 있습니다", retryable=True)
+                    raise GeminiApiError(
+                        code="INVALID_RESPONSE",
+                        message="headline 값이 비어 있습니다",
+                        retryable=True,
+                    )
                 if not summary:
-                    raise GeminiApiError(code="INVALID_RESPONSE", message="summary 값이 비어 있습니다", retryable=True)
+                    raise GeminiApiError(
+                        code="INVALID_RESPONSE",
+                        message="summary 값이 비어 있습니다",
+                        retryable=True,
+                    )
                 if not categories:
-                    raise GeminiApiError(code="INVALID_RESPONSE", message="categories 값이 비어 있습니다", retryable=True)
+                    raise GeminiApiError(
+                        code="INVALID_RESPONSE",
+                        message="categories 값이 비어 있습니다",
+                        retryable=True,
+                    )
 
                 return {
                     "headline": headline,

@@ -30,7 +30,7 @@ class BatchRunner:
         return True, "수집 대상"
 
     def _should_mark_permanent_failed(self, retry_count_after_update: int, error: GeminiApiError) -> bool:
-        if error.code in {"API_KEY_INVALID", "INVALID_REQUEST", "INVALID_CATEGORY_MAPPING"}:
+        if error.code in {"INVALID_CATEGORY_MAPPING"}:
             return True
 
         return retry_count_after_update >= self.settings.bill_batch_ai_max_retry_count
@@ -275,19 +275,7 @@ class BatchRunner:
             except GeminiApiError as exc:
                 self._rollback(batch_repo.conn)
 
-                ai_input = self._build_ai_input(bill)
-                ai_input_hash = self._build_ai_input_hash(bill)
                 retry_count_after_update = int(bill.get("ai_retry_count", 0)) + 1
-
-                analysis_id = ai_repo.insert_failed_analysis(
-                    bill_id=bill_id,
-                    source_text_hash=ai_input_hash,
-                    model_name=self.settings.gemini_model,
-                    prompt_version=self.settings.prompt_version,
-                    temperature=self.settings.gemini_temperature,
-                    analysis_input=ai_input,
-                    error_message=str(exc),
-                )
 
                 if exc.quota_exhausted:
                     bill_repo.mark_ai_retry_wait(
@@ -306,7 +294,9 @@ class BatchRunner:
                         error_message=str(exc),
                         payload={
                             "reason": "Gemini 할당량이 소진되어 이번 실행의 AI 처리를 중단했습니다",
-                            "analysis_id": analysis_id,
+                            "error_code": exc.code,
+                            "retryable": exc.retryable,
+                            "quota_exhausted": exc.quota_exhausted,
                         },
                     )
                     self._commit(batch_repo.conn)
@@ -338,7 +328,6 @@ class BatchRunner:
                     action_type=None,
                     error_message=str(exc),
                     payload={
-                        "analysis_id": analysis_id,
                         "error_code": exc.code,
                         "retryable": exc.retryable,
                         "quota_exhausted": exc.quota_exhausted,
@@ -350,19 +339,6 @@ class BatchRunner:
 
             except Exception as exc:
                 self._rollback(batch_repo.conn)
-
-                ai_input = self._build_ai_input(bill)
-                ai_input_hash = self._build_ai_input_hash(bill)
-
-                analysis_id = ai_repo.insert_failed_analysis(
-                    bill_id=bill_id,
-                    source_text_hash=ai_input_hash,
-                    model_name=self.settings.gemini_model,
-                    prompt_version=self.settings.prompt_version,
-                    temperature=self.settings.gemini_temperature,
-                    analysis_input=ai_input,
-                    error_message=str(exc),
-                )
 
                 bill_repo.mark_ai_retry_wait(
                     bill_id=bill_id,
@@ -380,7 +356,6 @@ class BatchRunner:
                     action_type=None,
                     error_message=str(exc),
                     payload={
-                        "analysis_id": analysis_id,
                         "error_code": "UNEXPECTED_ERROR",
                     },
                 )
