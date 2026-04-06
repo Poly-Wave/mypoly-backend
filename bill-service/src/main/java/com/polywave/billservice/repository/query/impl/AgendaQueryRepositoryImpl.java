@@ -43,10 +43,6 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
 
         NumberExpression<Integer> agreeSum = agreeCase.sum();
         NumberExpression<Integer> disagreeSum = disagreeCase.sum();
-        NumberExpression<Integer> myVoteCase = Expressions.cases()
-                .when(vote.userId.eq(userId)).then(1)
-                .otherwise(0);
-        NumberExpression<Integer> myVoteSum = myVoteCase.sum();
         NumberExpression<Long> totalVoteCount = agreeSum.add(disagreeSum).longValue();
         NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
                 Double.class,
@@ -60,7 +56,14 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                 agreeSum,
                 disagreeSum
         );
-        var hasVoted = myVoteSum.gt(0);
+        var hasVoted = JPAExpressions
+                .selectOne()
+                .from(vote)
+                .where(
+                        vote.userId.eq(userId),
+                        vote.bill.id.eq(bill.id)
+                )
+                .exists();
 
         // |찬성% - 반대%| = |agree/(agree+disagree) - 0.5|, 오름차순 → 가장 작을수록 상위
         NumberExpression<Double> controversyScore = Expressions.numberTemplate(
