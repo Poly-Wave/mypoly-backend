@@ -20,6 +20,12 @@ def _require_env(*names: str) -> str:
     raise ValueError(f"필수 환경변수가 없습니다. 다음 중 하나는 반드시 설정해야 합니다: [{joined}]")
 
 
+def _parse_bool(value: str | None, default: bool = False) -> bool:
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "y", "yes", "on"}
+
+
 def _load_gemini_keys(max_keys: int = 40) -> List[str]:
     keys: List[str] = []
 
@@ -56,6 +62,11 @@ class Settings:
     bill_start_ord: int
     bill_end_ord: int
 
+    assembly_service_key: str
+    bill_batch_member_age: int
+    bill_batch_member_sync_page_size: int
+    bill_batch_member_sync_max_pages: int
+
     gemini_keys: List[str]
     gemini_model: str
     gemini_temperature: float
@@ -67,6 +78,15 @@ class Settings:
     bill_batch_request_timeout_sec: int
     bill_batch_sleep_ms: int
     bill_batch_ai_sleep_ms: int
+
+    bill_batch_enable_bill_collect: bool
+    bill_batch_enable_member_sync: bool
+    bill_batch_enable_vote_sync: bool
+    bill_batch_enable_ai: bool
+
+    bill_batch_vote_sync_missing_only: bool
+    bill_batch_vote_sync_lookback_days: int
+    bill_batch_vote_sync_max_target_bills: int
 
     bill_batch_max_ai_per_run: int
     bill_batch_ai_max_retry_count: int
@@ -85,7 +105,12 @@ class Settings:
         return self.db_username
 
     @classmethod
-    def from_env(cls, require_gemini_keys: bool = True) -> "Settings":
+    def from_env(cls, require_gemini_keys: bool | None = None) -> "Settings":
+        enable_ai = _parse_bool(_get_env("BILL_BATCH_ENABLE_AI", "true"), default=True)
+
+        if require_gemini_keys is None:
+            require_gemini_keys = enable_ai
+
         gemini_keys = _load_gemini_keys(max_keys=40)
         if require_gemini_keys and not gemini_keys:
             raise ValueError("GEMINI_API_KEY 또는 GEMINI_API_KEY_* 중 최소 1개는 반드시 설정해야 합니다")
@@ -106,6 +131,11 @@ class Settings:
             bill_start_ord=int(_get_env("BILL_START_ORD", "22")),
             bill_end_ord=int(_get_env("BILL_END_ORD", "22")),
 
+            assembly_service_key=_require_env("ASSEMBLY_SERVICE_KEY"),
+            bill_batch_member_age=int(_get_env("BILL_BATCH_MEMBER_AGE", "22")),
+            bill_batch_member_sync_page_size=int(_get_env("BILL_BATCH_MEMBER_SYNC_PAGE_SIZE", "300")),
+            bill_batch_member_sync_max_pages=int(_get_env("BILL_BATCH_MEMBER_SYNC_MAX_PAGES", "10")),
+
             gemini_keys=gemini_keys,
             gemini_model=_get_env("GEMINI_MODEL", "gemini-2.5-flash"),
             gemini_temperature=float(_get_env("GEMINI_TEMPERATURE", "0.2")),
@@ -117,6 +147,15 @@ class Settings:
             bill_batch_request_timeout_sec=int(_get_env("BILL_BATCH_REQUEST_TIMEOUT_SEC", "30")),
             bill_batch_sleep_ms=int(_get_env("BILL_BATCH_SLEEP_MS", "150")),
             bill_batch_ai_sleep_ms=int(_get_env("BILL_BATCH_AI_SLEEP_MS", "1000")),
+
+            bill_batch_enable_bill_collect=_parse_bool(_get_env("BILL_BATCH_ENABLE_BILL_COLLECT", "true"), default=True),
+            bill_batch_enable_member_sync=_parse_bool(_get_env("BILL_BATCH_ENABLE_MEMBER_SYNC", "false"), default=False),
+            bill_batch_enable_vote_sync=_parse_bool(_get_env("BILL_BATCH_ENABLE_VOTE_SYNC", "true"), default=True),
+            bill_batch_enable_ai=enable_ai,
+
+            bill_batch_vote_sync_missing_only=_parse_bool(_get_env("BILL_BATCH_VOTE_SYNC_MISSING_ONLY", "true"), default=True),
+            bill_batch_vote_sync_lookback_days=int(_get_env("BILL_BATCH_VOTE_SYNC_LOOKBACK_DAYS", "365")),
+            bill_batch_vote_sync_max_target_bills=int(_get_env("BILL_BATCH_VOTE_SYNC_MAX_TARGET_BILLS", "300")),
 
             bill_batch_max_ai_per_run=int(_get_env("BILL_BATCH_MAX_AI_PER_RUN", "200")),
             bill_batch_ai_max_retry_count=int(_get_env("BILL_BATCH_AI_MAX_RETRY_COUNT", "3")),
@@ -132,5 +171,5 @@ class Settings:
         )
 
 
-def load_settings(require_gemini_keys: bool = True) -> Settings:
+def load_settings(require_gemini_keys: bool | None = None) -> Settings:
     return Settings.from_env(require_gemini_keys=require_gemini_keys)

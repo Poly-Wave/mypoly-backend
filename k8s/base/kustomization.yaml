@@ -12,3 +12,4 @@ resources:
   - services/bill-service
   - services/admin-tool
   - services/bill-batch-cronjob
+  - services/bill-member-sync-cronjob
