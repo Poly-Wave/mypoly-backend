@@ -242,6 +242,13 @@ class BatchRunner:
 
         lookup_maps = member_repo.build_lookup_maps()
 
+        repaired_member_ids = vote_repo.repair_missing_member_ids(lookup_maps=lookup_maps)
+        self._commit(batch_repo.conn)
+        print(
+            f"[BATCH][VOTE] 기존 표결 member_id 보정 건수={repaired_member_ids}",
+            flush=True,
+        )
+
         target_bill_count = len(target_bills)
         bills_with_no_vote = 0
         vote_rows_seen = 0
@@ -250,7 +257,10 @@ class BatchRunner:
         no_change = 0
         failed = 0
 
-        print(f"[BATCH][VOTE] 표결 수집 대상 의안 수={target_bill_count}", flush=True)
+        print(
+            f"[BATCH][VOTE] 표결 수집 대상 의안 수={target_bill_count}",
+            flush=True,
+        )
 
         for bill in target_bills:
             bill_id = bill["id"]
@@ -270,14 +280,17 @@ class BatchRunner:
                         target_external_id=external_bill_id,
                         target_internal_id=bill_id,
                         item_status="SKIPPED",
-                        action_type="NO_DATA",
+                        action_type="NO_CHANGE",
                         payload={
                             "official_title": bill.get("official_title"),
                             "proposal_date": str(bill.get("proposal_date")) if bill.get("proposal_date") else None,
                         },
                     )
                     self._commit(batch_repo.conn)
-                    print(f"[BATCH][VOTE] 표결 없음 external_bill_id={external_bill_id}", flush=True)
+                    print(
+                        f"[BATCH][VOTE] 표결 없음 external_bill_id={external_bill_id}",
+                        flush=True,
+                    )
                     continue
 
                 bill_inserted = 0
@@ -331,13 +344,20 @@ class BatchRunner:
                         bill_no_change += 1
                         no_change += 1
 
+                if bill_inserted > 0:
+                    vote_action_type = "INSERT"
+                elif bill_updated > 0:
+                    vote_action_type = "UPDATE"
+                else:
+                    vote_action_type = "NO_CHANGE"
+
                 batch_repo.add_item(
                     batch_run_id=batch_run_id,
                     item_type="VOTE_SYNC",
                     target_external_id=external_bill_id,
                     target_internal_id=bill_id,
                     item_status="SUCCESS",
-                    action_type="SYNC",
+                    action_type=vote_action_type,
                     payload={
                         "official_title": bill.get("official_title"),
                         "proposal_date": str(bill.get("proposal_date")) if bill.get("proposal_date") else None,
@@ -382,6 +402,7 @@ class BatchRunner:
             "updated": updated,
             "no_change": no_change,
             "failed": failed,
+            "repaired_member_ids": repaired_member_ids,
         }
 
     def _process_ai_queue(

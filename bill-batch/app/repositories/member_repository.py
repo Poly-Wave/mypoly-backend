@@ -162,7 +162,7 @@ class MemberRepository:
         with self.conn.cursor() as cur:
             cur.execute(
                 f"""
-                SELECT id, member_no, mona_cd, name, party_name
+                SELECT id, member_no, mona_cd, external_member_id, name, party_name
                 FROM {self.schema}.bill_members
                 """
             )
@@ -170,6 +170,7 @@ class MemberRepository:
 
         by_member_no: Dict[str, int] = {}
         by_mona_cd: Dict[str, int] = {}
+        by_external_member_id: Dict[str, int] = {}
         by_name_party: Dict[str, int] = {}
 
         for row in rows:
@@ -183,6 +184,10 @@ class MemberRepository:
             if mona_cd and mona_cd not in by_mona_cd:
                 by_mona_cd[mona_cd] = member_id
 
+            external_member_id = (row.get("external_member_id") or "").strip()
+            if external_member_id and external_member_id not in by_external_member_id:
+                by_external_member_id[external_member_id] = member_id
+
             name = (row.get("name") or "").strip()
             party_name = (row.get("party_name") or "").strip()
             if name:
@@ -190,9 +195,14 @@ class MemberRepository:
                 if key not in by_name_party:
                     by_name_party[key] = member_id
 
+                fallback_key = f"{name}|"
+                if fallback_key not in by_name_party:
+                    by_name_party[fallback_key] = member_id
+
         return {
             "by_member_no": by_member_no,
             "by_mona_cd": by_mona_cd,
+            "by_external_member_id": by_external_member_id,
             "by_name_party": by_name_party,
         }
 
@@ -215,8 +225,16 @@ class MemberRepository:
         if mona_cd and mona_cd in lookup_maps["by_mona_cd"]:
             return lookup_maps["by_mona_cd"][mona_cd]
 
+        if mona_cd and mona_cd in lookup_maps["by_external_member_id"]:
+            return lookup_maps["by_external_member_id"][mona_cd]
+
         if member_name:
             key = f"{member_name}|{party_name}"
-            return lookup_maps["by_name_party"].get(key)
+            resolved = lookup_maps["by_name_party"].get(key)
+            if resolved:
+                return resolved
+
+            fallback_key = f"{member_name}|"
+            return lookup_maps["by_name_party"].get(fallback_key)
 
         return None
