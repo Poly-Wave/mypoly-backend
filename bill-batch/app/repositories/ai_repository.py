@@ -34,57 +34,6 @@ class AiRepository:
             row = cur.fetchone()
             return int(row["next_version"])
 
-    def insert_failed_analysis(
-        self,
-        bill_id: int,
-        source_text_hash: str | None,
-        model_name: str,
-        prompt_version: str,
-        temperature: float,
-        analysis_input: Dict[str, Any],
-        error_message: str,
-    ) -> int:
-        version = self.get_next_analysis_version(bill_id)
-
-        with self.conn.cursor() as cur:
-            cur.execute(
-                f"""
-                INSERT INTO {self.schema}.bill_ai_analyses (
-                    bill_id,
-                    analysis_version,
-                    analysis_status,
-                    headline,
-                    summary,
-                    source_text_hash,
-                    model_name,
-                    prompt_version,
-                    temperature,
-                    analysis_input,
-                    analysis_output,
-                    error_message,
-                    is_current,
-                    generated_at,
-                    created_at
-                ) VALUES (
-                    %s, %s, 'FAILED',
-                    NULL, NULL, %s, %s, %s, %s,
-                    %s, NULL, %s, FALSE, now(), now()
-                )
-                RETURNING id
-                """,
-                (
-                    bill_id,
-                    version,
-                    source_text_hash,
-                    model_name,
-                    prompt_version,
-                    temperature,
-                    Json(analysis_input),
-                    error_message[:5000],
-                ),
-            )
-            return cur.fetchone()["id"]
-
     def insert_success_analysis(
         self,
         bill_id: int,

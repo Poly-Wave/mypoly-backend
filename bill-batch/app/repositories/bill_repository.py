@@ -402,3 +402,47 @@ class BillRepository:
                 ),
             )
             return cur.rowcount
+
+    def get_vote_target_bills(
+        self,
+        limit: int,
+        min_proposal_date: date,
+        lookback_days: int,
+        missing_only: bool,
+    ) -> List[Dict[str, Any]]:
+        missing_only_sql = ""
+        if missing_only:
+            missing_only_sql = f"""
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM {self.schema}.bill_votes v
+                    WHERE v.bill_id = b.id
+              )
+            """
+
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                SELECT
+                    b.id,
+                    b.external_bill_id,
+                    b.bill_no,
+                    b.official_title,
+                    b.proposal_date,
+                    b.current_proc_stage_name,
+                    EXISTS (
+                        SELECT 1
+                        FROM {self.schema}.bill_votes v
+                        WHERE v.bill_id = b.id
+                    ) AS has_votes
+                FROM {self.schema}.bills b
+                WHERE b.proposal_date IS NOT NULL
+                  AND b.proposal_date >= %s
+                  AND b.proposal_date >= current_date - (%s || ' days')::interval
+                  {missing_only_sql}
+                ORDER BY b.proposal_date DESC, b.id DESC
+                LIMIT %s
+                """,
+                (min_proposal_date, str(lookback_days), limit),
+            )
+            return cur.fetchall()

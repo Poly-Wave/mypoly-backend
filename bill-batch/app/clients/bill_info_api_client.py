@@ -1,6 +1,6 @@
 import re
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timezone, timedelta
 from typing import Any, Dict, Iterator, List
 from urllib.parse import urlencode
 from xml.etree import ElementTree as ET
@@ -9,6 +9,10 @@ import requests
 
 from app.config import Settings
 
+_KST = timezone(timedelta(hours=9))
+
+def kst_today() -> date:
+    return datetime.now(_KST).date()
 
 def parse_api_date(value: str | None):
     if not value:
