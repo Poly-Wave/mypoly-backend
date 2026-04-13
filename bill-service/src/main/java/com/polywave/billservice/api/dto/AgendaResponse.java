@@ -23,9 +23,19 @@ public record AgendaResponse(
         long totalVoteCount,
 
         @Schema(description = "현재 사용자의 투표 여부", example = "true")
-        boolean hasVoted
+        boolean hasVoted,
+
+        @Schema(
+                description = "메인 리스트 카테고리 이미지 URL",
+                example = "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/ENVIRONMENT_main_64.webp",
+                nullable = true
+        )
+        String iconUrl
 ) {
-    public static AgendaResponse from(AgendaResult result) {
+    private static final String ICON_PREFIX = "bill-categories";
+    private static final String MAIN_ICON_SUFFIX = "_main_64.webp";
+
+    public static AgendaResponse from(AgendaResult result, String iconBaseUrl) {
         double agreeRatio = result.agreeRatio();
         double disagreeRatio = result.disagreeRatio();
 
@@ -35,13 +45,19 @@ public record AgendaResponse(
             disagreeRatio = roundTo2(1.0 - agreeRatio);
         }
 
+        String iconUrl = null;
+        if (result.categoryCode() != null && !result.categoryCode().isBlank()) {
+            iconUrl = iconBaseUrl + "/" + ICON_PREFIX + "/" + result.categoryCode() + MAIN_ICON_SUFFIX;
+        }
+
         return new AgendaResponse(
                 result.billId(),
                 result.officialTitle(),
                 agreeRatio,
                 disagreeRatio,
                 result.totalVoteCount(),
-                result.hasVoted()
+                result.hasVoted(),
+                iconUrl
         );
     }
 

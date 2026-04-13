@@ -2,6 +2,9 @@ package com.polywave.billservice.repository.query.impl;
 
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.domain.QBill;
+import com.polywave.billservice.domain.QBillAiAnalysis;
+import com.polywave.billservice.domain.QBillAiCategory;
+import com.polywave.billservice.domain.QBillCategory;
 import com.polywave.billservice.domain.QBillTrendingSnapshot;
 import com.polywave.billservice.domain.QUserBillVote;
 import com.polywave.billservice.domain.UserVoteResult;
@@ -33,6 +36,9 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
         QUserBillVote vote = QUserBillVote.userBillVote;
         QUserBillVote userVote = new QUserBillVote("userVote");
         QBill bill = QBill.bill;
+        QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
+        QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
+        QBillCategory category = QBillCategory.billCategory;
 
         Instant cutoff = Instant.now().minus(days, ChronoUnit.DAYS);
 
@@ -84,16 +90,30 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         agreeRatio,
                         disagreeRatio,
                         totalVoteCount,
-                        hasVoted
+                        hasVoted,
+                        category.code
                 ))
                 .from(vote)
                 .innerJoin(vote.bill, bill)
+                .leftJoin(analysis).on(
+                        analysis.bill.id.eq(bill.id),
+                        analysis.current.isTrue()
+                )
+                .leftJoin(billAiCategory).on(
+                        billAiCategory.analysis.id.eq(analysis.id),
+                        billAiCategory.rankOrder.eq(1)
+                )
+                .leftJoin(billAiCategory.category, category)
                 .leftJoin(userVote).on(
                         userVote.bill.id.eq(bill.id),
                         userVote.userId.eq(userId)
                 )
                 .where(vote.votedAt.goe(cutoff))
-                .groupBy(bill.id, bill.officialTitle)
+                .groupBy(
+                        bill.id,
+                        bill.officialTitle,
+                        category.code
+                )
                 .having(agreeSum.add(disagreeSum).goe((long) minVoteCount))
                 .orderBy(controversyScore.asc())
                 .offset(pageable.getOffset())
@@ -106,6 +126,9 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
         QBillTrendingSnapshot snapshot = QBillTrendingSnapshot.billTrendingSnapshot;
         QBill bill = QBill.bill;
         QUserBillVote voteSub = new QUserBillVote("voteSub");
+        QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
+        QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
+        QBillCategory category = QBillCategory.billCategory;
 
         var hasVoted = JPAExpressions
                 .selectOne()
@@ -125,11 +148,21 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                                 Expressions.constant(0.0),
                                 Expressions.constant(0.0),
                                 snapshot.voteCount7d.longValue(),
-                                hasVoted
+                                hasVoted,
+                                category.code
                         )
                 )
                 .from(snapshot)
                 .innerJoin(bill).on(snapshot.billId.eq(bill.id))
+                .leftJoin(analysis).on(
+                        analysis.bill.id.eq(bill.id),
+                        analysis.current.isTrue()
+                )
+                .leftJoin(billAiCategory).on(
+                        billAiCategory.analysis.id.eq(analysis.id),
+                        billAiCategory.rankOrder.eq(1)
+                )
+                .leftJoin(billAiCategory.category, category)
                 .orderBy(snapshot.voteCount7d.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
