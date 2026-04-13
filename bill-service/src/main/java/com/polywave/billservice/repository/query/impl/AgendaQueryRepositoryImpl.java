@@ -7,6 +7,7 @@ import com.polywave.billservice.domain.QUserBillVote;
 import com.polywave.billservice.domain.UserVoteResult;
 import com.polywave.billservice.repository.query.AgendaQueryRepository;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
@@ -30,6 +31,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
     @Override
     public List<AgendaResult> findHotDebateAgendas(Long userId, int days, int minVoteCount, Pageable pageable) {
         QUserBillVote vote = QUserBillVote.userBillVote;
+        QUserBillVote userVote = new QUserBillVote("userVote");
         QBill bill = QBill.bill;
 
         Instant cutoff = Instant.now().minus(days, ChronoUnit.DAYS);
@@ -37,6 +39,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
         NumberExpression<Integer> agreeCase = Expressions.cases()
                 .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
                 .otherwise(0);
+
         NumberExpression<Integer> disagreeCase = Expressions.cases()
                 .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
                 .otherwise(0);
@@ -44,28 +47,28 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
         NumberExpression<Integer> agreeSum = agreeCase.sum();
         NumberExpression<Integer> disagreeSum = disagreeCase.sum();
         NumberExpression<Long> totalVoteCount = agreeSum.add(disagreeSum).longValue();
+
         NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
                 Double.class,
                 "(1.0 * {0}) / ({0} + {1})",
                 agreeSum,
                 disagreeSum
         );
+
         NumberExpression<Double> disagreeRatio = Expressions.numberTemplate(
                 Double.class,
                 "(1.0 * {1}) / ({0} + {1})",
                 agreeSum,
                 disagreeSum
         );
-        var hasVoted = JPAExpressions
-                .selectOne()
-                .from(vote)
-                .where(
-                        vote.userId.eq(userId),
-                        vote.bill.id.eq(bill.id)
-                )
-                .exists();
 
-        // |찬성% - 반대%| = |agree/(agree+disagree) - 0.5|, 오름차순 → 가장 작을수록 상위
+        NumberExpression<Integer> hasVotedInt = Expressions.cases()
+                .when(userVote.id.isNotNull()).then(1)
+                .otherwise(0)
+                .max();
+
+        BooleanExpression hasVoted = hasVotedInt.eq(1);
+
         NumberExpression<Double> controversyScore = Expressions.numberTemplate(
                 Double.class,
                 "abs(((1.0 * {0}) / ({0} + {1})) - 0.5)",
@@ -85,6 +88,10 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                 ))
                 .from(vote)
                 .innerJoin(vote.bill, bill)
+                .leftJoin(userVote).on(
+                        userVote.bill.id.eq(bill.id),
+                        userVote.userId.eq(userId)
+                )
                 .where(vote.votedAt.goe(cutoff))
                 .groupBy(bill.id, bill.officialTitle)
                 .having(agreeSum.add(disagreeSum).goe((long) minVoteCount))
@@ -98,13 +105,14 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
     public List<AgendaResult> findTrendingAgendas(Long userId, Pageable pageable) {
         QBillTrendingSnapshot snapshot = QBillTrendingSnapshot.billTrendingSnapshot;
         QBill bill = QBill.bill;
-        QUserBillVote vote = QUserBillVote.userBillVote;
+        QUserBillVote voteSub = new QUserBillVote("voteSub");
+
         var hasVoted = JPAExpressions
                 .selectOne()
-                .from(vote)
+                .from(voteSub)
                 .where(
-                        vote.userId.eq(userId),
-                        vote.bill.id.eq(bill.id)
+                        voteSub.userId.eq(userId),
+                        voteSub.bill.id.eq(bill.id)
                 )
                 .exists();
 
