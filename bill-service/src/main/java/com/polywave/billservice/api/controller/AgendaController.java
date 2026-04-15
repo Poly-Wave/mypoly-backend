@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,9 +24,6 @@ public class AgendaController implements AgendaApi {
     private final AgendaTabQueryService agendaTabQueryService;
     private final HotDebateAgendaQueryService hotDebateAgendaQueryService;
     private final TrendingAgendaQueryService trendingAgendaQueryService;
-
-    @Value("${bill.category.icon-base-url}")
-    private String iconBaseUrl;
 
     @Override
     public ResponseEntity<List<AgendaTabResponse>> getTabs() {
@@ -57,7 +53,7 @@ public class AgendaController implements AgendaApi {
         };
 
         List<AgendaResponse> response = agendas.stream()
-                .map(result -> AgendaResponse.from(result, iconBaseUrl))
+                .map(AgendaResponse::from)
                 .toList();
         return ResponseEntity.ok(response);
     }
