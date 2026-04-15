@@ -61,13 +61,6 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                 disagreeSum
         );
 
-        NumberExpression<Double> disagreeRatio = Expressions.numberTemplate(
-                Double.class,
-                "(1.0 * {1}) / ({0} + {1})",
-                agreeSum,
-                disagreeSum
-        );
-
         NumberExpression<Integer> hasVotedInt = Expressions.cases()
                 .when(userVote.id.isNotNull()).then(1)
                 .otherwise(0)
@@ -88,7 +81,6 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         bill.id,
                         bill.officialTitle,
                         agreeRatio,
-                        disagreeRatio,
                         totalVoteCount,
                         hasVoted,
                         category.code
@@ -145,7 +137,6 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                                 AgendaResult.class,
                                 bill.id,
                                 bill.officialTitle,
-                                Expressions.constant(0.0),
                                 Expressions.constant(0.0),
                                 snapshot.voteCount7d.longValue(),
                                 hasVoted,
