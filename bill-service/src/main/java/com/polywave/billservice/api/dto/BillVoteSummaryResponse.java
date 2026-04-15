@@ -23,18 +23,13 @@ public record BillVoteSummaryResponse(
         long totalVoteCount,
 
         @Schema(description = "찬성 비율 (0~1)", example = "0.60")
-        double agreeRatio,
-
-        @Schema(description = "반대 비율 (0~1)", example = "0.40")
-        double disagreeRatio
+        double agreeRatio
 ) {
     public static BillVoteSummaryResponse from(BillVoteSummaryResult result) {
         double agreeRatio = result.agreeRatio();
-        double disagreeRatio = result.disagreeRatio();
 
         if (result.totalVoteCount() > 0) {
             agreeRatio = roundTo2(agreeRatio);
-            disagreeRatio = roundTo2(1.0 - agreeRatio);
         }
 
         return new BillVoteSummaryResponse(
@@ -43,8 +38,7 @@ public record BillVoteSummaryResponse(
                 result.agreeCount(),
                 result.disagreeCount(),
                 result.totalVoteCount(),
-                agreeRatio,
-                disagreeRatio
+                agreeRatio
         );
     }
 
