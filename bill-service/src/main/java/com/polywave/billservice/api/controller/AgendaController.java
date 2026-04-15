@@ -8,11 +8,12 @@ import com.polywave.billservice.application.agenda.query.service.AgendaTabQueryS
 import com.polywave.billservice.application.agenda.query.service.HotDebateAgendaQueryService;
 import com.polywave.billservice.application.agenda.query.service.TrendingAgendaQueryService;
 import com.polywave.billservice.common.exception.InvalidAgendaTabCodeException;
-import io.swagger.v3.oas.annotations.Operation;
-import java.util.Locale;
 import com.polywave.security.annotation.LoginUser;
+import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,6 +25,9 @@ public class AgendaController implements AgendaApi {
     private final AgendaTabQueryService agendaTabQueryService;
     private final HotDebateAgendaQueryService hotDebateAgendaQueryService;
     private final TrendingAgendaQueryService trendingAgendaQueryService;
+
+    @Value("${bill.category.icon-base-url}")
+    private String iconBaseUrl;
 
     @Override
     public ResponseEntity<List<AgendaTabResponse>> getTabs() {
@@ -51,8 +55,9 @@ public class AgendaController implements AgendaApi {
             case "PERSONALIZED" -> List.of(); // TODO 구현
             default -> throw new InvalidAgendaTabCodeException();
         };
+
         List<AgendaResponse> response = agendas.stream()
-                .map(AgendaResponse::from)
+                .map(result -> AgendaResponse.from(result, iconBaseUrl))
                 .toList();
         return ResponseEntity.ok(response);
     }
