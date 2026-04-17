@@ -5,9 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "의안 카테고리 응답")
 public record CategoryResponse(
-        @Schema(description = "카테고리 ID", example = "1")
-        Long id,
-
         @Schema(description = "카테고리 코드(고유)", example = "DIGITAL")
         String code,
 
@@ -22,7 +19,6 @@ public record CategoryResponse(
 ) {
     public static CategoryResponse from(CategoryResult dto, String iconUrl) {
         return new CategoryResponse(
-                dto.id(),
                 dto.code(),
                 dto.name(),
                 dto.displayOrder(),

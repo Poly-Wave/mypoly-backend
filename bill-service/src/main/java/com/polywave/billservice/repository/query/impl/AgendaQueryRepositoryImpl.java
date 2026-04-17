@@ -1,6 +1,7 @@
 package com.polywave.billservice.repository.query.impl;
 
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
+import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
 import com.polywave.billservice.domain.QBill;
 import com.polywave.billservice.domain.QBillAiAnalysis;
 import com.polywave.billservice.domain.QBillAiCategory;
@@ -10,6 +11,7 @@ import com.polywave.billservice.domain.QUserBillVote;
 import com.polywave.billservice.domain.UserVoteResult;
 import com.polywave.billservice.repository.query.AgendaQueryRepository;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
@@ -18,6 +20,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -155,6 +158,74 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                 )
                 .leftJoin(billAiCategory.category, category)
                 .orderBy(snapshot.voteCount7d.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+    }
+
+    @Override
+    public List<MainAgendaResult> findMainAgendas(
+            Long userId,
+            boolean applyInterestFilter,
+            Set<Long> interestCategoryIds,
+            Pageable pageable
+    ) {
+        QBill bill = QBill.bill;
+        QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
+        QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
+        QBillCategory category = QBillCategory.billCategory;
+        QUserBillVote vote = QUserBillVote.userBillVote;
+        NumberExpression<Long> viewCount = bill.viewCount;
+
+        NumberExpression<Long> voteCount = vote.id.count();
+
+        BooleanExpression interestFilter = null;
+        if (applyInterestFilter) {
+            interestFilter = category.id.in(interestCategoryIds);
+        }
+
+        boolean isPopularSort = pageable.getSort().stream()
+                .anyMatch(order -> order.getProperty().equalsIgnoreCase("popular"));
+
+        OrderSpecifier<?> primaryOrder = isPopularSort
+                ? viewCount.desc()
+                : bill.proposalDate.desc();
+
+        return queryFactory
+                .select(Projections.constructor(
+                        MainAgendaResult.class,
+                        bill.officialTitle,
+                        analysis.summary,
+                        Expressions.nullExpression(String.class),
+                        bill.proposalDate,
+                        viewCount,
+                        voteCount,
+                        category.code,
+                        category.name,
+                        category.backgroundColor
+                ))
+                .from(bill)
+                .leftJoin(analysis).on(
+                        analysis.bill.id.eq(bill.id),
+                        analysis.current.isTrue()
+                )
+                .leftJoin(billAiCategory).on(
+                        billAiCategory.analysis.id.eq(analysis.id),
+                        billAiCategory.rankOrder.eq(1)
+                )
+                .leftJoin(billAiCategory.category, category)
+                .leftJoin(vote).on(vote.bill.id.eq(bill.id))
+                .where(interestFilter)
+                .groupBy(
+                        bill.id,
+                        bill.officialTitle,
+                        analysis.summary,
+                        bill.proposalDate,
+                        category.code,
+                        category.name,
+                        category.id
+                )
+                .orderBy(primaryOrder, bill.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
