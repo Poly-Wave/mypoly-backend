@@ -90,6 +90,24 @@ public class BillMember extends BaseEntity {
     @Column(name = "brief_history", columnDefinition = "TEXT")
     private String briefHistory;
 
+    @Column(name = "phone_number", length = 50)
+    private String phoneNumber;
+
+    @Column(name = "office_room_number", length = 100)
+    private String officeRoomNumber;
+
+    @Column(name = "email", length = 200)
+    private String email;
+
+    @Column(name = "aide_names", length = 500)
+    private String aideNames;
+
+    @Column(name = "chief_secretary_names", length = 500)
+    private String chiefSecretaryNames;
+
+    @Column(name = "secretary_names", length = 1000)
+    private String secretaryNames;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "source_payload", columnDefinition = "jsonb")
     private String sourcePayload;

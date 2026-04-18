@@ -48,7 +48,13 @@ public class BillMemberQueryRepositoryImpl implements BillMemberQueryRepository 
                         member.birthDate,
                         member.photoUrl,
                         member.homepageUrl,
-                        member.briefHistory
+                        member.briefHistory,
+                        member.phoneNumber,
+                        member.officeRoomNumber,
+                        member.email,
+                        member.aideNames,
+                        member.chiefSecretaryNames,
+                        member.secretaryNames
                 ))
                 .from(member)
                 .where(member.id.eq(memberId))

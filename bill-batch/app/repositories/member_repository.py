@@ -41,6 +41,12 @@ class MemberRepository:
             "photo_url": member.get("photo_url"),
             "homepage_url": member.get("homepage_url"),
             "brief_history": member.get("brief_history"),
+            "phone_number": member.get("phone_number"),
+            "office_room_number": member.get("office_room_number"),
+            "email": member.get("email"),
+            "aide_names": member.get("aide_names"),
+            "chief_secretary_names": member.get("chief_secretary_names"),
+            "secretary_names": member.get("secretary_names"),
         }
 
         if not existing:
@@ -66,6 +72,12 @@ class MemberRepository:
                         photo_url,
                         homepage_url,
                         brief_history,
+                        phone_number,
+                        office_room_number,
+                        email,
+                        aide_names,
+                        chief_secretary_names,
+                        secretary_names,
                         source_payload,
                         created_at,
                         updated_at
@@ -74,6 +86,8 @@ class MemberRepository:
                         %s, %s, %s,
                         %s, %s,
                         %s, %s, %s, %s,
+                        %s, %s, %s,
+                        %s, %s, %s,
                         %s, %s, %s,
                         %s,
                         now(), now()
@@ -99,6 +113,12 @@ class MemberRepository:
                         member.get("photo_url"),
                         member.get("homepage_url"),
                         member.get("brief_history"),
+                        member.get("phone_number"),
+                        member.get("office_room_number"),
+                        member.get("email"),
+                        member.get("aide_names"),
+                        member.get("chief_secretary_names"),
+                        member.get("secretary_names"),
                         Json(member.get("source_payload", {})),
                     ),
                 )
@@ -130,6 +150,12 @@ class MemberRepository:
                     photo_url = %s,
                     homepage_url = %s,
                     brief_history = %s,
+                    phone_number = %s,
+                    office_room_number = %s,
+                    email = %s,
+                    aide_names = %s,
+                    chief_secretary_names = %s,
+                    secretary_names = %s,
                     source_payload = %s,
                     updated_at = now()
                 WHERE id = %s
@@ -152,6 +178,12 @@ class MemberRepository:
                     member.get("photo_url"),
                     member.get("homepage_url"),
                     member.get("brief_history"),
+                    member.get("phone_number"),
+                    member.get("office_room_number"),
+                    member.get("email"),
+                    member.get("aide_names"),
+                    member.get("chief_secretary_names"),
+                    member.get("secretary_names"),
                     Json(member.get("source_payload", {})),
                     existing["id"],
                 ),

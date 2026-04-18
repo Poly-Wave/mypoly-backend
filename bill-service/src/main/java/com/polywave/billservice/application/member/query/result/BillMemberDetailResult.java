@@ -21,6 +21,12 @@ public record BillMemberDetailResult(
         LocalDate birthDate,
         String photoUrl,
         String homepageUrl,
-        String briefHistory
+        String briefHistory,
+        String phoneNumber,
+        String officeRoomNumber,
+        String email,
+        String aideNames,
+        String chiefSecretaryNames,
+        String secretaryNames
 ) {
 }

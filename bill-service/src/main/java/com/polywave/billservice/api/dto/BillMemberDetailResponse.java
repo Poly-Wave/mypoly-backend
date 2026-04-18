@@ -4,6 +4,7 @@ import com.polywave.billservice.application.member.query.result.BillMemberDetail
 import com.polywave.billservice.application.member.query.result.BillMemberRepresentativeBillResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
 @Schema(description = "국회의원 상세 응답")
@@ -65,6 +66,24 @@ public record BillMemberDetailResponse(
         @Schema(description = "약력")
         String briefHistory,
 
+        @Schema(description = "의원실 전화번호", example = "02-784-5601")
+        String phoneNumber,
+
+        @Schema(description = "의원회관 사무실 호실", example = "의원회관 515호")
+        String officeRoomNumber,
+
+        @Schema(description = "이메일", example = "gracesook52@rebuildingk.kr")
+        String email,
+
+        @Schema(description = "보좌관 목록", example = "[\"김재삼\", \"서용선\"]")
+        List<String> aides,
+
+        @Schema(description = "선임비서관 목록", example = "[\"김홍\", \"오세령\"]")
+        List<String> chiefSecretaries,
+
+        @Schema(description = "비서관 목록", example = "[\"유은영\", \"김예닮\"]")
+        List<String> secretaries,
+
         @Schema(description = "최근 대표 발의 의안 목록")
         List<BillMemberRepresentativeBillResponse> representativeBills
 ) {
@@ -93,6 +112,12 @@ public record BillMemberDetailResponse(
                 nullToEmpty(result.photoUrl()),
                 nullToEmpty(result.homepageUrl()),
                 nullToEmpty(result.briefHistory()),
+                nullToEmpty(result.phoneNumber()),
+                nullToEmpty(result.officeRoomNumber()),
+                nullToEmpty(result.email()),
+                splitNames(result.aideNames()),
+                splitNames(result.chiefSecretaryNames()),
+                splitNames(result.secretaryNames()),
                 toRepresentativeBillResponses(representativeBills)
         );
     }
@@ -106,6 +131,17 @@ public record BillMemberDetailResponse(
 
         return representativeBills.stream()
                 .map(BillMemberRepresentativeBillResponse::from)
+                .toList();
+    }
+
+    private static List<String> splitNames(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(name -> !name.isBlank())
                 .toList();
     }
 
