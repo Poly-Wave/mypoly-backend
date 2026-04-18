@@ -10,6 +10,7 @@ import com.polywave.billservice.application.bill.query.result.BillDetailResult;
 import com.polywave.billservice.application.bill.query.result.BillStatusHistoryResult;
 import com.polywave.billservice.application.bill.query.result.BillVoteSummaryResult;
 import com.polywave.billservice.application.bill.query.result.SimilarTopicBillResult;
+import com.polywave.billservice.application.view.command.service.BillViewCountCommandService;
 import com.polywave.billservice.common.exception.BillNotFoundException;
 import com.polywave.billservice.config.AgendaProperties;
 import com.polywave.billservice.repository.query.BillBookmarkQueryRepository;
@@ -28,11 +29,18 @@ public class BillDetailQueryService {
 
     private final BillDetailQueryRepository billDetailQueryRepository;
     private final BillBookmarkQueryRepository billBookmarkQueryRepository;
+    private final BillViewCountCommandService billViewCountCommandService;
     private final AgendaProperties agendaProperties;
 
+    @Transactional
     public BillDetailResponse getBillDetail(Long billId, Long userId) {
         BillDetailResult detail = billDetailQueryRepository.findBillDetailById(billId)
                 .orElseThrow(BillNotFoundException::new);
+
+        boolean viewCountIncreased = billViewCountCommandService.increaseViewCountIfCountable(userId, billId);
+        if (viewCountIncreased) {
+            detail = withIncreasedViewCount(detail);
+        }
 
         List<BillCategoryResult> categories = billDetailQueryRepository.findCategoriesByBillId(billId);
         BillVoteSummaryResult voteSummary = billDetailQueryRepository.findVoteSummaryByBillId(billId, userId);
@@ -92,6 +100,26 @@ public class BillDetailQueryService {
         if (!billDetailQueryRepository.existsBillById(billId)) {
             throw new BillNotFoundException();
         }
+    }
+
+    private BillDetailResult withIncreasedViewCount(BillDetailResult detail) {
+        long increasedViewCount = (detail.viewCount() == null ? 0L : detail.viewCount()) + 1;
+        return new BillDetailResult(
+                detail.billId(),
+                detail.officialTitle(),
+                detail.proposalDate(),
+                detail.representativeProposerName(),
+                detail.proposerCount(),
+                detail.detailUrl(),
+                increasedViewCount,
+                detail.currentProcStageCode(),
+                detail.currentProcStageName(),
+                detail.currentProcStageOrder(),
+                detail.currentPassGubn(),
+                detail.currentGeneralResult(),
+                detail.aiHeadline(),
+                detail.aiSummary()
+        );
     }
 
     private int normalizeSize(Integer size) {
