@@ -67,6 +67,23 @@ public record BillDetailResponse(
         );
     }
 
+    public BillDetailResponse withViewCount(long viewCount) {
+        return new BillDetailResponse(
+                billId,
+                officialTitle,
+                proposalDate,
+                representativeProposerName,
+                proposerCount,
+                detailUrl,
+                viewCount,
+                bookmarked,
+                stage,
+                aiSummary,
+                categories,
+                voteSummary
+        );
+    }
+
     private static String nullToEmpty(String value) {
         return value == null ? "" : value;
     }
