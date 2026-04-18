@@ -7,6 +7,7 @@ import com.polywave.billservice.api.dto.BillVoteSummaryResponse;
 import com.polywave.billservice.api.dto.SimilarTopicBillResponse;
 import com.polywave.billservice.api.dto.SimilarTopicSortType;
 import com.polywave.billservice.api.spec.BillDetailApi;
+import com.polywave.billservice.application.bill.BillDetailAppService;
 import com.polywave.billservice.application.bill.query.service.BillDetailQueryService;
 import com.polywave.billservice.application.bookmark.BillBookmarkAppService;
 import com.polywave.security.annotation.LoginUser;
@@ -19,12 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class BillDetailController implements BillDetailApi {
 
+    private final BillDetailAppService billDetailAppService;
     private final BillDetailQueryService billDetailQueryService;
     private final BillBookmarkAppService billBookmarkAppService;
 
     @Override
     public ResponseEntity<BillDetailResponse> getBillDetail(Long billId, @LoginUser Long userId) {
-        return ResponseEntity.ok(billDetailQueryService.getBillDetail(billId, userId));
+        return ResponseEntity.ok(billDetailAppService.getBillDetail(billId, userId));
     }
 
     @Override
