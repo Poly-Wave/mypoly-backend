@@ -1,8 +1,10 @@
 package com.polywave.billservice.api.dto;
 
 import com.polywave.billservice.application.member.query.result.BillMemberDetailResult;
+import com.polywave.billservice.application.member.query.result.BillMemberRepresentativeBillResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
+import java.util.List;
 
 @Schema(description = "국회의원 상세 응답")
 public record BillMemberDetailResponse(
@@ -61,10 +63,16 @@ public record BillMemberDetailResponse(
         String homepageUrl,
 
         @Schema(description = "약력")
-        String briefHistory
+        String briefHistory,
+
+        @Schema(description = "최근 대표 발의 의안 목록")
+        List<BillMemberRepresentativeBillResponse> representativeBills
 ) {
 
-    public static BillMemberDetailResponse from(BillMemberDetailResult result) {
+    public static BillMemberDetailResponse from(
+            BillMemberDetailResult result,
+            List<BillMemberRepresentativeBillResult> representativeBills
+    ) {
         return new BillMemberDetailResponse(
                 result.memberId(),
                 nullToEmpty(result.externalMemberId()),
@@ -84,8 +92,21 @@ public record BillMemberDetailResponse(
                 result.birthDate(),
                 nullToEmpty(result.photoUrl()),
                 nullToEmpty(result.homepageUrl()),
-                nullToEmpty(result.briefHistory())
+                nullToEmpty(result.briefHistory()),
+                toRepresentativeBillResponses(representativeBills)
         );
+    }
+
+    private static List<BillMemberRepresentativeBillResponse> toRepresentativeBillResponses(
+            List<BillMemberRepresentativeBillResult> representativeBills
+    ) {
+        if (representativeBills == null || representativeBills.isEmpty()) {
+            return List.of();
+        }
+
+        return representativeBills.stream()
+                .map(BillMemberRepresentativeBillResponse::from)
+                .toList();
     }
 
     private static String nullToEmpty(String value) {
