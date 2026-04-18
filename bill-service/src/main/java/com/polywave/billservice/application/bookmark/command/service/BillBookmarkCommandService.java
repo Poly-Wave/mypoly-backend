@@ -5,6 +5,7 @@ import com.polywave.billservice.domain.Bill;
 import com.polywave.billservice.domain.UserBillBookmark;
 import com.polywave.billservice.repository.command.BillCommandRepository;
 import com.polywave.billservice.repository.command.UserBillBookmarkCommandRepository;
+import com.polywave.billservice.repository.query.BillBookmarkQueryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -16,10 +17,11 @@ public class BillBookmarkCommandService {
 
     private final BillCommandRepository billCommandRepository;
     private final UserBillBookmarkCommandRepository userBillBookmarkCommandRepository;
+    private final BillBookmarkQueryRepository billBookmarkQueryRepository;
 
     @Transactional
     public void bookmark(Long userId, Long billId) {
-        if (userBillBookmarkCommandRepository.existsByUserIdAndBill_Id(userId, billId)) {
+        if (billBookmarkQueryRepository.existsBookmark(userId, billId)) {
             return;
         }
 
