@@ -2,6 +2,7 @@ package com.polywave.billservice.repository.query.impl;
 
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
+import com.polywave.billservice.domain.AgeBand;
 import com.polywave.billservice.domain.QBill;
 import com.polywave.billservice.domain.QBillAiAnalysis;
 import com.polywave.billservice.domain.QBillAiCategory;
@@ -18,6 +19,7 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
@@ -158,6 +160,123 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                 )
                 .leftJoin(billAiCategory.category, category)
                 .orderBy(snapshot.voteCount7d.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+    }
+
+    @Override
+    public List<AgendaResult> findRecent30dAgendas(Long userId, Pageable pageable) {
+        QBill bill = QBill.bill;
+        QUserBillVote vote = QUserBillVote.userBillVote;
+        QUserBillVote voteSub = new QUserBillVote("voteSub");
+        QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
+        QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
+        QBillCategory category = QBillCategory.billCategory;
+
+        LocalDate proposalCutoff = LocalDate.now().minusDays(30);
+        Instant monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay().toInstant(java.time.ZoneOffset.UTC);
+
+        NumberExpression<Long> monthlyVoteCount = vote.id.count();
+        var hasVoted = JPAExpressions
+                .selectOne()
+                .from(voteSub)
+                .where(
+                        voteSub.userId.eq(userId),
+                        voteSub.bill.id.eq(bill.id)
+                )
+                .exists();
+
+        return queryFactory
+                .select(Projections.constructor(
+                        AgendaResult.class,
+                        bill.id,
+                        bill.officialTitle,
+                        Expressions.constant(0.0),
+                        monthlyVoteCount,
+                        hasVoted,
+                        category.code
+                ))
+                .from(bill)
+                .leftJoin(vote).on(
+                        vote.bill.id.eq(bill.id),
+                        vote.votedAt.goe(monthStart)
+                )
+                .leftJoin(analysis).on(
+                        analysis.bill.id.eq(bill.id),
+                        analysis.current.isTrue()
+                )
+                .leftJoin(billAiCategory).on(
+                        billAiCategory.analysis.id.eq(analysis.id),
+                        billAiCategory.rankOrder.eq(1)
+                )
+                .leftJoin(billAiCategory.category, category)
+                .where(bill.proposalDate.goe(proposalCutoff))
+                .groupBy(
+                        bill.id,
+                        bill.officialTitle,
+                        bill.proposalDate,
+                        category.code
+                )
+                .orderBy(monthlyVoteCount.desc(), bill.proposalDate.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+    }
+
+    @Override
+    public List<AgendaResult> findSameAgeAgendas(Long userId, AgeBand ageBand, Pageable pageable) {
+        QBill bill = QBill.bill;
+        QUserBillVote vote = QUserBillVote.userBillVote;
+        QUserBillVote voteSub = new QUserBillVote("voteSub");
+        QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
+        QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
+        QBillCategory category = QBillCategory.billCategory;
+
+        LocalDate proposalCutoff = LocalDate.now().minusDays(7);
+        NumberExpression<Long> sameAgeVoteCount = vote.id.count();
+
+        var hasVoted = JPAExpressions
+                .selectOne()
+                .from(voteSub)
+                .where(
+                        voteSub.userId.eq(userId),
+                        voteSub.bill.id.eq(bill.id)
+                )
+                .exists();
+
+        return queryFactory
+                .select(Projections.constructor(
+                        AgendaResult.class,
+                        bill.id,
+                        bill.officialTitle,
+                        Expressions.constant(0.0),
+                        sameAgeVoteCount,
+                        hasVoted,
+                        category.code
+                ))
+                .from(bill)
+                .leftJoin(vote).on(
+                        vote.bill.id.eq(bill.id),
+                        vote.voterAgeBand.eq(ageBand.name())
+                )
+                .leftJoin(analysis).on(
+                        analysis.bill.id.eq(bill.id),
+                        analysis.current.isTrue()
+                )
+                .leftJoin(billAiCategory).on(
+                        billAiCategory.analysis.id.eq(analysis.id),
+                        billAiCategory.rankOrder.eq(1)
+                )
+                .leftJoin(billAiCategory.category, category)
+                .where(bill.proposalDate.goe(proposalCutoff))
+                .groupBy(
+                        bill.id,
+                        bill.officialTitle,
+                        bill.proposalDate,
+                        category.code
+                )
+                .orderBy(sameAgeVoteCount.desc(), bill.proposalDate.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

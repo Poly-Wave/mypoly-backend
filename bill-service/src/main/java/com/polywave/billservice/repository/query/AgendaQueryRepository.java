@@ -2,6 +2,7 @@ package com.polywave.billservice.repository.query;
 
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
+import com.polywave.billservice.domain.AgeBand;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -19,6 +20,16 @@ public interface AgendaQueryRepository {
      * 요즘 핫한 안건 목록: 7일 내 투표 완료 수 배치 스냅샷 기준 내림차순.
      */
     List<AgendaResult> findTrendingAgendas(Long userId, Pageable pageable);
+
+    /**
+     * 최근 30일 내 등록 안건 중 이번 달 누적 투표 완료 수 내림차순.
+     */
+    List<AgendaResult> findRecent30dAgendas(Long userId, Pageable pageable);
+
+    /**
+     * 최근 7일 내 등록 안건 중 동일 연령대 투표 완료 수 내림차순.
+     */
+    List<AgendaResult> findSameAgeAgendas(Long userId, AgeBand ageBand, Pageable pageable);
 
     /**
      * 안건 메인 목록 조회.
