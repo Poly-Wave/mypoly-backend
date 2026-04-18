@@ -24,6 +24,7 @@ import org.hibernate.type.SqlTypes;
         name = "bill_proposers",
         indexes = {
                 @Index(name = "idx_bill_proposers_bill_id", columnList = "bill_id"),
+                @Index(name = "idx_bill_proposers_member_id", columnList = "member_id"),
                 @Index(name = "idx_bill_proposers_name", columnList = "proposer_name")
         }
 )
@@ -36,6 +37,10 @@ public class BillProposer {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "bill_id", nullable = false)
     private Bill bill;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private BillMember member;
 
     @Column(name = "proposer_name", length = 100, nullable = false)
     private String proposerName;
