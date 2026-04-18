@@ -45,8 +45,8 @@ public class AgendaController implements AgendaApi {
             탭 코드에 해당하는 안건 목록을 반환합니다. 로그인한 사용자만 호출 가능합니다.
             - HOT_DEBATE: 쟁쟁한 (찬반 비율이 팽팽한 순)
             - TRENDING: 요즘 핫한 (최근 7일 투표 완료 수 순, 배치 선계산)
-            - RECENT_30D: 최근 30일 (최근 30일 등록 안건 중 이번 달 누적 투표 완료 수 순)
-            - SAME_AGE: 내 또래 (최근 7일 등록 안건 중 동일 연령대 투표 완료 수 순)
+            - RECENT_30D: 최근 30일 (최근 30일 이내 투표가 최소 M건 이상인 의안만, M은 쟁쟁한과 동일, 해당 기간 투표 수 많은 순)
+            - SAME_AGE: 내 또래 (최근 7일 이내 동일 연령대 투표만 집계, 10건 미만 의안 제외. 일수·최소 투표 수는 쟁쟁한과 동일 설정)
             """)
     @Override
     public ResponseEntity<List<AgendaResponse>> getAgendasByTab(

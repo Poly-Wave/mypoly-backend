@@ -5,6 +5,7 @@ import com.polywave.billservice.client.dto.UpdateOnboardingStatusRequest;
 import com.polywave.billservice.client.dto.UserProfileResponse;
 import com.polywave.billservice.common.exception.BillErrorCode;
 import com.polywave.billservice.common.exception.BillServiceClientException;
+import com.polywave.billservice.common.exception.UserBirthDateRequiredException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
 import jakarta.servlet.http.HttpServletRequest;
@@ -109,7 +110,7 @@ public class UserServiceClient {
             var response = restTemplate.exchange(url, HttpMethod.GET, entity, UserProfileResponse.class);
             UserProfileResponse body = response.getBody();
             if (body == null || body.birthDate() == null || body.birthDate().isBlank()) {
-                throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
+                throw new UserBirthDateRequiredException();
             }
             return body.birthDate();
         };

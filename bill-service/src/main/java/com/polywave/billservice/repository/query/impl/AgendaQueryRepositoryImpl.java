@@ -19,7 +19,7 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
@@ -30,6 +30,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 @RequiredArgsConstructor
 public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
+
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Seoul");
 
     private static final String VOTE_RESULT_AGREE = UserVoteResult.AGREE.name();
     private static final String VOTE_RESULT_DISAGREE = UserVoteResult.DISAGREE.name();
@@ -119,13 +121,30 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
     }
 
     @Override
-    public List<AgendaResult> findTrendingAgendas(Long userId, Pageable pageable) {
+    public List<AgendaResult> findTrendingAgendas(Long userId, int days, Pageable pageable) {
         QBillTrendingSnapshot snapshot = QBillTrendingSnapshot.billTrendingSnapshot;
         QBill bill = QBill.bill;
+        QUserBillVote vote = QUserBillVote.userBillVote;
         QUserBillVote voteSub = new QUserBillVote("voteSub");
         QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
         QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
         QBillCategory category = QBillCategory.billCategory;
+        Instant voteCutoff = Instant.now().minus(days, ChronoUnit.DAYS);
+
+        NumberExpression<Integer> agreeCase = Expressions.cases()
+                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
+                .otherwise(0);
+        NumberExpression<Integer> disagreeCase = Expressions.cases()
+                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
+                .otherwise(0);
+        NumberExpression<Integer> agreeSum = agreeCase.sum();
+        NumberExpression<Integer> disagreeSum = disagreeCase.sum();
+        NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
+                Double.class,
+                "coalesce((1.0 * {0}) / nullif(({0} + {1}), 0), 0.0)",
+                agreeSum,
+                disagreeSum
+        );
 
         var hasVoted = JPAExpressions
                 .selectOne()
@@ -142,7 +161,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                                 AgendaResult.class,
                                 bill.id,
                                 bill.officialTitle,
-                                Expressions.constant(0.0),
+                                agreeRatio,
                                 snapshot.voteCount7d.longValue(),
                                 hasVoted,
                                 category.code
@@ -150,6 +169,10 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                 )
                 .from(snapshot)
                 .innerJoin(bill).on(snapshot.billId.eq(bill.id))
+                .leftJoin(vote).on(
+                        vote.bill.id.eq(bill.id),
+                        vote.votedAt.goe(voteCutoff)
+                )
                 .leftJoin(analysis).on(
                         analysis.bill.id.eq(bill.id),
                         analysis.current.isTrue()
@@ -159,6 +182,12 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         billAiCategory.rankOrder.eq(1)
                 )
                 .leftJoin(billAiCategory.category, category)
+                .groupBy(
+                        bill.id,
+                        bill.officialTitle,
+                        snapshot.voteCount7d,
+                        category.code
+                )
                 .orderBy(snapshot.voteCount7d.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -166,42 +195,51 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
     }
 
     @Override
-    public List<AgendaResult> findRecent30dAgendas(Long userId, Pageable pageable) {
+    public List<AgendaResult> findRecent30dAgendas(Long userId, int minVoteCount, Pageable pageable) {
         QBill bill = QBill.bill;
         QUserBillVote vote = QUserBillVote.userBillVote;
-        QUserBillVote voteSub = new QUserBillVote("voteSub");
+        QUserBillVote userVote = new QUserBillVote("userVote");
         QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
         QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
         QBillCategory category = QBillCategory.billCategory;
 
-        LocalDate proposalCutoff = LocalDate.now().minusDays(30);
-        Instant monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay().toInstant(java.time.ZoneOffset.UTC);
+        Instant voteCutoff = Instant.now().minus(30, ChronoUnit.DAYS);
 
-        NumberExpression<Long> monthlyVoteCount = vote.id.count();
-        var hasVoted = JPAExpressions
-                .selectOne()
-                .from(voteSub)
-                .where(
-                        voteSub.userId.eq(userId),
-                        voteSub.bill.id.eq(bill.id)
-                )
-                .exists();
+        NumberExpression<Integer> agreeCase = Expressions.cases()
+                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
+                .otherwise(0);
+        NumberExpression<Integer> disagreeCase = Expressions.cases()
+                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
+                .otherwise(0);
+        NumberExpression<Integer> agreeSum = agreeCase.sum();
+        NumberExpression<Integer> disagreeSum = disagreeCase.sum();
+        NumberExpression<Long> totalVoteCount = agreeSum.add(disagreeSum).longValue();
+        NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
+                Double.class,
+                "coalesce((1.0 * {0}) / nullif(({0} + {1}), 0), 0.0)",
+                agreeSum,
+                disagreeSum
+        );
+
+        NumberExpression<Integer> hasVotedInt = Expressions.cases()
+                .when(userVote.id.isNotNull()).then(1)
+                .otherwise(0)
+                .max();
+
+        BooleanExpression hasVoted = hasVotedInt.eq(1);
 
         return queryFactory
                 .select(Projections.constructor(
                         AgendaResult.class,
                         bill.id,
                         bill.officialTitle,
-                        Expressions.constant(0.0),
-                        monthlyVoteCount,
+                        agreeRatio,
+                        totalVoteCount,
                         hasVoted,
                         category.code
                 ))
-                .from(bill)
-                .leftJoin(vote).on(
-                        vote.bill.id.eq(bill.id),
-                        vote.votedAt.goe(monthStart)
-                )
+                .from(vote)
+                .innerJoin(vote.bill, bill)
                 .leftJoin(analysis).on(
                         analysis.bill.id.eq(bill.id),
                         analysis.current.isTrue()
@@ -211,55 +249,74 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         billAiCategory.rankOrder.eq(1)
                 )
                 .leftJoin(billAiCategory.category, category)
-                .where(bill.proposalDate.goe(proposalCutoff))
+                .leftJoin(userVote).on(
+                        userVote.bill.id.eq(bill.id),
+                        userVote.userId.eq(userId)
+                )
+                .where(vote.votedAt.goe(voteCutoff))
                 .groupBy(
                         bill.id,
                         bill.officialTitle,
                         bill.proposalDate,
                         category.code
                 )
-                .orderBy(monthlyVoteCount.desc(), bill.proposalDate.desc())
+                .having(agreeSum.add(disagreeSum).goe((long) minVoteCount))
+                .orderBy(totalVoteCount.desc(), bill.proposalDate.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
     }
 
     @Override
-    public List<AgendaResult> findSameAgeAgendas(Long userId, AgeBand ageBand, Pageable pageable) {
+    public List<AgendaResult> findSameAgeAgendas(
+            Long userId,
+            AgeBand ageBand,
+            int days,
+            int minVoteCount,
+            Pageable pageable
+    ) {
         QBill bill = QBill.bill;
         QUserBillVote vote = QUserBillVote.userBillVote;
-        QUserBillVote voteSub = new QUserBillVote("voteSub");
+        QUserBillVote userVote = new QUserBillVote("userVote");
         QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
         QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
         QBillCategory category = QBillCategory.billCategory;
 
-        LocalDate proposalCutoff = LocalDate.now().minusDays(7);
-        NumberExpression<Long> sameAgeVoteCount = vote.id.count();
+        Instant voteCutoff = Instant.now().minus(days, ChronoUnit.DAYS);
 
-        var hasVoted = JPAExpressions
-                .selectOne()
-                .from(voteSub)
-                .where(
-                        voteSub.userId.eq(userId),
-                        voteSub.bill.id.eq(bill.id)
-                )
-                .exists();
+        NumberExpression<Integer> agreeCase = Expressions.cases()
+                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
+                .otherwise(0);
+        NumberExpression<Integer> disagreeCase = Expressions.cases()
+                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
+                .otherwise(0);
+        NumberExpression<Integer> agreeSum = agreeCase.sum();
+        NumberExpression<Integer> disagreeSum = disagreeCase.sum();
+        NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
+                Double.class,
+                "coalesce((1.0 * {0}) / nullif(({0} + {1}), 0), 0.0)",
+                agreeSum,
+                disagreeSum
+        );
+        NumberExpression<Long> sameAgeVoteCount = vote.id.count();
+        NumberExpression<Integer> hasVotedInt = Expressions.cases()
+                .when(userVote.id.isNotNull()).then(1)
+                .otherwise(0)
+                .max();
+        BooleanExpression hasVoted = hasVotedInt.eq(1);
 
         return queryFactory
                 .select(Projections.constructor(
                         AgendaResult.class,
                         bill.id,
                         bill.officialTitle,
-                        Expressions.constant(0.0),
+                        agreeRatio,
                         sameAgeVoteCount,
                         hasVoted,
                         category.code
                 ))
-                .from(bill)
-                .leftJoin(vote).on(
-                        vote.bill.id.eq(bill.id),
-                        vote.voterAgeBand.eq(ageBand.name())
-                )
+                .from(vote)
+                .innerJoin(vote.bill, bill)
                 .leftJoin(analysis).on(
                         analysis.bill.id.eq(bill.id),
                         analysis.current.isTrue()
@@ -269,13 +326,21 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         billAiCategory.rankOrder.eq(1)
                 )
                 .leftJoin(billAiCategory.category, category)
-                .where(bill.proposalDate.goe(proposalCutoff))
+                .leftJoin(userVote).on(
+                        userVote.bill.id.eq(bill.id),
+                        userVote.userId.eq(userId)
+                )
+                .where(
+                        vote.voterAgeBand.eq(ageBand.name()),
+                        vote.votedAt.goe(voteCutoff)
+                )
                 .groupBy(
                         bill.id,
                         bill.officialTitle,
                         bill.proposalDate,
                         category.code
                 )
+                .having(sameAgeVoteCount.goe((long) minVoteCount))
                 .orderBy(sameAgeVoteCount.desc(), bill.proposalDate.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())

@@ -9,18 +9,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 요즘 핫한 탭: 7일 내 투표 완료 수 배치 스냅샷 기준 정렬.
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class TrendingAgendaQueryService {
+public class Recent30dAgendaQueryService {
 
     private final AgendaQueryRepository agendaQueryRepository;
     private final AgendaProperties agendaProperties;
 
     public List<AgendaResult> getAgendas(Long userId, Pageable pageable) {
-        return agendaQueryRepository.findTrendingAgendas(userId, agendaProperties.trending().days(), pageable);
+        return agendaQueryRepository.findRecent30dAgendas(
+                userId,
+                agendaProperties.hotDebate().minVoteCount(),
+                pageable
+        );
     }
 }

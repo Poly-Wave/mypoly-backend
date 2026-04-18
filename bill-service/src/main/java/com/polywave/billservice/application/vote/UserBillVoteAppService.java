@@ -4,6 +4,7 @@ import com.polywave.billservice.application.vote.command.service.UserBillVoteCom
 import com.polywave.billservice.application.vote.command.service.UserBillVoteCommandService;
 import com.polywave.billservice.application.vote.query.service.UserBillVoteQueryService;
 import com.polywave.billservice.client.UserServiceClient;
+import com.polywave.billservice.common.exception.InvalidUserBirthDateException;
 import com.polywave.billservice.domain.AgeBand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,7 +21,9 @@ public class UserBillVoteAppService {
     @Transactional
     public void voteOnBill(UserBillVoteCommand command) {
         String birthDate = userServiceClient.getMyBirthDate(command.userId());
-        String voterAgeBand = AgeBand.fromBirthDate(birthDate).name();
+        String voterAgeBand = AgeBand.tryFromBirthDate(birthDate)
+                .orElseThrow(InvalidUserBirthDateException::new)
+                .name();
 
         Long existingVoteId = userBillVoteQueryService
                 .findVoteId(command.userId(), command.billId())
