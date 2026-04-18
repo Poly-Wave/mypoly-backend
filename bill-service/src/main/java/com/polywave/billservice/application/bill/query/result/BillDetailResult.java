@@ -9,6 +9,7 @@ public record BillDetailResult(
         String representativeProposerName,
         Integer proposerCount,
         String detailUrl,
+        Long viewCount,
         String currentProcStageCode,
         String currentProcStageName,
         Integer currentProcStageOrder,

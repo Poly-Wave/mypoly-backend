@@ -22,10 +22,16 @@ public record BillDetailResponse(
         String representativeProposerName,
 
         @Schema(description = "제안자 수", example = "10")
-        Integer proposerCount,
+        int proposerCount,
 
         @Schema(description = "원문 URL")
         String detailUrl,
+
+        @Schema(description = "조회수", example = "0")
+        long viewCount,
+
+        @Schema(description = "현재 사용자의 보관 여부", example = "true")
+        boolean bookmarked,
 
         @Schema(description = "진행 단계 정보")
         BillStageResponse stage,
@@ -42,19 +48,26 @@ public record BillDetailResponse(
     public static BillDetailResponse from(
             BillDetailResult detail,
             List<BillCategoryResult> categories,
-            BillVoteSummaryResult voteSummary
+            BillVoteSummaryResult voteSummary,
+            boolean bookmarked
     ) {
         return new BillDetailResponse(
                 detail.billId(),
-                detail.officialTitle(),
+                nullToEmpty(detail.officialTitle()),
                 detail.proposalDate(),
-                detail.representativeProposerName(),
-                detail.proposerCount(),
-                detail.detailUrl(),
+                nullToEmpty(detail.representativeProposerName()),
+                detail.proposerCount() == null ? 0 : detail.proposerCount(),
+                nullToEmpty(detail.detailUrl()),
+                detail.viewCount() == null ? 0L : detail.viewCount(),
+                bookmarked,
                 BillStageResponse.from(detail),
                 BillAiSummaryResponse.from(detail),
-                categories.stream().map(BillCategorySummaryResponse::from).toList(),
+                categories == null ? List.of() : categories.stream().map(BillCategorySummaryResponse::from).toList(),
                 BillVoteSummaryResponse.from(voteSummary)
         );
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 }

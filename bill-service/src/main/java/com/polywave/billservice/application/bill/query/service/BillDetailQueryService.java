@@ -12,6 +12,7 @@ import com.polywave.billservice.application.bill.query.result.BillVoteSummaryRes
 import com.polywave.billservice.application.bill.query.result.SimilarTopicBillResult;
 import com.polywave.billservice.common.exception.BillNotFoundException;
 import com.polywave.billservice.config.AgendaProperties;
+import com.polywave.billservice.repository.query.BillBookmarkQueryRepository;
 import com.polywave.billservice.repository.query.BillDetailQueryRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class BillDetailQueryService {
     private static final int MONTHLY_POPULAR_DAYS = 30;
 
     private final BillDetailQueryRepository billDetailQueryRepository;
+    private final BillBookmarkQueryRepository billBookmarkQueryRepository;
     private final AgendaProperties agendaProperties;
 
     public BillDetailResponse getBillDetail(Long billId, Long userId) {
@@ -34,8 +36,9 @@ public class BillDetailQueryService {
 
         List<BillCategoryResult> categories = billDetailQueryRepository.findCategoriesByBillId(billId);
         BillVoteSummaryResult voteSummary = billDetailQueryRepository.findVoteSummaryByBillId(billId, userId);
+        boolean bookmarked = billBookmarkQueryRepository.existsBookmark(userId, billId);
 
-        return BillDetailResponse.from(detail, categories, voteSummary);
+        return BillDetailResponse.from(detail, categories, voteSummary, bookmarked);
     }
 
     public BillVoteSummaryResponse getBillVoteSummary(Long billId, Long userId) {

@@ -50,6 +50,7 @@ public class BillDetailQueryRepositoryImpl implements BillDetailQueryRepository 
                         bill.representativeProposerName,
                         bill.proposerCount,
                         bill.detailUrl,
+                        bill.viewCount,
                         bill.currentProcStageCode,
                         bill.currentProcStageName,
                         bill.currentProcStageOrder,
