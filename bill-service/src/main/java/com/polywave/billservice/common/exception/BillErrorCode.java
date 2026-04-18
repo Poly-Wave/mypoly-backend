@@ -18,6 +18,9 @@ public enum BillErrorCode implements ErrorCode {
     /** 요청한 의안을 찾을 수 없는 경우 */
     BILL_NOT_FOUND(HttpStatus.NOT_FOUND, "BILL_NOT_FOUND"),
 
+    /** 요청한 국회의원을 찾을 수 없는 경우 */
+    BILL_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "BILL_MEMBER_NOT_FOUND"),
+
     /** bill-service 내부 혹은 타 서비스 통신 시 필수인 JWT 인증 토큰이 없는 경우 */
     MISSING_JWT_TOKEN(HttpStatus.UNAUTHORIZED, "MISSING_JWT_TOKEN"),
 
