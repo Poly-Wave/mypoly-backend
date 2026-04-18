@@ -1,5 +1,6 @@
 package com.polywave.billservice.api.controller;
 
+import com.polywave.billservice.api.dto.BillBookmarkStatusResponse;
 import com.polywave.billservice.api.dto.BillDetailResponse;
 import com.polywave.billservice.api.dto.BillStatusHistoryResponse;
 import com.polywave.billservice.api.dto.BillVoteSummaryResponse;
@@ -7,6 +8,7 @@ import com.polywave.billservice.api.dto.SimilarTopicBillResponse;
 import com.polywave.billservice.api.dto.SimilarTopicSortType;
 import com.polywave.billservice.api.spec.BillDetailApi;
 import com.polywave.billservice.application.bill.query.service.BillDetailQueryService;
+import com.polywave.billservice.application.bookmark.BillBookmarkAppService;
 import com.polywave.security.annotation.LoginUser;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +20,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class BillDetailController implements BillDetailApi {
 
     private final BillDetailQueryService billDetailQueryService;
+    private final BillBookmarkAppService billBookmarkAppService;
 
     @Override
     public ResponseEntity<BillDetailResponse> getBillDetail(Long billId, @LoginUser Long userId) {
         return ResponseEntity.ok(billDetailQueryService.getBillDetail(billId, userId));
+    }
+
+    @Override
+    public ResponseEntity<BillBookmarkStatusResponse> bookmarkBill(Long billId, @LoginUser Long userId) {
+        return ResponseEntity.ok(billBookmarkAppService.bookmark(userId, billId));
+    }
+
+    @Override
+    public ResponseEntity<BillBookmarkStatusResponse> unbookmarkBill(Long billId, @LoginUser Long userId) {
+        return ResponseEntity.ok(billBookmarkAppService.unbookmark(userId, billId));
     }
 
     @Override

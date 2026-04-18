@@ -10,7 +10,11 @@ public record BillVoteSummaryResponse(
         @Schema(description = "현재 사용자의 투표 여부", example = "true")
         boolean hasVoted,
 
-        @Schema(description = "현재 사용자의 투표값", example = "AGREE", nullable = true)
+        @Schema(
+                description = "현재 사용자의 투표값. hasVoted=false인 경우 아직 투표하지 않은 상태이므로 null입니다. 가능한 값: AGREE, DISAGREE",
+                example = "AGREE",
+                nullable = true
+        )
         String myVoteResult,
 
         @Schema(description = "찬성 수", example = "120")

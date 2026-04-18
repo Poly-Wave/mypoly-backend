@@ -1,5 +1,6 @@
 package com.polywave.billservice.api.spec;
 
+import com.polywave.billservice.api.dto.BillBookmarkStatusResponse;
 import com.polywave.billservice.api.dto.BillDetailResponse;
 import com.polywave.billservice.api.dto.BillStatusHistoryResponse;
 import com.polywave.billservice.api.dto.BillVoteSummaryResponse;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +29,7 @@ public interface BillDetailApi {
 
     @Operation(
             summary = "의안 상세 조회",
-            description = "의안 상세 화면에 필요한 기본 정보, AI 요약, 카테고리, 현재 단계, 투표 요약 정보를 반환합니다."
+            description = "의안 상세 화면에 필요한 기본 정보, AI 요약, 카테고리, 현재 단계, 투표 요약, 보관 여부 정보를 반환합니다."
     )
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
@@ -41,6 +43,42 @@ public interface BillDetailApi {
     })
     @GetMapping("/{billId}")
     ResponseEntity<BillDetailResponse> getBillDetail(
+            @Parameter(description = "의안 ID", required = true)
+            @PathVariable Long billId,
+            @Parameter(hidden = true) Long userId
+    );
+
+    @Operation(summary = "의안 보관하기", description = "현재 로그인 사용자의 보관함에 의안을 추가합니다. 이미 보관된 의안이면 그대로 성공 처리합니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "보관 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "의안을 찾을 수 없음",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @org.springframework.web.bind.annotation.PostMapping("/{billId}/bookmark")
+    ResponseEntity<BillBookmarkStatusResponse> bookmarkBill(
+            @Parameter(description = "의안 ID", required = true)
+            @PathVariable Long billId,
+            @Parameter(hidden = true) Long userId
+    );
+
+    @Operation(summary = "의안 보관 해제", description = "현재 로그인 사용자의 보관함에서 의안을 제거합니다. 이미 보관되어 있지 않아도 성공 처리합니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "보관 해제 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "의안을 찾을 수 없음",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @DeleteMapping("/{billId}/bookmark")
+    ResponseEntity<BillBookmarkStatusResponse> unbookmarkBill(
             @Parameter(description = "의안 ID", required = true)
             @PathVariable Long billId,
             @Parameter(hidden = true) Long userId

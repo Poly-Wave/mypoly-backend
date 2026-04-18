@@ -1,6 +1,7 @@
 package com.polywave.billservice.api.dto;
 
 import com.polywave.billservice.application.bill.query.result.BillDetailResult;
+import com.polywave.billservice.application.bill.query.service.BillUiStage;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "의안 진행 단계 응답")
@@ -27,31 +28,20 @@ public record BillStageResponse(
         String generalResult
 ) {
     public static BillStageResponse from(BillDetailResult detail) {
-        StageUiMapping mapping = StageUiMapping.from(detail.currentProcStageOrder());
+        BillUiStage mapping = BillUiStage.fromProcStageOrder(detail.currentProcStageOrder());
 
         return new BillStageResponse(
-                detail.currentProcStageCode(),
-                detail.currentProcStageName(),
+                nullToEmpty(detail.currentProcStageCode()),
+                nullToEmpty(detail.currentProcStageName()),
                 mapping.code(),
-                mapping.name(),
+                mapping.displayName(),
                 mapping.order(),
-                detail.currentPassGubn(),
-                detail.currentGeneralResult()
+                nullToEmpty(detail.currentPassGubn()),
+                nullToEmpty(detail.currentGeneralResult())
         );
     }
 
-    private record StageUiMapping(String code, String name, Integer order) {
-        private static StageUiMapping from(Integer currentProcStageOrder) {
-            if (currentProcStageOrder == null || currentProcStageOrder <= 1) {
-                return new StageUiMapping("RECEIVED", "접수", 1);
-            }
-            if (currentProcStageOrder == 2) {
-                return new StageUiMapping("REVIEW", "심사", 2);
-            }
-            if (currentProcStageOrder == 3) {
-                return new StageUiMapping("DECISION", "의결", 3);
-            }
-            return new StageUiMapping("COMPLETED", "완료", 4);
-        }
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 }
