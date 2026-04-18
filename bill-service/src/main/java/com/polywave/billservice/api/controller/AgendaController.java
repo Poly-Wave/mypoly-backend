@@ -2,10 +2,13 @@ package com.polywave.billservice.api.controller;
 
 import com.polywave.billservice.api.dto.AgendaResponse;
 import com.polywave.billservice.api.dto.AgendaTabResponse;
+import com.polywave.billservice.api.dto.MainAgendaResponse;
 import com.polywave.billservice.api.spec.AgendaApi;
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
+import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
 import com.polywave.billservice.application.agenda.query.service.AgendaTabQueryService;
 import com.polywave.billservice.application.agenda.query.service.HotDebateAgendaQueryService;
+import com.polywave.billservice.application.agenda.query.service.MainAgendaQueryService;
 import com.polywave.billservice.application.agenda.query.service.TrendingAgendaQueryService;
 import com.polywave.billservice.common.exception.InvalidAgendaTabCodeException;
 import com.polywave.security.annotation.LoginUser;
@@ -24,6 +27,7 @@ public class AgendaController implements AgendaApi {
     private final AgendaTabQueryService agendaTabQueryService;
     private final HotDebateAgendaQueryService hotDebateAgendaQueryService;
     private final TrendingAgendaQueryService trendingAgendaQueryService;
+    private final MainAgendaQueryService mainAgendaQueryService;
 
     @Override
     public ResponseEntity<List<AgendaTabResponse>> getTabs() {
@@ -54,6 +58,20 @@ public class AgendaController implements AgendaApi {
 
         List<AgendaResponse> response = agendas.stream()
                 .map(AgendaResponse::from)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<List<MainAgendaResponse>> getMainAgendas(
+            boolean aiRecommended,
+            @LoginUser Long userId,
+            Pageable pageable) {
+        List<MainAgendaResult> results = mainAgendaQueryService.getMainAgendas(userId, aiRecommended,
+                pageable);
+
+        List<MainAgendaResponse> response = results.stream()
+                .map(MainAgendaResponse::from)
                 .toList();
         return ResponseEntity.ok(response);
     }

@@ -95,4 +95,11 @@ public class Bill extends BaseEntity {
 
     @Column(name = "last_status_changed_at")
     private Instant lastStatusChangedAt;
+
+    @Column(name = "view_count", nullable = false)
+    private Long viewCount = 0L;
+
+    public void increaseViewCount() {
+        this.viewCount = this.viewCount + 1;
+    }
 }

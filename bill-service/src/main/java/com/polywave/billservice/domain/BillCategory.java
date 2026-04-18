@@ -38,4 +38,7 @@ public class BillCategory extends BaseEntity {
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
+
+    @Column(name = "background_color", length = 6, nullable = false)
+    private String backgroundColor;
 }
