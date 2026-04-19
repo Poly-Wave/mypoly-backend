@@ -1,7 +1,10 @@
 package com.polywave.billservice.application.agenda.query.service;
 
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
+import com.polywave.billservice.client.UserServiceClient;
+import com.polywave.billservice.common.exception.InvalidUserBirthDateException;
 import com.polywave.billservice.config.AgendaProperties;
+import com.polywave.billservice.domain.AgeBand;
 import com.polywave.billservice.repository.query.AgendaQueryRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -9,18 +12,25 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 요즘 핫한 탭: 7일 내 투표 완료 수 배치 스냅샷 기준 정렬.
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class TrendingAgendaQueryService {
+public class SameAgeAgendaQueryService {
 
     private final AgendaQueryRepository agendaQueryRepository;
+    private final UserServiceClient userServiceClient;
     private final AgendaProperties agendaProperties;
 
     public List<AgendaResult> getAgendas(Long userId, Pageable pageable) {
-        return agendaQueryRepository.findTrendingAgendas(userId, agendaProperties.trending().days(), pageable);
+        String birthDate = userServiceClient.getMyBirthDate(userId);
+        AgeBand ageBand = AgeBand.tryFromBirthDate(birthDate)
+                .orElseThrow(InvalidUserBirthDateException::new);
+        return agendaQueryRepository.findSameAgeAgendas(
+                userId,
+                ageBand,
+                agendaProperties.hotDebate().days(),
+                agendaProperties.hotDebate().minVoteCount(),
+                pageable
+        );
     }
 }

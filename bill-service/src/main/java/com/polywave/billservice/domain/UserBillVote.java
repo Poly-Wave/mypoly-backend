@@ -46,6 +46,9 @@ public class UserBillVote {
     @Column(name = "vote_result", length = 50, nullable = false)
     private String voteResult;
 
+    @Column(name = "voter_age_band", length = 20)
+    private String voterAgeBand;
+
     @Column(name = "voted_at", nullable = false)
     private Instant votedAt;
 
@@ -53,17 +56,19 @@ public class UserBillVote {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public static UserBillVote create(Long userId, Bill bill, String voteResult, Instant votedAt) {
+    public static UserBillVote create(Long userId, Bill bill, String voteResult, String voterAgeBand, Instant votedAt) {
         UserBillVote vote = new UserBillVote();
         vote.userId = userId;
         vote.bill = bill;
         vote.voteResult = voteResult;
+        vote.voterAgeBand = voterAgeBand;
         vote.votedAt = votedAt;
         return vote;
     }
 
-    public void changeVote(String voteResult, Instant votedAt) {
+    public void changeVote(String voteResult, String voterAgeBand, Instant votedAt) {
         this.voteResult = voteResult;
+        this.voterAgeBand = voterAgeBand;
         this.votedAt = votedAt;
     }
 }

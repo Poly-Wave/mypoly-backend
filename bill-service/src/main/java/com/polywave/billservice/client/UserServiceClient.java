@@ -2,8 +2,10 @@ package com.polywave.billservice.client;
 
 import com.polywave.billservice.client.dto.OnboardingStatusResponse;
 import com.polywave.billservice.client.dto.UpdateOnboardingStatusRequest;
+import com.polywave.billservice.client.dto.UserProfileResponse;
 import com.polywave.billservice.common.exception.BillErrorCode;
 import com.polywave.billservice.common.exception.BillServiceClientException;
+import com.polywave.billservice.common.exception.UserBirthDateRequiredException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
 import jakarta.servlet.http.HttpServletRequest;
@@ -88,6 +90,43 @@ public class UserServiceClient {
             return userServiceCircuitBreaker.executeSupplier(retrySupplier);
         } catch (Exception e) {
             log.error("user-service 온보딩 상태 조회 최종 실패 (서킷브레이커 또는 재시도 한도 초과): userId={}, url={}", userId, url, e);
+            throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
+        }
+    }
+
+    public String getMyBirthDate(Long userId) {
+        String url = userServiceUrl + "me";
+
+        HttpHeaders headers = new HttpHeaders();
+        String bearerToken = resolveBearerToken();
+        if (bearerToken == null) {
+            log.error("JWT 토큰을 찾을 수 없습니다. user-service 호출 실패: userId={}", userId);
+            throw new BillServiceClientException(BillErrorCode.MISSING_JWT_TOKEN);
+        }
+        headers.set(AUTHORIZATION_HEADER, "Bearer " + bearerToken);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        Supplier<String> supplier = () -> {
+            var response = restTemplate.exchange(url, HttpMethod.GET, entity, UserProfileResponse.class);
+            UserProfileResponse body = response.getBody();
+            if (body == null || body.birthDate() == null || body.birthDate().isBlank()) {
+                throw new UserBirthDateRequiredException();
+            }
+            return body.birthDate();
+        };
+
+        Supplier<String> retrySupplier = Retry.decorateSupplier(userServiceRetry, supplier);
+        try {
+            return userServiceCircuitBreaker.executeSupplier(retrySupplier);
+        } catch (UserBirthDateRequiredException e) {
+            throw e;
+        } catch (Exception e) {
+            for (Throwable t = e; t != null; t = t.getCause()) {
+                if (t instanceof UserBirthDateRequiredException u) {
+                    throw u;
+                }
+            }
+            log.error("user-service 프로필 조회 최종 실패: userId={}, url={}", userId, url, e);
             throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
         }
     }
