@@ -41,6 +41,12 @@ class MemberRepository:
             "photo_url": member.get("photo_url"),
             "homepage_url": member.get("homepage_url"),
             "brief_history": member.get("brief_history"),
+            "phone_number": member.get("phone_number"),
+            "office_room_number": member.get("office_room_number"),
+            "email": member.get("email"),
+            "aide_names": member.get("aide_names"),
+            "chief_secretary_names": member.get("chief_secretary_names"),
+            "secretary_names": member.get("secretary_names"),
         }
 
         if not existing:
@@ -66,6 +72,12 @@ class MemberRepository:
                         photo_url,
                         homepage_url,
                         brief_history,
+                        phone_number,
+                        office_room_number,
+                        email,
+                        aide_names,
+                        chief_secretary_names,
+                        secretary_names,
                         source_payload,
                         created_at,
                         updated_at
@@ -74,6 +86,8 @@ class MemberRepository:
                         %s, %s, %s,
                         %s, %s,
                         %s, %s, %s, %s,
+                        %s, %s, %s,
+                        %s, %s, %s,
                         %s, %s, %s,
                         %s,
                         now(), now()
@@ -99,6 +113,12 @@ class MemberRepository:
                         member.get("photo_url"),
                         member.get("homepage_url"),
                         member.get("brief_history"),
+                        member.get("phone_number"),
+                        member.get("office_room_number"),
+                        member.get("email"),
+                        member.get("aide_names"),
+                        member.get("chief_secretary_names"),
+                        member.get("secretary_names"),
                         Json(member.get("source_payload", {})),
                     ),
                 )
@@ -130,6 +150,12 @@ class MemberRepository:
                     photo_url = %s,
                     homepage_url = %s,
                     brief_history = %s,
+                    phone_number = %s,
+                    office_room_number = %s,
+                    email = %s,
+                    aide_names = %s,
+                    chief_secretary_names = %s,
+                    secretary_names = %s,
                     source_payload = %s,
                     updated_at = now()
                 WHERE id = %s
@@ -152,6 +178,12 @@ class MemberRepository:
                     member.get("photo_url"),
                     member.get("homepage_url"),
                     member.get("brief_history"),
+                    member.get("phone_number"),
+                    member.get("office_room_number"),
+                    member.get("email"),
+                    member.get("aide_names"),
+                    member.get("chief_secretary_names"),
+                    member.get("secretary_names"),
                     Json(member.get("source_payload", {})),
                     existing["id"],
                 ),
@@ -168,42 +200,49 @@ class MemberRepository:
             )
             rows = cur.fetchall()
 
-        by_member_no: Dict[str, int] = {}
-        by_mona_cd: Dict[str, int] = {}
-        by_external_member_id: Dict[str, int] = {}
-        by_name_party: Dict[str, int] = {}
+        member_no_candidates: Dict[str, set[int]] = {}
+        mona_cd_candidates: Dict[str, set[int]] = {}
+        external_member_id_candidates: Dict[str, set[int]] = {}
+        name_party_candidates: Dict[str, set[int]] = {}
+
+        def add_candidate(candidate_map: Dict[str, set[int]], key: str, member_id: int):
+            key = (key or "").strip()
+            if not key:
+                return
+
+            if key not in candidate_map:
+                candidate_map[key] = set()
+            candidate_map[key].add(member_id)
 
         for row in rows:
             member_id = row["id"]
 
             member_no = (row.get("member_no") or "").strip()
-            if member_no and member_no not in by_member_no:
-                by_member_no[member_no] = member_id
-
             mona_cd = (row.get("mona_cd") or "").strip()
-            if mona_cd and mona_cd not in by_mona_cd:
-                by_mona_cd[mona_cd] = member_id
-
             external_member_id = (row.get("external_member_id") or "").strip()
-            if external_member_id and external_member_id not in by_external_member_id:
-                by_external_member_id[external_member_id] = member_id
-
             name = (row.get("name") or "").strip()
             party_name = (row.get("party_name") or "").strip()
-            if name:
-                key = f"{name}|{party_name}"
-                if key not in by_name_party:
-                    by_name_party[key] = member_id
 
-                fallback_key = f"{name}|"
-                if fallback_key not in by_name_party:
-                    by_name_party[fallback_key] = member_id
+            add_candidate(member_no_candidates, member_no, member_id)
+            add_candidate(mona_cd_candidates, mona_cd, member_id)
+            add_candidate(external_member_id_candidates, external_member_id, member_id)
+
+            if name:
+                add_candidate(name_party_candidates, f"{name}|{party_name}", member_id)
+                add_candidate(name_party_candidates, f"{name}|", member_id)
+
+        def only_unique(candidate_map: Dict[str, set[int]]) -> Dict[str, int]:
+            result: Dict[str, int] = {}
+            for key, member_ids in candidate_map.items():
+                if len(member_ids) == 1:
+                    result[key] = next(iter(member_ids))
+            return result
 
         return {
-            "by_member_no": by_member_no,
-            "by_mona_cd": by_mona_cd,
-            "by_external_member_id": by_external_member_id,
-            "by_name_party": by_name_party,
+            "by_member_no": only_unique(member_no_candidates),
+            "by_mona_cd": only_unique(mona_cd_candidates),
+            "by_external_member_id": only_unique(external_member_id_candidates),
+            "by_name_party": only_unique(name_party_candidates),
         }
 
     def resolve_member_id(

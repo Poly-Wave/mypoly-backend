@@ -211,7 +211,82 @@ class BillRepository:
             )
         return existing["id"], "UPDATE"
 
-    def replace_proposers(self, bill_id: int, bill: Dict[str, Any]):
+    def _resolve_member_id_from_lookup_maps(
+        self,
+        lookup_maps: Dict[str, Dict[str, int]],
+        member_no: str | None,
+        mona_cd: str | None,
+        member_name: str | None,
+        party_name: str | None,
+    ) -> int | None:
+        member_no = (member_no or "").strip()
+        mona_cd = (mona_cd or "").strip()
+        member_name = (member_name or "").strip()
+        party_name = (party_name or "").strip()
+
+        if member_no and member_no in lookup_maps["by_member_no"]:
+            return lookup_maps["by_member_no"][member_no]
+
+        if mona_cd and mona_cd in lookup_maps["by_mona_cd"]:
+            return lookup_maps["by_mona_cd"][mona_cd]
+
+        if mona_cd and mona_cd in lookup_maps["by_external_member_id"]:
+            return lookup_maps["by_external_member_id"][mona_cd]
+
+        if member_name:
+            key = f"{member_name}|{party_name}"
+            resolved = lookup_maps["by_name_party"].get(key)
+            if resolved:
+                return resolved
+
+            fallback_key = f"{member_name}|"
+            return lookup_maps["by_name_party"].get(fallback_key)
+
+        return None
+
+    def repair_missing_proposer_member_ids(self, lookup_maps: Dict[str, Dict[str, int]]) -> int:
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                SELECT id, proposer_name, proposer_type
+                FROM {self.schema}.bill_proposers
+                WHERE member_id IS NULL
+                ORDER BY id
+                """
+            )
+            rows = cur.fetchall()
+
+        repaired = 0
+
+        with self.conn.cursor() as cur:
+            for row in rows:
+                member_id = self._resolve_member_id_from_lookup_maps(
+                    lookup_maps=lookup_maps,
+                    member_no=None,
+                    mona_cd=None,
+                    member_name=row.get("proposer_name"),
+                    party_name=None,
+                )
+
+                if not member_id:
+                    continue
+
+                cur.execute(
+                    f"""
+                    UPDATE {self.schema}.bill_proposers
+                    SET member_id = %s
+                    WHERE id = %s
+                      AND member_id IS NULL
+                    """,
+                    (member_id, row["id"]),
+                )
+
+                if cur.rowcount:
+                    repaired += 1
+
+        return repaired
+
+    def replace_proposers(self, bill_id: int, bill: Dict[str, Any], member_id: int | None = None):
         proposer_name = (bill.get("representative_proposer_name") or "").strip()
         proposer_kind = (bill.get("proposer_kind") or "").strip()
 
@@ -226,21 +301,24 @@ class BillRepository:
                     f"""
                     INSERT INTO {self.schema}.bill_proposers (
                         bill_id,
+                        member_id,
                         proposer_name,
                         proposer_type,
                         is_representative,
                         display_order,
                         source_payload,
                         created_at
-                    ) VALUES (%s, %s, %s, TRUE, 1, %s, now())
+                    ) VALUES (%s, %s, %s, %s, TRUE, 1, %s, now())
                     """,
                     (
                         bill_id,
+                        member_id,
                         proposer_name,
                         proposer_kind or None,
                         Json(
                             {
                                 "note": "1차 배치에서는 대표 발의자 1명 기준 저장",
+                                "member_id_resolved": member_id is not None,
                                 "raw": bill.get("source_payload", {}),
                             }
                         ),

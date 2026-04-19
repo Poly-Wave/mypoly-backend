@@ -55,6 +55,7 @@ class BatchRunner:
         self,
         batch_repo: BatchRepository,
         bill_repo: BillRepository,
+        member_repo: MemberRepository,
         api_client: BillInfoApiClient,
         batch_run_id: int,
         min_proposal_date: date,
@@ -66,6 +67,15 @@ class BatchRunner:
         no_change = 0
         filtered_out = 0
         failed = 0
+
+        lookup_maps = member_repo.build_lookup_maps()
+        repaired_proposer_member_ids = bill_repo.repair_missing_proposer_member_ids(lookup_maps=lookup_maps)
+        self._commit(batch_repo.conn)
+
+        print(
+            f"[BATCH][COLLECT] 기존 대표발의자 member_id 보정 건수={repaired_proposer_member_ids}",
+            flush=True,
+        )
 
         for bill in api_client.iter_bills():
             api_seen += 1
@@ -92,7 +102,19 @@ class BatchRunner:
                 bill_id, action = bill_repo.upsert_bill(bill)
 
                 if action in {"INSERT", "UPDATE"}:
-                    bill_repo.replace_proposers(bill_id, bill)
+                    representative_member_id = member_repo.resolve_member_id(
+                        lookup_maps=lookup_maps,
+                        member_no=None,
+                        mona_cd=None,
+                        member_name=bill.get("representative_proposer_name"),
+                        party_name=None,
+                    )
+
+                    bill_repo.replace_proposers(
+                        bill_id=bill_id,
+                        bill=bill,
+                        member_id=representative_member_id,
+                    )
                     bill_repo.insert_status_history_if_needed(bill_id, bill)
 
                 batch_repo.add_item(
@@ -743,6 +765,7 @@ class BatchRunner:
                 collect_result = self._collect_bills(
                     batch_repo=batch_repo,
                     bill_repo=bill_repo,
+                    member_repo=member_repo,
                     api_client=bill_api_client,
                     batch_run_id=batch_run_id,
                     min_proposal_date=min_proposal_date,
@@ -754,6 +777,15 @@ class BatchRunner:
                     member_repo=member_repo,
                     assembly_client=assembly_client,
                     batch_run_id=batch_run_id,
+                )
+
+                lookup_maps = member_repo.build_lookup_maps()
+                repaired_proposer_member_ids = bill_repo.repair_missing_proposer_member_ids(lookup_maps=lookup_maps)
+                self._commit(conn)
+
+                print(
+                    f"[BATCH][MEMBER] 의원 동기화 이후 대표발의자 member_id 보정 건수={repaired_proposer_member_ids}",
+                    flush=True,
                 )
 
             if self.settings.bill_batch_enable_vote_sync:

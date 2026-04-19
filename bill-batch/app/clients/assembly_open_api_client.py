@@ -126,6 +126,12 @@ class AssemblyOpenApiClient:
                     "photo_url": (item.findtext("NAAS_PIC", "") or "").strip() or None,
                     "homepage_url": (item.findtext("NAAS_HP_URL", "") or "").strip() or None,
                     "brief_history": (item.findtext("BRF_HST", "") or "").strip() or None,
+                    "phone_number": (item.findtext("NAAS_TEL_NO", "") or "").strip() or None,
+                    "office_room_number": (item.findtext("OFFM_RNUM_NO", "") or "").strip() or None,
+                    "email": (item.findtext("NAAS_EMAIL_ADDR", "") or "").strip() or None,
+                    "aide_names": (item.findtext("AIDE_NM", "") or "").strip() or None,
+                    "chief_secretary_names": (item.findtext("CHF_SCRT_NM", "") or "").strip() or None,
+                    "secretary_names": (item.findtext("SCRT_NM", "") or "").strip() or None,
                     "source_payload": raw,
                 }
 
