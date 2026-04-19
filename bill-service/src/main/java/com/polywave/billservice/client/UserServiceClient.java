@@ -118,7 +118,14 @@ public class UserServiceClient {
         Supplier<String> retrySupplier = Retry.decorateSupplier(userServiceRetry, supplier);
         try {
             return userServiceCircuitBreaker.executeSupplier(retrySupplier);
+        } catch (UserBirthDateRequiredException e) {
+            throw e;
         } catch (Exception e) {
+            for (Throwable t = e; t != null; t = t.getCause()) {
+                if (t instanceof UserBirthDateRequiredException u) {
+                    throw u;
+                }
+            }
             log.error("user-service 프로필 조회 최종 실패: userId={}, url={}", userId, url, e);
             throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
         }
