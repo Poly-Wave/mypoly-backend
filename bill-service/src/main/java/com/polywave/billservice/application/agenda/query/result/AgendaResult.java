@@ -1,5 +1,8 @@
 package com.polywave.billservice.application.agenda.query.result;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 /**
  * 탭별 안건 목록 조회 결과 한 건.
  * HOT_DEBATE: agreeRatio(찬성 비율), totalVoteCount(해당 기간 찬반 합산 투표 수).
@@ -11,11 +14,34 @@ package com.polywave.billservice.application.agenda.query.result;
  * agreeRatio는 SAME_AGE 집계와 동일한 기간/연령대 조건의 찬성 비율.
  */
 public record AgendaResult(
-        Long billId,
-        String officialTitle,
-        double agreeRatio,
-        long totalVoteCount,
-        boolean hasVoted,
-        String categoryCode
-) {
+                Long billId,
+                String officialTitle,
+                double agreeRatio,
+                double disagreeRatio,
+                long totalVoteCount,
+                boolean hasVoted,
+                String categoryCode) {
+
+    public AgendaResult(
+            Long billId,
+            String officialTitle,
+            double agreeRatio,
+            long totalVoteCount,
+            boolean hasVoted,
+            String categoryCode) {
+        this(
+                billId,
+                officialTitle,
+                totalVoteCount > 0 ? roundTo2(agreeRatio) : 0.0,
+                totalVoteCount > 0 ? 1.0 - roundTo2(agreeRatio) : 0.0,
+                totalVoteCount,
+                hasVoted,
+                categoryCode);
+    }
+
+    private static double roundTo2(double value) {
+        return BigDecimal.valueOf(value)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
+    }
 }
