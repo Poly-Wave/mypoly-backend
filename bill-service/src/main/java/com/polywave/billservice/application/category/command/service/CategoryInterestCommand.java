@@ -4,5 +4,5 @@ import java.util.List;
 
 public record CategoryInterestCommand(
         Long userId,
-        List<Long> categoryIds
+        List<String> categoryCodes
 ) {}

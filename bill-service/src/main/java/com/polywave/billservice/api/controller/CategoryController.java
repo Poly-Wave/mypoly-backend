@@ -44,7 +44,7 @@ public class CategoryController implements CategoryApi {
     public ResponseEntity<Void> updateInterests(
             @LoginUser Long userId,
             CategoryInterestUpdateRequest request) {
-        CategoryInterestCommand command = new CategoryInterestCommand(userId, request.categoryIds());
+        CategoryInterestCommand command = new CategoryInterestCommand(userId, request.categoryCodes());
         userBillInterestAppService.updateInterests(command);
 
         return ResponseEntity.ok().build();
@@ -54,7 +54,7 @@ public class CategoryController implements CategoryApi {
     public ResponseEntity<Void> updateOnboardingInterests(
             @LoginUser Long userId,
             CategoryInterestUpdateRequest request) {
-        CategoryInterestCommand command = new CategoryInterestCommand(userId, request.categoryIds());
+        CategoryInterestCommand command = new CategoryInterestCommand(userId, request.categoryCodes());
         userBillInterestAppService.saveOnboardingInterests(command);
 
         return ResponseEntity.ok().build();
