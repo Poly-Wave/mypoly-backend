@@ -1,6 +1,9 @@
 package com.polywave.billservice.api.spec;
 
+import com.polywave.billservice.api.dto.MyVotedBillResponse;
+import com.polywave.billservice.api.dto.SliceResponse;
 import com.polywave.billservice.api.dto.UserBillVoteRequest;
+import com.polywave.billservice.domain.UserVoteResult;
 import com.polywave.common.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,11 +14,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.util.Set;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Vote", description = "사용자 의안 투표 API")
 @RequestMapping("/votes")
@@ -43,5 +52,42 @@ public interface UserBillVoteApi {
             @PathVariable Long billId,
             @Parameter(hidden = true) Long userId,
             @RequestBody @Valid UserBillVoteRequest request
+    );
+
+    @Operation(summary = "참여한 투표 안건 목록 조회", description = """
+            로그인 사용자가 참여한 투표 안건 목록을 조회합니다.
+
+            - 날짜 필터는 '투표한 날짜' 기준입니다.
+            - voteResults는 현재 사용자의 투표 결과 기준입니다. 사용 가능 값: AGREE, DISAGREE
+            - 정렬은 최신 투표순으로 고정입니다.
+            """)
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @GetMapping("/me")
+    ResponseEntity<SliceResponse<MyVotedBillResponse>> getMyVotedBills(
+            @Parameter(description = "투표 시작일, KST 기준", example = "2026-01-01")
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+
+            @Parameter(description = "투표 종료일, KST 기준", example = "2026-04-18")
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate toDate,
+
+            @Parameter(description = "투표 결과 목록", example = "AGREE,DISAGREE")
+            @RequestParam(required = false)
+            Set<UserVoteResult> voteResults,
+
+            @Parameter(hidden = true)
+            Long userId,
+
+            Pageable pageable
     );
 }

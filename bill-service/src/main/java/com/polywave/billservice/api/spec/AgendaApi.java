@@ -7,6 +7,7 @@ import com.polywave.billservice.api.example.AgendaApiExamples;
 import com.polywave.common.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,52 +27,117 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/agendas")
 public interface AgendaApi {
 
-        @Operation(summary = "탭 목록 조회", description = "안건 목록에 사용할 탭(쟁쟁한, 요즘 핫한, 최근 30일, 내 또래) 메타 정보를 반환합니다. 로그인한 사용자만 호출 가능합니다.")
-        @SecurityRequirement(name = "bearerAuth")
-        @ApiResponses({
-                        @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AgendaTabResponse.class), examples = @ExampleObject(name = "조회 성공", value = AgendaApiExamples.EXAMPLE_GET_TABS_OK))),
-                        @ApiResponse(responseCode = "401", description = "인증 필요 (JWT 누락/만료/위조)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-                        @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-        })
-        @GetMapping("/tabs")
-        ResponseEntity<List<AgendaTabResponse>> getTabs();
+    @Operation(summary = "탭 목록 조회", description = "안건 목록에 사용할 탭(쟁쟁한, 요즘 핫한, 최근 30일, 내 또래) 메타 정보를 반환합니다. 로그인한 사용자만 호출 가능합니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = AgendaTabResponse.class)),
+                            examples = @ExampleObject(
+                                    name = "조회 성공",
+                                    value = AgendaApiExamples.EXAMPLE_GET_TABS_OK
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요 (JWT 누락/만료/위조)",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
+    })
+    @GetMapping("/tabs")
+    ResponseEntity<List<AgendaTabResponse>> getTabs();
 
-        @Operation(summary = "탭별 안건 목록 조회", description = """
-                        탭 코드에 해당하는 안건 목록을 반환합니다. 로그인한 사용자만 호출 가능합니다.
-                        - HOT_DEBATE: 쟁쟁한 (찬반 비율이 팽팽한 순)
-                        - TRENDING: 요즘 핫한 (최근 7일 투표 완료 수 순, 배치 선계산)
-                        - RECENT_30D: 최근 30일 (최근 30일 이내 투표가 최소 M건 이상인 의안만, M은 쟁쟁한과 동일 bill.agenda.hot-debate.min-vote-count, 해당 기간 투표 수 많은 순)
-                        - SAME_AGE: 내 또래 (최근 7일 이내 투표 중 동일 연령대 투표 10건 이상인 의안만, 투표 수 많은 순. 일수·최소 투표 수는 쟁쟁한과 동일 설정)
-                        """)
-        @SecurityRequirement(name = "bearerAuth")
-        @ApiResponses({
-                        @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AgendaResponse.class), examples = @ExampleObject(name = "조회 성공", value = AgendaApiExamples.EXAMPLE_GET_AGENDAS_BY_TAB_OK))),
-                        @ApiResponse(responseCode = "400", description = "알 수 없는 탭 코드", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-                        @ApiResponse(responseCode = "401", description = "인증 필요 (JWT 누락/만료/위조)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-                        @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-        })
-        @GetMapping("/tabs/{tabCode}")
-        ResponseEntity<List<AgendaResponse>> getAgendasByTab(
-                        @Parameter(description = "탭 코드 (HOT_DEBATE, TRENDING, RECENT_30D, SAME_AGE)", required = true) @PathVariable String tabCode,
-                        @Parameter(hidden = true) Long userId,
-                        Pageable pageable);
+    @Operation(summary = "탭별 안건 목록 조회", description = """
+            탭 코드에 해당하는 안건 목록을 반환합니다. 로그인한 사용자만 호출 가능합니다.
+            - HOT_DEBATE: 쟁쟁한 (찬반 비율이 팽팽한 순)
+            - TRENDING: 요즘 핫한 (최근 7일 투표 완료 수 순, 배치 선계산)
+            - RECENT_30D: 최근 30일 (최근 30일 이내 투표가 최소 M건 이상인 의안만, M은 쟁쟁한과 동일 bill.agenda.hot-debate.min-vote-count, 해당 기간 투표 수 많은 순)
+            - SAME_AGE: 내 또래 (최근 7일 이내 투표 중 동일 연령대 투표 10건 이상인 의안만, 투표 수 많은 순. 일수·최소 투표 수는 쟁쟁한과 동일 설정)
+            """)
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = AgendaResponse.class)),
+                            examples = @ExampleObject(
+                                    name = "조회 성공",
+                                    value = AgendaApiExamples.EXAMPLE_GET_AGENDAS_BY_TAB_OK
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "알 수 없는 탭 코드",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요 (JWT 누락/만료/위조)",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
+    })
+    @GetMapping("/tabs/{tabCode}")
+    ResponseEntity<List<AgendaResponse>> getAgendasByTab(
+            @Parameter(description = "탭 코드 (HOT_DEBATE, TRENDING, RECENT_30D, SAME_AGE)", required = true)
+            @PathVariable String tabCode,
+            @Parameter(hidden = true) Long userId,
+            Pageable pageable
+    );
 
-        @Operation(summary = "안건 메인 목록 조회", description = """
-                        안건 메인 화면용 목록을 반환합니다. 로그인한 사용자만 호출 가능합니다.
-                        - sort=LATEST: 최신 등록일 기준 내림차순 (기본값)
-                        - sort=POPULAR: 조회 수 기준 내림차순
-                        - aiRecommended=true: 사용자 관심 주제와 일치하는 카테고리만 필터링
-                        - aiRecommended=false: 전체 목록 반환
-                        """)
-        @SecurityRequirement(name = "bearerAuth")
-        @ApiResponses({
-                        @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = MainAgendaResponse.class), examples = @ExampleObject(name = "조회 성공", value = AgendaApiExamples.EXAMPLE_GET_MAIN_AGENDAS_OK))),
-                        @ApiResponse(responseCode = "401", description = "인증 필요 (JWT 누락/만료/위조)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-                        @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-        })
-        @GetMapping("/main")
-        ResponseEntity<List<MainAgendaResponse>> getMainAgendas(
-                        @Parameter(description = "AI 추천 필터 on/off", example = "false") @RequestParam(defaultValue = "false") boolean aiRecommended,
-                        @Parameter(hidden = true) Long userId,
-                        Pageable pageable);
+    @Operation(summary = "안건 메인 목록 조회", description = """
+            안건 메인 화면용 목록을 반환합니다. 로그인한 사용자만 호출 가능합니다.
+            - sort=LATEST: 최신 등록일 기준 내림차순 (기본값)
+            - sort=POPULAR: 조회 수 기준 내림차순
+            - aiRecommended=true: 사용자 관심 주제와 일치하는 카테고리만 필터링
+            - aiRecommended=false: 전체 목록 반환
+            """)
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = MainAgendaResponse.class)),
+                            examples = @ExampleObject(
+                                    name = "조회 성공",
+                                    value = AgendaApiExamples.EXAMPLE_GET_MAIN_AGENDAS_OK
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요 (JWT 누락/만료/위조)",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
+    })
+    @GetMapping("/main")
+    ResponseEntity<List<MainAgendaResponse>> getMainAgendas(
+            @Parameter(description = "AI 추천 필터 on/off", example = "false")
+            @RequestParam(defaultValue = "false") boolean aiRecommended,
+            @Parameter(hidden = true) Long userId,
+            Pageable pageable
+    );
 }
