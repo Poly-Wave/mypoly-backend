@@ -56,6 +56,7 @@ public final class AgendaApiExamples {
                 "billId": 101,
                 "officialTitle": "인공지능 산업 진흥법 일부개정법률안",
                 "agreeRatio": 0.52,
+                "disagreeRatio": 0.48,
                 "totalVoteCount": 128,
                 "hasVoted": true
               },
@@ -63,6 +64,7 @@ public final class AgendaApiExamples {
                 "billId": 102,
                 "officialTitle": "플랫폼 공정거래법 일부개정법률안",
                 "agreeRatio": 0.49,
+                "disagreeRatio": 0.51,
                 "totalVoteCount": 117,
                 "hasVoted": false
               }
