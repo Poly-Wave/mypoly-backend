@@ -2,6 +2,7 @@ package com.polywave.billservice.api.controller;
 
 import com.polywave.billservice.api.dto.AgendaResponse;
 import com.polywave.billservice.api.dto.AgendaTabResponse;
+import com.polywave.billservice.api.dto.InterestAgendaResponse;
 import com.polywave.billservice.api.dto.MainAgendaResponse;
 import com.polywave.billservice.api.spec.AgendaApi;
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
@@ -70,14 +71,25 @@ public class AgendaController implements AgendaApi {
 
     @Override
     public ResponseEntity<List<MainAgendaResponse>> getMainAgendas(
-            boolean aiRecommended,
+            List<String> categoryCodes,
             @LoginUser Long userId,
             Pageable pageable) {
-        List<MainAgendaResult> results = mainAgendaQueryService.getMainAgendas(userId, aiRecommended,
-                pageable);
+        List<MainAgendaResult> results = mainAgendaQueryService.getMainAgendas(userId, categoryCodes, pageable);
 
         List<MainAgendaResponse> response = results.stream()
                 .map(MainAgendaResponse::from)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<List<InterestAgendaResponse>> getInterestAgendas(
+            @LoginUser Long userId,
+            Pageable pageable) {
+        List<MainAgendaResult> results = mainAgendaQueryService.getInterestAgendas(userId, pageable);
+
+        List<InterestAgendaResponse> response = results.stream()
+                .map(InterestAgendaResponse::from)
                 .toList();
         return ResponseEntity.ok(response);
     }

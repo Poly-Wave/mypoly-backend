@@ -24,7 +24,7 @@ public final class CategoryApiExamples {
 
   public static final String EXAMPLE_UPDATE_INTERESTS_REQUEST = """
       {
-        "categoryIds": [1, 2, 3]
+        "categoryCodes": ["DIGITAL", "SECURITY", "ECONOMY"]
       }
       """;
 

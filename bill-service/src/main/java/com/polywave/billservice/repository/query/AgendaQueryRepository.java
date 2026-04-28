@@ -46,6 +46,7 @@ public interface AgendaQueryRepository {
             Long userId,
             boolean applyInterestFilter,
             Set<Long> interestCategoryIds,
+            Set<String> categoryCodes,
             Pageable pageable
     );
 }

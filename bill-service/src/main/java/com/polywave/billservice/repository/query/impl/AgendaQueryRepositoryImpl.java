@@ -31,387 +31,365 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
 
-    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Seoul");
+        private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Seoul");
 
-    private static final String VOTE_RESULT_AGREE = UserVoteResult.AGREE.name();
-    private static final String VOTE_RESULT_DISAGREE = UserVoteResult.DISAGREE.name();
+        private static final String VOTE_RESULT_AGREE = UserVoteResult.AGREE.name();
+        private static final String VOTE_RESULT_DISAGREE = UserVoteResult.DISAGREE.name();
 
-    private final JPAQueryFactory queryFactory;
+        private final JPAQueryFactory queryFactory;
 
-    @Override
-    public List<AgendaResult> findHotDebateAgendas(Long userId, int days, int minVoteCount, Pageable pageable) {
-        QUserBillVote vote = QUserBillVote.userBillVote;
-        QUserBillVote userVote = new QUserBillVote("userVote");
-        QBill bill = QBill.bill;
-        QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
-        QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
-        QBillCategory category = QBillCategory.billCategory;
+        @Override
+        public List<AgendaResult> findHotDebateAgendas(Long userId, int days, int minVoteCount, Pageable pageable) {
+                QUserBillVote vote = QUserBillVote.userBillVote;
+                QUserBillVote userVote = new QUserBillVote("userVote");
+                QBill bill = QBill.bill;
+                QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
+                QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
+                QBillCategory category = QBillCategory.billCategory;
 
-        Instant cutoff = Instant.now().minus(days, ChronoUnit.DAYS);
+                Instant cutoff = Instant.now().minus(days, ChronoUnit.DAYS);
 
-        NumberExpression<Integer> agreeCase = Expressions.cases()
-                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
-                .otherwise(0);
+                NumberExpression<Integer> agreeCase = Expressions.cases()
+                                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
+                                .otherwise(0);
 
-        NumberExpression<Integer> disagreeCase = Expressions.cases()
-                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
-                .otherwise(0);
+                NumberExpression<Integer> disagreeCase = Expressions.cases()
+                                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
+                                .otherwise(0);
 
-        NumberExpression<Integer> agreeSum = agreeCase.sum();
-        NumberExpression<Integer> disagreeSum = disagreeCase.sum();
-        NumberExpression<Long> totalVoteCount = agreeSum.add(disagreeSum).longValue();
+                NumberExpression<Integer> agreeSum = agreeCase.sum();
+                NumberExpression<Integer> disagreeSum = disagreeCase.sum();
+                NumberExpression<Long> totalVoteCount = agreeSum.add(disagreeSum).longValue();
 
-        NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
-                Double.class,
-                "(1.0 * {0}) / ({0} + {1})",
-                agreeSum,
-                disagreeSum
-        );
+                NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
+                                Double.class,
+                                "(1.0 * {0}) / ({0} + {1})",
+                                agreeSum,
+                                disagreeSum);
 
-        NumberExpression<Integer> hasVotedInt = Expressions.cases()
-                .when(userVote.id.isNotNull()).then(1)
-                .otherwise(0)
-                .max();
+                NumberExpression<Integer> hasVotedInt = Expressions.cases()
+                                .when(userVote.id.isNotNull()).then(1)
+                                .otherwise(0)
+                                .max();
 
-        BooleanExpression hasVoted = hasVotedInt.eq(1);
+                BooleanExpression hasVoted = hasVotedInt.eq(1);
 
-        NumberExpression<Double> controversyScore = Expressions.numberTemplate(
-                Double.class,
-                "abs(((1.0 * {0}) / ({0} + {1})) - 0.5)",
-                agreeSum,
-                disagreeSum
-        );
+                NumberExpression<Double> controversyScore = Expressions.numberTemplate(
+                                Double.class,
+                                "abs(((1.0 * {0}) / ({0} + {1})) - 0.5)",
+                                agreeSum,
+                                disagreeSum);
 
-        return queryFactory
-                .select(Projections.constructor(
-                        AgendaResult.class,
-                        bill.id,
-                        bill.officialTitle,
-                        agreeRatio,
-                        totalVoteCount,
-                        hasVoted,
-                        category.code
-                ))
-                .from(vote)
-                .innerJoin(vote.bill, bill)
-                .leftJoin(analysis).on(
-                        analysis.bill.id.eq(bill.id),
-                        analysis.current.isTrue()
-                )
-                .leftJoin(billAiCategory).on(
-                        billAiCategory.analysis.id.eq(analysis.id),
-                        billAiCategory.rankOrder.eq(1)
-                )
-                .leftJoin(billAiCategory.category, category)
-                .leftJoin(userVote).on(
-                        userVote.bill.id.eq(bill.id),
-                        userVote.userId.eq(userId)
-                )
-                .where(vote.votedAt.goe(cutoff))
-                .groupBy(
-                        bill.id,
-                        bill.officialTitle,
-                        category.code
-                )
-                .having(agreeSum.add(disagreeSum).goe((long) minVoteCount))
-                .orderBy(controversyScore.asc())
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
-    }
-
-    @Override
-    public List<AgendaResult> findTrendingAgendas(Long userId, int days, Pageable pageable) {
-        QBillTrendingSnapshot snapshot = QBillTrendingSnapshot.billTrendingSnapshot;
-        QBill bill = QBill.bill;
-        QUserBillVote vote = QUserBillVote.userBillVote;
-        QUserBillVote voteSub = new QUserBillVote("voteSub");
-        QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
-        QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
-        QBillCategory category = QBillCategory.billCategory;
-        Instant voteCutoff = Instant.now().minus(days, ChronoUnit.DAYS);
-
-        NumberExpression<Integer> agreeCase = Expressions.cases()
-                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
-                .otherwise(0);
-        NumberExpression<Integer> disagreeCase = Expressions.cases()
-                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
-                .otherwise(0);
-        NumberExpression<Integer> agreeSum = agreeCase.sum();
-        NumberExpression<Integer> disagreeSum = disagreeCase.sum();
-        NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
-                Double.class,
-                "coalesce((1.0 * {0}) / nullif(({0} + {1}), 0), 0.0)",
-                agreeSum,
-                disagreeSum
-        );
-
-        var hasVoted = JPAExpressions
-                .selectOne()
-                .from(voteSub)
-                .where(
-                        voteSub.userId.eq(userId),
-                        voteSub.bill.id.eq(bill.id)
-                )
-                .exists();
-
-        return queryFactory
-                .select(
-                        Projections.constructor(
-                                AgendaResult.class,
-                                bill.id,
-                                bill.officialTitle,
-                                agreeRatio,
-                                snapshot.voteCount7d.longValue(),
-                                hasVoted,
-                                category.code
-                        )
-                )
-                .from(snapshot)
-                .innerJoin(bill).on(snapshot.billId.eq(bill.id))
-                .leftJoin(vote).on(
-                        vote.bill.id.eq(bill.id),
-                        vote.votedAt.goe(voteCutoff)
-                )
-                .leftJoin(analysis).on(
-                        analysis.bill.id.eq(bill.id),
-                        analysis.current.isTrue()
-                )
-                .leftJoin(billAiCategory).on(
-                        billAiCategory.analysis.id.eq(analysis.id),
-                        billAiCategory.rankOrder.eq(1)
-                )
-                .leftJoin(billAiCategory.category, category)
-                .groupBy(
-                        bill.id,
-                        bill.officialTitle,
-                        snapshot.voteCount7d,
-                        category.code
-                )
-                .orderBy(snapshot.voteCount7d.desc())
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
-    }
-
-    @Override
-    public List<AgendaResult> findRecent30dAgendas(Long userId, int minVoteCount, Pageable pageable) {
-        QBill bill = QBill.bill;
-        QUserBillVote vote = QUserBillVote.userBillVote;
-        QUserBillVote userVote = new QUserBillVote("userVote");
-        QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
-        QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
-        QBillCategory category = QBillCategory.billCategory;
-
-        Instant voteCutoff = Instant.now().minus(30, ChronoUnit.DAYS);
-
-        NumberExpression<Integer> agreeCase = Expressions.cases()
-                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
-                .otherwise(0);
-        NumberExpression<Integer> disagreeCase = Expressions.cases()
-                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
-                .otherwise(0);
-        NumberExpression<Integer> agreeSum = agreeCase.sum();
-        NumberExpression<Integer> disagreeSum = disagreeCase.sum();
-        NumberExpression<Long> totalVoteCount = agreeSum.add(disagreeSum).longValue();
-        NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
-                Double.class,
-                "coalesce((1.0 * {0}) / nullif(({0} + {1}), 0), 0.0)",
-                agreeSum,
-                disagreeSum
-        );
-
-        NumberExpression<Integer> hasVotedInt = Expressions.cases()
-                .when(userVote.id.isNotNull()).then(1)
-                .otherwise(0)
-                .max();
-
-        BooleanExpression hasVoted = hasVotedInt.eq(1);
-
-        return queryFactory
-                .select(Projections.constructor(
-                        AgendaResult.class,
-                        bill.id,
-                        bill.officialTitle,
-                        agreeRatio,
-                        totalVoteCount,
-                        hasVoted,
-                        category.code
-                ))
-                .from(vote)
-                .innerJoin(vote.bill, bill)
-                .leftJoin(analysis).on(
-                        analysis.bill.id.eq(bill.id),
-                        analysis.current.isTrue()
-                )
-                .leftJoin(billAiCategory).on(
-                        billAiCategory.analysis.id.eq(analysis.id),
-                        billAiCategory.rankOrder.eq(1)
-                )
-                .leftJoin(billAiCategory.category, category)
-                .leftJoin(userVote).on(
-                        userVote.bill.id.eq(bill.id),
-                        userVote.userId.eq(userId)
-                )
-                .where(vote.votedAt.goe(voteCutoff))
-                .groupBy(
-                        bill.id,
-                        bill.officialTitle,
-                        bill.proposalDate,
-                        category.code
-                )
-                .having(agreeSum.add(disagreeSum).goe((long) minVoteCount))
-                .orderBy(totalVoteCount.desc(), bill.proposalDate.desc())
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
-    }
-
-    @Override
-    public List<AgendaResult> findSameAgeAgendas(
-            Long userId,
-            AgeBand ageBand,
-            int days,
-            int minVoteCount,
-            Pageable pageable
-    ) {
-        QBill bill = QBill.bill;
-        QUserBillVote vote = QUserBillVote.userBillVote;
-        QUserBillVote userVote = new QUserBillVote("userVote");
-        QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
-        QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
-        QBillCategory category = QBillCategory.billCategory;
-
-        Instant voteCutoff = Instant.now().minus(days, ChronoUnit.DAYS);
-
-        NumberExpression<Integer> agreeCase = Expressions.cases()
-                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
-                .otherwise(0);
-        NumberExpression<Integer> disagreeCase = Expressions.cases()
-                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
-                .otherwise(0);
-        NumberExpression<Integer> agreeSum = agreeCase.sum();
-        NumberExpression<Integer> disagreeSum = disagreeCase.sum();
-        NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
-                Double.class,
-                "coalesce((1.0 * {0}) / nullif(({0} + {1}), 0), 0.0)",
-                agreeSum,
-                disagreeSum
-        );
-        NumberExpression<Long> sameAgeVoteCount = vote.id.count();
-        NumberExpression<Integer> hasVotedInt = Expressions.cases()
-                .when(userVote.id.isNotNull()).then(1)
-                .otherwise(0)
-                .max();
-        BooleanExpression hasVoted = hasVotedInt.eq(1);
-
-        return queryFactory
-                .select(Projections.constructor(
-                        AgendaResult.class,
-                        bill.id,
-                        bill.officialTitle,
-                        agreeRatio,
-                        sameAgeVoteCount,
-                        hasVoted,
-                        category.code
-                ))
-                .from(vote)
-                .innerJoin(vote.bill, bill)
-                .leftJoin(analysis).on(
-                        analysis.bill.id.eq(bill.id),
-                        analysis.current.isTrue()
-                )
-                .leftJoin(billAiCategory).on(
-                        billAiCategory.analysis.id.eq(analysis.id),
-                        billAiCategory.rankOrder.eq(1)
-                )
-                .leftJoin(billAiCategory.category, category)
-                .leftJoin(userVote).on(
-                        userVote.bill.id.eq(bill.id),
-                        userVote.userId.eq(userId)
-                )
-                .where(
-                        vote.voterAgeBand.eq(ageBand.name()),
-                        vote.votedAt.goe(voteCutoff)
-                )
-                .groupBy(
-                        bill.id,
-                        bill.officialTitle,
-                        bill.proposalDate,
-                        category.code
-                )
-                .having(sameAgeVoteCount.goe((long) minVoteCount))
-                .orderBy(sameAgeVoteCount.desc(), bill.proposalDate.desc())
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
-    }
-
-    @Override
-    public List<MainAgendaResult> findMainAgendas(
-            Long userId,
-            boolean applyInterestFilter,
-            Set<Long> interestCategoryIds,
-            Pageable pageable
-    ) {
-        QBill bill = QBill.bill;
-        QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
-        QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
-        QBillCategory category = QBillCategory.billCategory;
-        QUserBillVote vote = QUserBillVote.userBillVote;
-        NumberExpression<Long> viewCount = bill.viewCount;
-
-        NumberExpression<Long> voteCount = vote.id.count();
-
-        BooleanExpression interestFilter = null;
-        if (applyInterestFilter) {
-            interestFilter = category.id.in(interestCategoryIds);
+                return queryFactory
+                                .select(Projections.constructor(
+                                                AgendaResult.class,
+                                                bill.id,
+                                                bill.officialTitle,
+                                                agreeRatio,
+                                                totalVoteCount,
+                                                hasVoted,
+                                                category.code))
+                                .from(vote)
+                                .innerJoin(vote.bill, bill)
+                                .leftJoin(analysis).on(
+                                                analysis.bill.id.eq(bill.id),
+                                                analysis.current.isTrue())
+                                .leftJoin(billAiCategory).on(
+                                                billAiCategory.analysis.id.eq(analysis.id),
+                                                billAiCategory.rankOrder.eq(1))
+                                .leftJoin(billAiCategory.category, category)
+                                .leftJoin(userVote).on(
+                                                userVote.bill.id.eq(bill.id),
+                                                userVote.userId.eq(userId))
+                                .where(vote.votedAt.goe(cutoff))
+                                .groupBy(
+                                                bill.id,
+                                                bill.officialTitle,
+                                                category.code)
+                                .having(agreeSum.add(disagreeSum).goe((long) minVoteCount))
+                                .orderBy(controversyScore.asc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
+                                .fetch();
         }
 
-        boolean isPopularSort = pageable.getSort().stream()
-                .anyMatch(order -> order.getProperty().equalsIgnoreCase("popular"));
+        @Override
+        public List<AgendaResult> findTrendingAgendas(Long userId, int days, Pageable pageable) {
+                QBillTrendingSnapshot snapshot = QBillTrendingSnapshot.billTrendingSnapshot;
+                QBill bill = QBill.bill;
+                QUserBillVote vote = QUserBillVote.userBillVote;
+                QUserBillVote voteSub = new QUserBillVote("voteSub");
+                QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
+                QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
+                QBillCategory category = QBillCategory.billCategory;
+                Instant voteCutoff = Instant.now().minus(days, ChronoUnit.DAYS);
 
-        OrderSpecifier<?> primaryOrder = isPopularSort
-                ? viewCount.desc()
-                : bill.proposalDate.desc();
+                NumberExpression<Integer> agreeCase = Expressions.cases()
+                                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
+                                .otherwise(0);
+                NumberExpression<Integer> disagreeCase = Expressions.cases()
+                                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
+                                .otherwise(0);
+                NumberExpression<Integer> agreeSum = agreeCase.sum();
+                NumberExpression<Integer> disagreeSum = disagreeCase.sum();
+                NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
+                                Double.class,
+                                "coalesce((1.0 * {0}) / nullif(({0} + {1}), 0), 0.0)",
+                                agreeSum,
+                                disagreeSum);
 
-        return queryFactory
-                .select(Projections.constructor(
-                        MainAgendaResult.class,
-                        bill.officialTitle,
-                        analysis.summary,
-                        Expressions.nullExpression(String.class),
-                        bill.proposalDate,
-                        viewCount,
-                        voteCount,
-                        category.code,
-                        category.name,
-                        category.backgroundColor
-                ))
-                .from(bill)
-                .leftJoin(analysis).on(
-                        analysis.bill.id.eq(bill.id),
-                        analysis.current.isTrue()
-                )
-                .leftJoin(billAiCategory).on(
-                        billAiCategory.analysis.id.eq(analysis.id),
-                        billAiCategory.rankOrder.eq(1)
-                )
-                .leftJoin(billAiCategory.category, category)
-                .leftJoin(vote).on(vote.bill.id.eq(bill.id))
-                .where(interestFilter)
-                .groupBy(
-                        bill.id,
-                        bill.officialTitle,
-                        analysis.summary,
-                        bill.proposalDate,
-                        category.code,
-                        category.name,
-                        category.id
-                )
-                .orderBy(primaryOrder, bill.id.desc())
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
-    }
+                var hasVoted = JPAExpressions
+                                .selectOne()
+                                .from(voteSub)
+                                .where(
+                                                voteSub.userId.eq(userId),
+                                                voteSub.bill.id.eq(bill.id))
+                                .exists();
+
+                return queryFactory
+                                .select(
+                                                Projections.constructor(
+                                                                AgendaResult.class,
+                                                                bill.id,
+                                                                bill.officialTitle,
+                                                                agreeRatio,
+                                                                snapshot.voteCount7d.longValue(),
+                                                                hasVoted,
+                                                                category.code))
+                                .from(snapshot)
+                                .innerJoin(bill).on(snapshot.billId.eq(bill.id))
+                                .leftJoin(vote).on(
+                                                vote.bill.id.eq(bill.id),
+                                                vote.votedAt.goe(voteCutoff))
+                                .leftJoin(analysis).on(
+                                                analysis.bill.id.eq(bill.id),
+                                                analysis.current.isTrue())
+                                .leftJoin(billAiCategory).on(
+                                                billAiCategory.analysis.id.eq(analysis.id),
+                                                billAiCategory.rankOrder.eq(1))
+                                .leftJoin(billAiCategory.category, category)
+                                .groupBy(
+                                                bill.id,
+                                                bill.officialTitle,
+                                                snapshot.voteCount7d,
+                                                category.code)
+                                .orderBy(snapshot.voteCount7d.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
+                                .fetch();
+        }
+
+        @Override
+        public List<AgendaResult> findRecent30dAgendas(Long userId, int minVoteCount, Pageable pageable) {
+                QBill bill = QBill.bill;
+                QUserBillVote vote = QUserBillVote.userBillVote;
+                QUserBillVote userVote = new QUserBillVote("userVote");
+                QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
+                QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
+                QBillCategory category = QBillCategory.billCategory;
+
+                Instant voteCutoff = Instant.now().minus(30, ChronoUnit.DAYS);
+
+                NumberExpression<Integer> agreeCase = Expressions.cases()
+                                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
+                                .otherwise(0);
+                NumberExpression<Integer> disagreeCase = Expressions.cases()
+                                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
+                                .otherwise(0);
+                NumberExpression<Integer> agreeSum = agreeCase.sum();
+                NumberExpression<Integer> disagreeSum = disagreeCase.sum();
+                NumberExpression<Long> totalVoteCount = agreeSum.add(disagreeSum).longValue();
+                NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
+                                Double.class,
+                                "coalesce((1.0 * {0}) / nullif(({0} + {1}), 0), 0.0)",
+                                agreeSum,
+                                disagreeSum);
+
+                NumberExpression<Integer> hasVotedInt = Expressions.cases()
+                                .when(userVote.id.isNotNull()).then(1)
+                                .otherwise(0)
+                                .max();
+
+                BooleanExpression hasVoted = hasVotedInt.eq(1);
+
+                return queryFactory
+                                .select(Projections.constructor(
+                                                AgendaResult.class,
+                                                bill.id,
+                                                bill.officialTitle,
+                                                agreeRatio,
+                                                totalVoteCount,
+                                                hasVoted,
+                                                category.code))
+                                .from(vote)
+                                .innerJoin(vote.bill, bill)
+                                .leftJoin(analysis).on(
+                                                analysis.bill.id.eq(bill.id),
+                                                analysis.current.isTrue())
+                                .leftJoin(billAiCategory).on(
+                                                billAiCategory.analysis.id.eq(analysis.id),
+                                                billAiCategory.rankOrder.eq(1))
+                                .leftJoin(billAiCategory.category, category)
+                                .leftJoin(userVote).on(
+                                                userVote.bill.id.eq(bill.id),
+                                                userVote.userId.eq(userId))
+                                .where(vote.votedAt.goe(voteCutoff))
+                                .groupBy(
+                                                bill.id,
+                                                bill.officialTitle,
+                                                bill.proposalDate,
+                                                category.code)
+                                .having(agreeSum.add(disagreeSum).goe((long) minVoteCount))
+                                .orderBy(totalVoteCount.desc(), bill.proposalDate.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
+                                .fetch();
+        }
+
+        @Override
+        public List<AgendaResult> findSameAgeAgendas(
+                        Long userId,
+                        AgeBand ageBand,
+                        int days,
+                        int minVoteCount,
+                        Pageable pageable) {
+                QBill bill = QBill.bill;
+                QUserBillVote vote = QUserBillVote.userBillVote;
+                QUserBillVote userVote = new QUserBillVote("userVote");
+                QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
+                QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
+                QBillCategory category = QBillCategory.billCategory;
+
+                Instant voteCutoff = Instant.now().minus(days, ChronoUnit.DAYS);
+
+                NumberExpression<Integer> agreeCase = Expressions.cases()
+                                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
+                                .otherwise(0);
+                NumberExpression<Integer> disagreeCase = Expressions.cases()
+                                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
+                                .otherwise(0);
+                NumberExpression<Integer> agreeSum = agreeCase.sum();
+                NumberExpression<Integer> disagreeSum = disagreeCase.sum();
+                NumberExpression<Double> agreeRatio = Expressions.numberTemplate(
+                                Double.class,
+                                "coalesce((1.0 * {0}) / nullif(({0} + {1}), 0), 0.0)",
+                                agreeSum,
+                                disagreeSum);
+                NumberExpression<Long> sameAgeVoteCount = vote.id.count();
+                NumberExpression<Integer> hasVotedInt = Expressions.cases()
+                                .when(userVote.id.isNotNull()).then(1)
+                                .otherwise(0)
+                                .max();
+                BooleanExpression hasVoted = hasVotedInt.eq(1);
+
+                return queryFactory
+                                .select(Projections.constructor(
+                                                AgendaResult.class,
+                                                bill.id,
+                                                bill.officialTitle,
+                                                agreeRatio,
+                                                sameAgeVoteCount,
+                                                hasVoted,
+                                                category.code))
+                                .from(vote)
+                                .innerJoin(vote.bill, bill)
+                                .leftJoin(analysis).on(
+                                                analysis.bill.id.eq(bill.id),
+                                                analysis.current.isTrue())
+                                .leftJoin(billAiCategory).on(
+                                                billAiCategory.analysis.id.eq(analysis.id),
+                                                billAiCategory.rankOrder.eq(1))
+                                .leftJoin(billAiCategory.category, category)
+                                .leftJoin(userVote).on(
+                                                userVote.bill.id.eq(bill.id),
+                                                userVote.userId.eq(userId))
+                                .where(
+                                                vote.voterAgeBand.eq(ageBand.name()),
+                                                vote.votedAt.goe(voteCutoff))
+                                .groupBy(
+                                                bill.id,
+                                                bill.officialTitle,
+                                                bill.proposalDate,
+                                                category.code)
+                                .having(sameAgeVoteCount.goe((long) minVoteCount))
+                                .orderBy(sameAgeVoteCount.desc(), bill.proposalDate.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
+                                .fetch();
+        }
+
+        @Override
+        public List<MainAgendaResult> findMainAgendas(
+                        Long userId,
+                        boolean applyInterestFilter,
+                        Set<Long> interestCategoryIds,
+                        Set<String> categoryCodes,
+                        Pageable pageable) {
+                QBill bill = QBill.bill;
+                QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
+                QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
+                QBillCategory category = QBillCategory.billCategory;
+                QUserBillVote vote = QUserBillVote.userBillVote;
+                QBillTrendingSnapshot snapshot = QBillTrendingSnapshot.billTrendingSnapshot;
+                NumberExpression<Long> viewCount = bill.viewCount;
+                NumberExpression<Long> voteCount = vote.id.count();
+                NumberExpression<Long> voteCount7d = Expressions.numberTemplate(
+                                Long.class,
+                                "coalesce({0}, 0)",
+                                snapshot.voteCount7d);
+
+                BooleanExpression interestFilter = null;
+                if (applyInterestFilter) {
+                        interestFilter = category.id.in(interestCategoryIds);
+                }
+                BooleanExpression categoryCodeFilter = null;
+                if (categoryCodes != null && !categoryCodes.isEmpty()) {
+                        categoryCodeFilter = category.code.in(categoryCodes);
+                }
+
+                boolean isPopularSort = pageable.getSort().stream()
+                                .anyMatch(order -> order.getProperty().equalsIgnoreCase("popular"));
+
+                NumberExpression<Long> selectedVoteCount = isPopularSort ? voteCount7d : voteCount;
+                OrderSpecifier<?> primaryOrder = isPopularSort
+                                ? voteCount7d.desc()
+                                : bill.proposalDate.desc();
+
+                return queryFactory
+                                .select(Projections.constructor(
+                                                MainAgendaResult.class,
+                                                bill.officialTitle,
+                                                analysis.summary,
+                                                Expressions.nullExpression(String.class),
+                                                bill.proposalDate,
+                                                viewCount,
+                                                selectedVoteCount,
+                                                category.code,
+                                                category.name,
+                                                category.backgroundColor))
+                                .from(bill)
+                                .leftJoin(snapshot).on(snapshot.billId.eq(bill.id))
+                                .leftJoin(analysis).on(
+                                                analysis.bill.id.eq(bill.id),
+                                                analysis.current.isTrue())
+                                .leftJoin(billAiCategory).on(
+                                                billAiCategory.analysis.id.eq(analysis.id),
+                                                billAiCategory.rankOrder.eq(1))
+                                .leftJoin(billAiCategory.category, category)
+                                .leftJoin(vote).on(vote.bill.id.eq(bill.id))
+                                .where(categoryCodeFilter, interestFilter)
+                                .groupBy(
+                                                bill.id,
+                                                bill.officialTitle,
+                                                analysis.summary,
+                                                bill.proposalDate,
+                                                snapshot.voteCount7d,
+                                                category.code,
+                                                category.name,
+                                                category.id)
+                                .orderBy(primaryOrder, bill.id.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
+                                .fetch();
+        }
 }

@@ -4,8 +4,8 @@ import com.polywave.billservice.application.agenda.query.result.MainAgendaResult
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 
-@Schema(description = "안건 메인 목록 응답")
-public record MainAgendaResponse(
+@Schema(description = "관심 주제 안건 목록 응답")
+public record InterestAgendaResponse(
         @Schema(description = "주제 코드", example = "DIGITAL")
         String categoryCode,
 
@@ -33,33 +33,17 @@ public record MainAgendaResponse(
                 example = "2026-04-16",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        LocalDate registeredDate,
-
-        @Schema(
-                description = "조회수",
-                example = "0",
-                requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        long viewCount,
-
-        @Schema(
-                description = "투표수",
-                example = "123",
-                requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        long voteCount
+        LocalDate registeredDate
 ) {
-    public static MainAgendaResponse from(MainAgendaResult result) {
-        return new MainAgendaResponse(
+    public static InterestAgendaResponse from(MainAgendaResult result) {
+        return new InterestAgendaResponse(
                 result.categoryCode(),
                 result.categoryName(),
                 result.categoryIconUrl(),
                 result.categoryBackgroundColor(),
                 result.officialTitle(),
                 result.summary(),
-                result.proposalDate(),
-                result.viewCount(),
-                result.voteCount()
+                result.proposalDate()
         );
     }
 }

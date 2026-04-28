@@ -3,6 +3,7 @@ package com.polywave.billservice.application.category;
 import com.polywave.billservice.application.category.command.service.CategoryInterestCommand;
 import com.polywave.billservice.application.category.command.service.InterestDiff;
 import com.polywave.billservice.application.category.command.service.UserBillInterestCommandService;
+import com.polywave.billservice.application.category.query.service.CategoryQueryService;
 import com.polywave.billservice.application.category.query.service.UserBillInterestQueryService;
 import java.util.HashSet;
 import java.util.Set;
@@ -14,7 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserBillInterestAppService {
 
-    private final UserBillInterestQueryService queryService;
+    private final UserBillInterestQueryService userBillInterestQueryService;
+    private final CategoryQueryService categoryQueryService;
     private final UserBillInterestCommandService commandService;
 
     /**
@@ -24,10 +26,11 @@ public class UserBillInterestAppService {
     @Transactional
     public void updateInterests(CategoryInterestCommand command) {
         Long userId = command.userId();
-        Set<Long> requested = new HashSet<>(command.categoryIds());
+        Set<String> requestedCodes = new HashSet<>(command.categoryCodes());
+        Set<Long> requested = categoryQueryService.resolveActiveCategoryIdsByCodes(requestedCodes);
 
         // 1. 현재 관심사 조회 (QueryService)
-        Set<Long> current = queryService.getCurrentCategoryIds(userId);
+        Set<Long> current = userBillInterestQueryService.getCurrentCategoryIds(userId);
 
         // 2. 추가/삭제 차이 계산
         InterestDiff diff = InterestDiff.of(current, requested);

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -26,14 +27,22 @@ public class MainAgendaQueryService {
 
     public List<MainAgendaResult> getMainAgendas(
             Long userId,
-            boolean aiRecommended,
-            Pageable pageable
-    ) {
+            List<String> categoryCodes,
+            Pageable pageable) {
+        Set<String> normalizedCategoryCodes = categoryCodes == null
+                ? Set.of()
+                : categoryCodes.stream()
+                        .filter(StringUtils::hasText)
+                        .map(code -> code.trim().toUpperCase())
+                        .collect(java.util.stream.Collectors.toSet());
+
         Set<Long> interestCategoryIds = Set.of();
         boolean applyInterestFilter = false;
-
-        if (aiRecommended) {
+        if (normalizedCategoryCodes.isEmpty()) {
             interestCategoryIds = userBillInterestQueryService.getCurrentCategoryIds(userId);
+            if (interestCategoryIds.isEmpty()) {
+                return List.of();
+            }
             applyInterestFilter = !interestCategoryIds.isEmpty();
         }
 
@@ -41,8 +50,36 @@ public class MainAgendaQueryService {
                 userId,
                 applyInterestFilter,
                 interestCategoryIds,
-                pageable
-        );
+                normalizedCategoryCodes,
+                pageable);
+
+        return rawResults.stream()
+                .map(result -> new MainAgendaResult(
+                        result.officialTitle(),
+                        result.summary(),
+                        toCategoryIconUrl(result.categoryCode()),
+                        result.proposalDate(),
+                        result.viewCount(),
+                        result.voteCount(),
+                        result.categoryCode(),
+                        result.categoryName(),
+                        result.categoryBackgroundColor()
+                ))
+                .toList();
+    }
+
+    public List<MainAgendaResult> getInterestAgendas(Long userId, Pageable pageable) {
+        Set<Long> interestCategoryIds = userBillInterestQueryService.getCurrentCategoryIds(userId);
+        if (interestCategoryIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<MainAgendaResult> rawResults = agendaQueryRepository.findMainAgendas(
+                userId,
+                true,
+                interestCategoryIds,
+                Set.of(),
+                pageable);
 
         return rawResults.stream()
                 .map(result -> new MainAgendaResult(
