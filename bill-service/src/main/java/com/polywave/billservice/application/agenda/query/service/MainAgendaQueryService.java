@@ -40,6 +40,9 @@ public class MainAgendaQueryService {
         boolean applyInterestFilter = false;
         if (normalizedCategoryCodes.isEmpty()) {
             interestCategoryIds = userBillInterestQueryService.getCurrentCategoryIds(userId);
+            if (interestCategoryIds.isEmpty()) {
+                return List.of();
+            }
             applyInterestFilter = !interestCategoryIds.isEmpty();
         }
 
@@ -48,6 +51,34 @@ public class MainAgendaQueryService {
                 applyInterestFilter,
                 interestCategoryIds,
                 normalizedCategoryCodes,
+                pageable);
+
+        return rawResults.stream()
+                .map(result -> new MainAgendaResult(
+                        result.officialTitle(),
+                        result.summary(),
+                        toCategoryIconUrl(result.categoryCode()),
+                        result.proposalDate(),
+                        result.viewCount(),
+                        result.voteCount(),
+                        result.categoryCode(),
+                        result.categoryName(),
+                        result.categoryBackgroundColor()
+                ))
+                .toList();
+    }
+
+    public List<MainAgendaResult> getInterestAgendas(Long userId, Pageable pageable) {
+        Set<Long> interestCategoryIds = userBillInterestQueryService.getCurrentCategoryIds(userId);
+        if (interestCategoryIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<MainAgendaResult> rawResults = agendaQueryRepository.findMainAgendas(
+                userId,
+                true,
+                interestCategoryIds,
+                Set.of(),
                 pageable);
 
         return rawResults.stream()

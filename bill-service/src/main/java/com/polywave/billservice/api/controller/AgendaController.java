@@ -86,7 +86,7 @@ public class AgendaController implements AgendaApi {
     public ResponseEntity<List<InterestAgendaResponse>> getInterestAgendas(
             @LoginUser Long userId,
             Pageable pageable) {
-        List<MainAgendaResult> results = mainAgendaQueryService.getMainAgendas(userId, null, pageable);
+        List<MainAgendaResult> results = mainAgendaQueryService.getInterestAgendas(userId, pageable);
 
         List<InterestAgendaResponse> response = results.stream()
                 .map(InterestAgendaResponse::from)
