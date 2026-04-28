@@ -2,6 +2,7 @@ package com.polywave.billservice.api.spec;
 
 import com.polywave.billservice.api.dto.AgendaResponse;
 import com.polywave.billservice.api.dto.AgendaTabResponse;
+import com.polywave.billservice.api.dto.InterestAgendaResponse;
 import com.polywave.billservice.api.dto.MainAgendaResponse;
 import com.polywave.billservice.api.example.AgendaApiExamples;
 import com.polywave.common.dto.ErrorResponse;
@@ -104,9 +105,9 @@ public interface AgendaApi {
     @Operation(summary = "안건 메인 목록 조회", description = """
             안건 메인 화면용 목록을 반환합니다. 로그인한 사용자만 호출 가능합니다.
             - sort=LATEST: 최신 등록일 기준 내림차순 (기본값)
-            - sort=POPULAR: 조회 수 기준 내림차순
-            - aiRecommended=true: 사용자 관심 주제와 일치하는 카테고리만 필터링
-            - aiRecommended=false: 전체 목록 반환
+            - sort=POPULAR: 최근 7일 투표 완료 수(배치 스냅샷) 기준 내림차순
+            - categoryCodes 미지정 시: 사용자 관심 주제와 일치하는 카테고리만 상시 필터링됩니다.
+            - categoryCodes 지정 시: 전달된 주제 코드 목록으로 필터링합니다.
             """)
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
@@ -135,8 +136,46 @@ public interface AgendaApi {
     })
     @GetMapping("/main")
     ResponseEntity<List<MainAgendaResponse>> getMainAgendas(
-            @Parameter(description = "AI 추천 필터 on/off", example = "false")
-            @RequestParam(defaultValue = "false") boolean aiRecommended,
+            @Parameter(description = "주제 코드 목록(선택). 지정 시 해당 주제들만 조회", example = "DIGITAL,ECONOMY")
+            @RequestParam(required = false) List<String> categoryCodes,
+            @Parameter(hidden = true) Long userId,
+            Pageable pageable
+    );
+
+    @Operation(summary = "관심 주제 안건 목록 조회", description = """
+            관심 주제 기반 안건 목록을 반환합니다. 로그인한 사용자만 호출 가능합니다.
+            - sort=LATEST: 최신 등록일 기준 내림차순 (기본값)
+            - sort=POPULAR: 최근 7일 투표 완료 수(배치 스냅샷) 기준 내림차순
+            - 사용자 관심 주제와 일치하는 카테고리만 필터링됩니다.
+            - 본 API는 조회수/투표수를 반환하지 않습니다.
+            """)
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = InterestAgendaResponse.class)),
+                            examples = @ExampleObject(
+                                    name = "조회 성공",
+                                    value = AgendaApiExamples.EXAMPLE_GET_INTEREST_AGENDAS_OK
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요 (JWT 누락/만료/위조)",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
+    })
+    @GetMapping("/interests")
+    ResponseEntity<List<InterestAgendaResponse>> getInterestAgendas(
             @Parameter(hidden = true) Long userId,
             Pageable pageable
     );

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -26,13 +27,18 @@ public class MainAgendaQueryService {
 
     public List<MainAgendaResult> getMainAgendas(
             Long userId,
-            boolean aiRecommended,
-            Pageable pageable
-    ) {
+            List<String> categoryCodes,
+            Pageable pageable) {
+        Set<String> normalizedCategoryCodes = categoryCodes == null
+                ? Set.of()
+                : categoryCodes.stream()
+                        .filter(StringUtils::hasText)
+                        .map(code -> code.trim().toUpperCase())
+                        .collect(java.util.stream.Collectors.toSet());
+
         Set<Long> interestCategoryIds = Set.of();
         boolean applyInterestFilter = false;
-
-        if (aiRecommended) {
+        if (normalizedCategoryCodes.isEmpty()) {
             interestCategoryIds = userBillInterestQueryService.getCurrentCategoryIds(userId);
             applyInterestFilter = !interestCategoryIds.isEmpty();
         }
@@ -41,8 +47,8 @@ public class MainAgendaQueryService {
                 userId,
                 applyInterestFilter,
                 interestCategoryIds,
-                pageable
-        );
+                normalizedCategoryCodes,
+                pageable);
 
         return rawResults.stream()
                 .map(result -> new MainAgendaResult(

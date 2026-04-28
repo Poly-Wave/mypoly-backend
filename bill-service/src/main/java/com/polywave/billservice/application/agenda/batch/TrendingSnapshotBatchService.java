@@ -30,9 +30,9 @@ public class TrendingSnapshotBatchService {
 
     /**
      * 최근 7일간 의안별 투표 완료 수를 집계한 뒤 스냅샷 테이블을 갱신한다.
-     * 매시 0분에 실행 (cron: 0 0 * * * *)
+     * 매일 0시에 실행 (cron: 0 0 0 * * *)
      */
-    @Scheduled(cron = "${bill.agenda.trending.snapshot-cron:0 0 * * * *}")
+    @Scheduled(cron = "${bill.agenda.trending.snapshot-cron:0 0 0 * * *}")
     @Transactional
     public void run() {
         int days = agendaProperties.trending().days();
