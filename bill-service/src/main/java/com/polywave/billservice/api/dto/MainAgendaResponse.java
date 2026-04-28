@@ -18,19 +18,35 @@ public record MainAgendaResponse(
         @Schema(description = "주제 배경색(HEX, # 제외)", example = "46D9E3")
         String categoryBackgroundColor,
 
-        @Schema(description = "제목", example = "○○법 일부개정법률안")
+        @Schema(
+                description = "제목",
+                example = "○○법 일부개정법률안",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
         String title,
 
         @Schema(description = "내용 요약", example = "AI 분석 요약입니다.")
         String content,
 
-        @Schema(description = "등록일자", example = "2026-04-16")
+        @Schema(
+                description = "등록일자",
+                example = "2026-04-16",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
         LocalDate registeredDate,
 
-        @Schema(description = "조회수", example = "0")
+        @Schema(
+                description = "조회수",
+                example = "0",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
         long viewCount,
 
-        @Schema(description = "투표수", example = "123")
+        @Schema(
+                description = "투표수",
+                example = "123",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
         long voteCount
 ) {
     public static MainAgendaResponse from(MainAgendaResult result) {
