@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.Set;
-import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,6 +31,7 @@ public interface BillBookmarkApi {
             - categoryCodes는 의안의 AI 카테고리 중 하나라도 매칭되면 포함됩니다.
             - stageCodes는 앱용 진행 단계 코드 기준입니다. 사용 가능 값: RECEIVED, REVIEW, DECISION, COMPLETED
             - sortType 기본값은 LATEST입니다.
+            - 정렬은 pageable.sort가 아닌 sortType으로 제어합니다.
             """)
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
@@ -61,13 +61,26 @@ public interface BillBookmarkApi {
             @RequestParam(required = false)
             Set<String> stageCodes,
 
-            @Parameter(description = "정렬 방식", example = "LATEST")
+            @Parameter(
+                    description = "정렬 방식 (LATEST: 최근 보관순, OLDEST: 오래된 보관순)",
+                    example = "LATEST",
+                    schema = @Schema(
+                            allowableValues = {"LATEST", "OLDEST"},
+                            defaultValue = "LATEST"
+                    )
+            )
             @RequestParam(defaultValue = "LATEST")
             BillBookmarkSortType sortType,
 
             @Parameter(hidden = true)
             Long userId,
 
-            Pageable pageable
+            @Parameter(description = "페이지 번호, 0부터 시작", example = "0")
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @Parameter(description = "페이지 크기", example = "20")
+            @RequestParam(defaultValue = "20")
+            int size
     );
 }
