@@ -1,6 +1,7 @@
 package com.polywave.billservice.api.spec;
 
 import com.polywave.billservice.api.dto.MyVotedBillResponse;
+import com.polywave.billservice.api.dto.MyVotedBillSortType;
 import com.polywave.billservice.api.dto.SliceResponse;
 import com.polywave.billservice.api.dto.UserBillVoteRequest;
 import com.polywave.billservice.domain.UserVoteResult;
@@ -16,7 +17,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.Set;
-import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,7 +50,10 @@ public interface UserBillVoteApi {
     ResponseEntity<Void> voteOnBill(
             @Parameter(description = "의안 ID", required = true)
             @PathVariable Long billId,
-            @Parameter(hidden = true) Long userId,
+
+            @Parameter(hidden = true)
+            Long userId,
+
             @RequestBody @Valid UserBillVoteRequest request
     );
 
@@ -59,7 +62,9 @@ public interface UserBillVoteApi {
 
             - 날짜 필터는 '투표한 날짜' 기준입니다.
             - voteResults는 현재 사용자의 투표 결과 기준입니다. 사용 가능 값: AGREE, DISAGREE
-            - 정렬은 최신 투표순으로 고정입니다.
+            - sortType 기본값은 LATEST입니다.
+            - 정렬은 sortType으로만 제어합니다.
+            - 사용 가능 값: LATEST, POPULAR
             """)
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
@@ -85,9 +90,26 @@ public interface UserBillVoteApi {
             @RequestParam(required = false)
             Set<UserVoteResult> voteResults,
 
+            @Parameter(
+                    description = "정렬 방식 (LATEST: 최근 투표순, POPULAR: 인기순)",
+                    example = "LATEST",
+                    schema = @Schema(
+                            allowableValues = {"LATEST", "POPULAR"},
+                            defaultValue = "LATEST"
+                    )
+            )
+            @RequestParam(defaultValue = "LATEST")
+            MyVotedBillSortType sortType,
+
             @Parameter(hidden = true)
             Long userId,
 
-            Pageable pageable
+            @Parameter(description = "페이지 번호", example = "0")
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @Parameter(description = "페이지 크기", example = "20")
+            @RequestParam(defaultValue = "20")
+            int size
     );
 }

@@ -1,6 +1,7 @@
 package com.polywave.billservice.application.vote.query.service;
 
 import com.polywave.billservice.api.dto.MyVotedBillResponse;
+import com.polywave.billservice.api.dto.MyVotedBillSortType;
 import com.polywave.billservice.api.dto.SliceResponse;
 import com.polywave.billservice.application.vote.query.result.MyVotedBillResult;
 import com.polywave.billservice.domain.UserVoteResult;
@@ -35,6 +36,7 @@ public class UserBillVoteQueryService {
             LocalDate fromDate,
             LocalDate toDate,
             Set<UserVoteResult> voteResults,
+            MyVotedBillSortType sortType,
             Pageable pageable
     ) {
         Instant fromVotedAt = toStartOfDayInstant(fromDate);
@@ -46,6 +48,7 @@ public class UserBillVoteQueryService {
                 fromVotedAt,
                 toVotedAtExclusive,
                 normalizedVoteResults,
+                sortType,
                 pageable
         );
 

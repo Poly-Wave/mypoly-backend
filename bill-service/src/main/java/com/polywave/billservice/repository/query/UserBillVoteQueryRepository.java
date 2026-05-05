@@ -1,5 +1,6 @@
 package com.polywave.billservice.repository.query;
 
+import com.polywave.billservice.api.dto.MyVotedBillSortType;
 import com.polywave.billservice.application.vote.query.result.MyVotedBillResult;
 import java.time.Instant;
 import java.util.List;
@@ -16,6 +17,7 @@ public interface UserBillVoteQueryRepository {
             Instant fromVotedAt,
             Instant toVotedAtExclusive,
             Set<String> voteResults,
+            MyVotedBillSortType sortType,
             Pageable pageable
     );
 }
