@@ -1,6 +1,7 @@
 package com.polywave.billservice.api.spec;
 
 import com.polywave.billservice.api.dto.MyVotedBillResponse;
+import com.polywave.billservice.api.dto.MyVotedBillSliceResponse;
 import com.polywave.billservice.api.dto.MyVotedBillSortType;
 import com.polywave.billservice.api.dto.SliceResponse;
 import com.polywave.billservice.api.dto.UserBillVoteRequest;
@@ -18,6 +19,7 @@ import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.Set;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,16 +39,40 @@ public interface UserBillVoteApi {
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "저장 성공"),
-            @ApiResponse(responseCode = "400", description = "요청 값 검증 실패",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "인증 필요",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "의안 없음",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "500", description = "서버 오류",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "요청 값 검증 실패",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "의안 없음",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "서버 오류",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
     })
-    @PostMapping("/{billId}")
+    @PostMapping(value = "/{billId}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> voteOnBill(
             @Parameter(description = "의안 ID", required = true)
             @PathVariable Long billId,
@@ -63,18 +89,37 @@ public interface UserBillVoteApi {
             - 날짜 필터는 '투표한 날짜' 기준입니다.
             - voteResults는 현재 사용자의 투표 결과 기준입니다. 사용 가능 값: AGREE, DISAGREE
             - sortType 기본값은 LATEST입니다.
-            - 정렬은 sortType으로만 제어합니다.
+            - 정렬은 pageable.sort가 아닌 sortType으로 제어합니다.
             - 사용 가능 값: LATEST, POPULAR
             """)
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증 필요",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "500", description = "서버 오류",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = MyVotedBillSliceResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "서버 오류",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
     })
-    @GetMapping("/me")
+    @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<SliceResponse<MyVotedBillResponse>> getMyVotedBills(
             @Parameter(description = "투표 시작일, KST 기준", example = "2026-01-01")
             @RequestParam(required = false)
@@ -104,7 +149,7 @@ public interface UserBillVoteApi {
             @Parameter(hidden = true)
             Long userId,
 
-            @Parameter(description = "페이지 번호", example = "0")
+            @Parameter(description = "페이지 번호, 0부터 시작", example = "0")
             @RequestParam(defaultValue = "0")
             int page,
 

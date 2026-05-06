@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,7 +37,7 @@ public interface CategoryApi {
                     responseCode = "200",
                     description = "조회 성공",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             array = @ArraySchema(schema = @Schema(implementation = CategoryResponse.class)),
                             examples = @ExampleObject(
                                     name = "조회 성공",
@@ -48,7 +49,7 @@ public interface CategoryApi {
                     responseCode = "500",
                     description = "서버 오류",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "서버 오류",
@@ -57,7 +58,7 @@ public interface CategoryApi {
                     )
             )
     })
-    @GetMapping
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<List<CategoryResponse>> getCategories();
 
     @Operation(summary = "내 관심 카테고리 저장(갱신)", description = """
@@ -80,7 +81,7 @@ public interface CategoryApi {
                     responseCode = "400",
                     description = "요청 값 검증 실패 또는 에러",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
                                     @ExampleObject(
@@ -98,7 +99,7 @@ public interface CategoryApi {
                     responseCode = "401",
                     description = "인증 필요(JWT 누락/만료/위조)",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
                                     @ExampleObject(
@@ -116,7 +117,7 @@ public interface CategoryApi {
                     responseCode = "403",
                     description = "권한 없음",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "권한 없음",
@@ -128,7 +129,7 @@ public interface CategoryApi {
                     responseCode = "500",
                     description = "서버 오류",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
                                     @ExampleObject(
@@ -143,14 +144,14 @@ public interface CategoryApi {
                     )
             )
     })
-    @PostMapping("/interests")
+    @PostMapping(value = "/interests", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> updateInterests(
             @Parameter(hidden = true) Long userId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "저장할 관심 카테고리 코드 목록",
                     required = true,
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = CategoryInterestUpdateRequest.class),
                             examples = @ExampleObject(
                                     name = "요청 예시",
@@ -174,7 +175,7 @@ public interface CategoryApi {
                     responseCode = "400",
                     description = "요청 값 검증 실패 (또는 잘못된 온보딩 상태)",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
                                     @ExampleObject(
@@ -192,7 +193,7 @@ public interface CategoryApi {
                     responseCode = "401",
                     description = "인증 필요(JWT 누락/만료/위조)",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
                                     @ExampleObject(
@@ -210,7 +211,7 @@ public interface CategoryApi {
                     responseCode = "403",
                     description = "권한 없음",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "권한 없음",
@@ -222,7 +223,7 @@ public interface CategoryApi {
                     responseCode = "500",
                     description = "서버 오류",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
                                     @ExampleObject(
@@ -237,14 +238,14 @@ public interface CategoryApi {
                     )
             )
     })
-    @PostMapping("/onboarding/interests")
+    @PostMapping(value = "/onboarding/interests", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> updateOnboardingInterests(
             @Parameter(hidden = true) Long userId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "저장할 관심 카테고리 코드 목록",
                     required = true,
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = CategoryInterestUpdateRequest.class),
                             examples = @ExampleObject(
                                     name = "요청 예시",

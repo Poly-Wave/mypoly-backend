@@ -110,7 +110,7 @@ public class BillBookmarkQueryRepositoryImpl implements BillBookmarkQueryReposit
                         primaryCategory.backgroundColor,
                         bill.viewCount
                 )
-                .orderBy(bookmarkOrder(bookmark, sortType), bill.id.desc())
+                .orderBy(bookmarkOrders(bookmark, bill, vote, sortType))
                 .offset(pageable.getOffset())
                 .limit(pageSize + 1L)
                 .fetch();
@@ -179,10 +179,23 @@ public class BillBookmarkQueryRepositoryImpl implements BillBookmarkQueryReposit
         return builder;
     }
 
-    private OrderSpecifier<?> bookmarkOrder(QUserBillBookmark bookmark, BillBookmarkSortType sortType) {
-        if (sortType == BillBookmarkSortType.OLDEST) {
-            return bookmark.createdAt.asc();
+    private OrderSpecifier<?>[] bookmarkOrders(
+            QUserBillBookmark bookmark,
+            QBill bill,
+            QUserBillVote vote,
+            BillBookmarkSortType sortType
+    ) {
+        if (sortType == BillBookmarkSortType.POPULAR) {
+            return new OrderSpecifier<?>[]{
+                    vote.id.count().desc(),
+                    bookmark.createdAt.desc(),
+                    bill.id.desc()
+            };
         }
-        return bookmark.createdAt.desc();
+
+        return new OrderSpecifier<?>[]{
+                bookmark.createdAt.desc(),
+                bill.id.desc()
+        };
     }
 }

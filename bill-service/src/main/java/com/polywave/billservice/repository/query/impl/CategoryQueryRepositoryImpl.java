@@ -24,7 +24,8 @@ public class CategoryQueryRepositoryImpl implements CategoryQueryRepository {
                         CategoryResult.class,
                         category.code,
                         category.name,
-                        category.displayOrder
+                        category.displayOrder,
+                        category.backgroundColor
                 ))
                 .from(category)
                 .where(category.isActive.isTrue())
