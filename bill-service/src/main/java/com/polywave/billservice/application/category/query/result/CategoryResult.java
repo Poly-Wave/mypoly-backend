@@ -4,6 +4,7 @@ package com.polywave.billservice.application.category.query.result;
 public record CategoryResult(
         String code,
         String name,
-        Integer displayOrder
+        Integer displayOrder,
+        String backgroundColor
 ) {
 }

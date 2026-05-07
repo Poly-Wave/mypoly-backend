@@ -2,6 +2,7 @@ package com.polywave.billservice.api.spec;
 
 import com.polywave.billservice.api.dto.BillBookmarkSortType;
 import com.polywave.billservice.api.dto.BookmarkedBillResponse;
+import com.polywave.billservice.api.dto.BookmarkedBillSliceResponse;
 import com.polywave.billservice.api.dto.SliceResponse;
 import com.polywave.common.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,8 +15,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.Set;
-import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,16 +33,37 @@ public interface BillBookmarkApi {
             - categoryCodes는 의안의 AI 카테고리 중 하나라도 매칭되면 포함됩니다.
             - stageCodes는 앱용 진행 단계 코드 기준입니다. 사용 가능 값: RECEIVED, REVIEW, DECISION, COMPLETED
             - sortType 기본값은 LATEST입니다.
+            - 정렬은 pageable.sort가 아닌 sortType으로 제어합니다.
+            - 사용 가능 값: LATEST, POPULAR
             """)
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증 필요",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "500", description = "서버 오류",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = BookmarkedBillSliceResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "서버 오류",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
     })
-    @GetMapping
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<SliceResponse<BookmarkedBillResponse>> getBookmarkedBills(
             @Parameter(description = "보관 시작일, KST 기준", example = "2026-01-01")
             @RequestParam(required = false)
@@ -61,13 +83,26 @@ public interface BillBookmarkApi {
             @RequestParam(required = false)
             Set<String> stageCodes,
 
-            @Parameter(description = "정렬 방식", example = "LATEST")
+            @Parameter(
+                    description = "정렬 방식 (LATEST: 최근 보관순, POPULAR: 인기순)",
+                    example = "LATEST",
+                    schema = @Schema(
+                            allowableValues = {"LATEST", "POPULAR"},
+                            defaultValue = "LATEST"
+                    )
+            )
             @RequestParam(defaultValue = "LATEST")
             BillBookmarkSortType sortType,
 
             @Parameter(hidden = true)
             Long userId,
 
-            Pageable pageable
+            @Parameter(description = "페이지 번호, 0부터 시작", example = "0")
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @Parameter(description = "페이지 크기", example = "20")
+            @RequestParam(defaultValue = "20")
+            int size
     );
 }

@@ -1,5 +1,6 @@
 package com.polywave.billservice.repository.query.impl;
 
+import com.polywave.billservice.api.dto.MyVotedBillSortType;
 import com.polywave.billservice.application.vote.query.result.MyVotedBillResult;
 import com.polywave.billservice.domain.QBill;
 import com.polywave.billservice.domain.QBillAiAnalysis;
@@ -7,6 +8,7 @@ import com.polywave.billservice.domain.QBillAiCategory;
 import com.polywave.billservice.domain.QBillCategory;
 import com.polywave.billservice.domain.QUserBillVote;
 import com.polywave.billservice.repository.query.UserBillVoteQueryRepository;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -41,6 +43,7 @@ public class UserBillVoteQueryRepositoryImpl implements UserBillVoteQueryReposit
             Instant fromVotedAt,
             Instant toVotedAtExclusive,
             Set<String> voteResults,
+            MyVotedBillSortType sortType,
             Pageable pageable
     ) {
         QUserBillVote userBillVote = QUserBillVote.userBillVote;
@@ -98,10 +101,30 @@ public class UserBillVoteQueryRepositoryImpl implements UserBillVoteQueryReposit
                         primaryCategory.backgroundColor,
                         bill.viewCount
                 )
-                .orderBy(userBillVote.votedAt.desc(), bill.id.desc())
+                .orderBy(myVotedBillOrders(userBillVote, bill, voteCountSource, sortType))
                 .offset(pageable.getOffset())
                 .limit(pageSize + 1L)
                 .fetch();
+    }
+
+    private OrderSpecifier<?>[] myVotedBillOrders(
+            QUserBillVote userBillVote,
+            QBill bill,
+            QUserBillVote voteCountSource,
+            MyVotedBillSortType sortType
+    ) {
+        if (sortType == MyVotedBillSortType.POPULAR) {
+            return new OrderSpecifier<?>[]{
+                    voteCountSource.id.count().desc(),
+                    userBillVote.votedAt.desc(),
+                    bill.id.desc()
+            };
+        }
+
+        return new OrderSpecifier<?>[]{
+                userBillVote.votedAt.desc(),
+                bill.id.desc()
+        };
     }
 
     private BooleanExpression votedAtGoe(QUserBillVote userBillVote, Instant fromVotedAt) {

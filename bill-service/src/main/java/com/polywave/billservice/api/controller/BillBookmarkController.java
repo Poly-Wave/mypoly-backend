@@ -9,6 +9,7 @@ import com.polywave.security.annotation.LoginUser;
 import java.time.LocalDate;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,8 +28,11 @@ public class BillBookmarkController implements BillBookmarkApi {
             Set<String> stageCodes,
             BillBookmarkSortType sortType,
             @LoginUser Long userId,
-            Pageable pageable
+            int page,
+            int size
     ) {
+        Pageable pageable = PageRequest.of(page, size);
+
         return ResponseEntity.ok(
                 billBookmarkQueryService.getBookmarkedBills(
                         userId,

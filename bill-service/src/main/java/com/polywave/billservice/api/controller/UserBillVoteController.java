@@ -1,6 +1,7 @@
 package com.polywave.billservice.api.controller;
 
 import com.polywave.billservice.api.dto.MyVotedBillResponse;
+import com.polywave.billservice.api.dto.MyVotedBillSortType;
 import com.polywave.billservice.api.dto.SliceResponse;
 import com.polywave.billservice.api.dto.UserBillVoteRequest;
 import com.polywave.billservice.api.spec.UserBillVoteApi;
@@ -12,6 +13,7 @@ import com.polywave.security.annotation.LoginUser;
 import java.time.LocalDate;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,15 +37,20 @@ public class UserBillVoteController implements UserBillVoteApi {
             LocalDate fromDate,
             LocalDate toDate,
             Set<UserVoteResult> voteResults,
+            MyVotedBillSortType sortType,
             @LoginUser Long userId,
-            Pageable pageable
+            int page,
+            int size
     ) {
+        Pageable pageable = PageRequest.of(page, size);
+
         return ResponseEntity.ok(
                 userBillVoteQueryService.getMyVotedBills(
                         userId,
                         fromDate,
                         toDate,
                         voteResults,
+                        sortType,
                         pageable
                 )
         );
