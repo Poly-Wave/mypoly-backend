@@ -47,6 +47,12 @@ public interface AgendaQueryRepository {
             boolean applyInterestFilter,
             Set<Long> interestCategoryIds,
             Set<String> categoryCodes,
-            Pageable pageable
-    );
+            Pageable pageable);
+
+    /**
+     * 의안 제목으로 검색.
+     */
+    List<SearchAgendaResult> searchAgendasByTitle(
+            String keyword,
+            Pageable pageable);
 }

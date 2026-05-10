@@ -55,6 +55,7 @@ public class MainAgendaQueryService {
 
         return rawResults.stream()
                 .map(result -> new MainAgendaResult(
+                        result.billId(),
                         result.officialTitle(),
                         result.summary(),
                         toCategoryIconUrl(result.categoryCode()),
@@ -63,8 +64,7 @@ public class MainAgendaQueryService {
                         result.voteCount(),
                         result.categoryCode(),
                         result.categoryName(),
-                        result.categoryBackgroundColor()
-                ))
+                        result.categoryBackgroundColor()))
                 .toList();
     }
 
@@ -83,6 +83,7 @@ public class MainAgendaQueryService {
 
         return rawResults.stream()
                 .map(result -> new MainAgendaResult(
+                        result.billId(),
                         result.officialTitle(),
                         result.summary(),
                         toCategoryIconUrl(result.categoryCode()),
@@ -91,8 +92,7 @@ public class MainAgendaQueryService {
                         result.voteCount(),
                         result.categoryCode(),
                         result.categoryName(),
-                        result.categoryBackgroundColor()
-                ))
+                        result.categoryBackgroundColor()))
                 .toList();
     }
 

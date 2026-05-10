@@ -1,33 +1,27 @@
 package com.polywave.billservice.api.dto;
 
-import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
+import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 
-@Schema(description = "안건 메인 목록 응답")
-public record MainAgendaResponse(
+@Schema(description = "의안 검색 결과 응답")
+public record SearchAgendaResponse(
         @Schema(description = "의안 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED) Long billId,
-
         @Schema(description = "주제 코드", example = "DIGITAL") String categoryCode,
-
         @Schema(description = "주제 이름", example = "디지털") String categoryName,
-
-        @Schema(description = "주제 아이콘 URL", example = "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp") String categoryIconUrl,
-
-        @Schema(description = "주제 배경색(HEX, # 제외)", example = "46D9E3") String categoryBackgroundColor,
-
         @Schema(description = "제목", example = "○○법 일부개정법률안", requiredMode = Schema.RequiredMode.REQUIRED) String title,
-
-        @Schema(description = "내용 요약", example = "AI 분석 요약입니다.") String content,
-
         @Schema(description = "등록일자", example = "2026-04-16", requiredMode = Schema.RequiredMode.REQUIRED) LocalDate registeredDate,
-
         @Schema(description = "조회수", example = "0", requiredMode = Schema.RequiredMode.REQUIRED) long viewCount,
-
         @Schema(description = "투표수", example = "123", requiredMode = Schema.RequiredMode.REQUIRED) long voteCount) {
-    public static MainAgendaResponse from(MainAgendaResult result) {
-        return new MainAgendaResponse(result.billId(), result.categoryCode(), result.categoryName(),
-                result.categoryIconUrl(), result.categoryBackgroundColor(), result.officialTitle(), result.summary(),
-                result.proposalDate(), result.viewCount(), result.voteCount());
+
+    public static SearchAgendaResponse from(SearchAgendaResult result) {
+        return new SearchAgendaResponse(
+                result.billId(),
+                result.categoryCode(),
+                result.categoryName(),
+                result.officialTitle(),
+                result.proposalDate(),
+                result.viewCount(),
+                result.voteCount());
     }
 }

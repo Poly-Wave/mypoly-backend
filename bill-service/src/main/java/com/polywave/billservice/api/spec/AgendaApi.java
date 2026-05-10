@@ -4,6 +4,7 @@ import com.polywave.billservice.api.dto.AgendaResponse;
 import com.polywave.billservice.api.dto.AgendaTabResponse;
 import com.polywave.billservice.api.dto.InterestAgendaResponse;
 import com.polywave.billservice.api.dto.MainAgendaResponse;
+import com.polywave.billservice.api.dto.SearchAgendaResponse;
 import com.polywave.billservice.api.example.AgendaApiExamples;
 import com.polywave.common.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -177,6 +178,21 @@ public interface AgendaApi {
     @GetMapping("/interests")
     ResponseEntity<List<InterestAgendaResponse>> getInterestAgendas(
             @Parameter(hidden = true) Long userId,
-            Pageable pageable
-    );
+            Pageable pageable);
+
+    @Operation(summary = "의안 제목 검색", description = """
+            입력한 키워드가 의안 제목에 포함된 안건 목록을 반환합니다.
+            최신 등록일(proposalDate) 기준 내림차순으로 정렬됩니다.
+            """)
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = SearchAgendaResponse.class)))),
+            @ApiResponse(responseCode = "401", description = "인증 필요 (JWT 누락/만료/위조)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @GetMapping("/search")
+    ResponseEntity<List<SearchAgendaResponse>> searchAgendas(
+            @Parameter(description = "검색 키워드", required = true) @RequestParam String keyword,
+            @Parameter(hidden = true) Long userId,
+            Pageable pageable);
 }
