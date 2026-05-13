@@ -7,6 +7,9 @@ import com.polywave.billservice.api.dto.MainAgendaResponse;
 import com.polywave.billservice.api.spec.AgendaApi;
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
+import com.polywave.billservice.api.dto.SearchAgendaResponse;
+import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
+import com.polywave.billservice.application.agenda.query.service.AgendaSearchQueryService;
 import com.polywave.billservice.application.agenda.query.service.AgendaTabQueryService;
 import com.polywave.billservice.application.agenda.query.service.HotDebateAgendaQueryService;
 import com.polywave.billservice.application.agenda.query.service.MainAgendaQueryService;
@@ -33,6 +36,7 @@ public class AgendaController implements AgendaApi {
     private final Recent30dAgendaQueryService recent30dAgendaQueryService;
     private final SameAgeAgendaQueryService sameAgeAgendaQueryService;
     private final MainAgendaQueryService mainAgendaQueryService;
+    private final AgendaSearchQueryService agendaSearchQueryService;
 
     @Override
     public ResponseEntity<List<AgendaTabResponse>> getTabs() {
@@ -90,6 +94,19 @@ public class AgendaController implements AgendaApi {
 
         List<InterestAgendaResponse> response = results.stream()
                 .map(InterestAgendaResponse::from)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<List<SearchAgendaResponse>> searchAgendas(
+            String keyword,
+            @LoginUser Long userId,
+            Pageable pageable) {
+        List<SearchAgendaResult> results = agendaSearchQueryService.searchAgendas(keyword, pageable);
+
+        List<SearchAgendaResponse> response = results.stream()
+                .map(SearchAgendaResponse::from)
                 .toList();
         return ResponseEntity.ok(response);
     }
