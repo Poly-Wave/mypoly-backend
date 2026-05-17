@@ -34,8 +34,10 @@ public class UserBillVoteController implements UserBillVoteApi {
 
     @Override
     public ResponseEntity<SliceResponse<MyVotedBillResponse>> getMyVotedBills(
-            LocalDate fromDate,
-            LocalDate toDate,
+            LocalDate proposalFromDate,
+            LocalDate proposalToDate,
+            LocalDate votedFromDate,
+            LocalDate votedToDate,
             Set<UserVoteResult> voteResults,
             MyVotedBillSortType sortType,
             @LoginUser Long userId,
@@ -47,8 +49,10 @@ public class UserBillVoteController implements UserBillVoteApi {
         return ResponseEntity.ok(
                 userBillVoteQueryService.getMyVotedBills(
                         userId,
-                        fromDate,
-                        toDate,
+                        proposalFromDate,
+                        proposalToDate,
+                        votedFromDate,
+                        votedToDate,
                         voteResults,
                         sortType,
                         pageable

@@ -3,6 +3,7 @@ package com.polywave.billservice.repository.query;
 import com.polywave.billservice.api.dto.MyVotedBillSortType;
 import com.polywave.billservice.application.vote.query.result.MyVotedBillResult;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -14,6 +15,8 @@ public interface UserBillVoteQueryRepository {
 
     List<MyVotedBillResult> findMyVotedBills(
             Long userId,
+            LocalDate proposalFromDate,
+            LocalDate proposalToDate,
             Instant fromVotedAt,
             Instant toVotedAtExclusive,
             Set<String> voteResults,

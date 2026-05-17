@@ -33,18 +33,22 @@ public class UserBillVoteQueryService {
 
     public SliceResponse<MyVotedBillResponse> getMyVotedBills(
             Long userId,
-            LocalDate fromDate,
-            LocalDate toDate,
+            LocalDate proposalFromDate,
+            LocalDate proposalToDate,
+            LocalDate votedFromDate,
+            LocalDate votedToDate,
             Set<UserVoteResult> voteResults,
             MyVotedBillSortType sortType,
             Pageable pageable
     ) {
-        Instant fromVotedAt = toStartOfDayInstant(fromDate);
-        Instant toVotedAtExclusive = toExclusiveEndInstant(toDate);
+        Instant fromVotedAt = toStartOfDayInstant(votedFromDate);
+        Instant toVotedAtExclusive = toExclusiveEndInstant(votedToDate);
         Set<String> normalizedVoteResults = normalizeVoteResults(voteResults);
 
         List<MyVotedBillResult> results = userBillVoteQueryRepository.findMyVotedBills(
                 userId,
+                proposalFromDate,
+                proposalToDate,
                 fromVotedAt,
                 toVotedAtExclusive,
                 normalizedVoteResults,
