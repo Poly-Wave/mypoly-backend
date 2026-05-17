@@ -2,6 +2,7 @@ package com.polywave.billservice.repository.query;
 
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
+import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
 import com.polywave.billservice.domain.AgeBand;
 import org.springframework.data.domain.Pageable;
 

@@ -86,7 +86,8 @@ public interface UserBillVoteApi {
     @Operation(summary = "참여한 투표 안건 목록 조회", description = """
             로그인 사용자가 참여한 투표 안건 목록을 조회합니다.
 
-            - 날짜 필터는 '투표한 날짜' 기준입니다.
+            - proposalFromDate/proposalToDate는 안건 생성일 기준입니다.
+            - votedFromDate/votedToDate는 사용자가 실제 투표한 날짜 기준입니다.
             - voteResults는 현재 사용자의 투표 결과 기준입니다. 사용 가능 값: AGREE, DISAGREE
             - sortType 기본값은 LATEST입니다.
             - 정렬은 pageable.sort가 아닌 sortType으로 제어합니다.
@@ -121,15 +122,25 @@ public interface UserBillVoteApi {
     })
     @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<SliceResponse<MyVotedBillResponse>> getMyVotedBills(
-            @Parameter(description = "투표 시작일, KST 기준", example = "2026-01-01")
+            @Parameter(description = "안건 생성 시작일, KST 기준", example = "2026-01-01")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate fromDate,
+            LocalDate proposalFromDate,
 
-            @Parameter(description = "투표 종료일, KST 기준", example = "2026-04-18")
+            @Parameter(description = "안건 생성 종료일, KST 기준", example = "2026-04-18")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate toDate,
+            LocalDate proposalToDate,
+
+            @Parameter(description = "투표한 날짜 시작일, KST 기준", example = "2026-01-01")
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate votedFromDate,
+
+            @Parameter(description = "투표한 날짜 종료일, KST 기준", example = "2026-04-18")
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate votedToDate,
 
             @Parameter(description = "투표 결과 목록", example = "AGREE,DISAGREE")
             @RequestParam(required = false)

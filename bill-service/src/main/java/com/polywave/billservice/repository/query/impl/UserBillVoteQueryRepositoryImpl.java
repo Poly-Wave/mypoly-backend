@@ -13,6 +13,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +41,8 @@ public class UserBillVoteQueryRepositoryImpl implements UserBillVoteQueryReposit
     @Override
     public List<MyVotedBillResult> findMyVotedBills(
             Long userId,
+            LocalDate proposalFromDate,
+            LocalDate proposalToDate,
             Instant fromVotedAt,
             Instant toVotedAtExclusive,
             Set<String> voteResults,
@@ -84,6 +87,8 @@ public class UserBillVoteQueryRepositoryImpl implements UserBillVoteQueryReposit
                 .leftJoin(voteCountSource).on(voteCountSource.bill.id.eq(bill.id))
                 .where(
                         userBillVote.userId.eq(userId),
+                        proposalDateGoe(bill, proposalFromDate),
+                        proposalDateLoe(bill, proposalToDate),
                         votedAtGoe(userBillVote, fromVotedAt),
                         votedAtLt(userBillVote, toVotedAtExclusive),
                         voteResultIn(userBillVote, voteResults)
@@ -125,6 +130,20 @@ public class UserBillVoteQueryRepositoryImpl implements UserBillVoteQueryReposit
                 userBillVote.votedAt.desc(),
                 bill.id.desc()
         };
+    }
+
+    private BooleanExpression proposalDateGoe(QBill bill, LocalDate proposalFromDate) {
+        if (proposalFromDate == null) {
+            return null;
+        }
+        return bill.proposalDate.goe(proposalFromDate);
+    }
+
+    private BooleanExpression proposalDateLoe(QBill bill, LocalDate proposalToDate) {
+        if (proposalToDate == null) {
+            return null;
+        }
+        return bill.proposalDate.loe(proposalToDate);
     }
 
     private BooleanExpression votedAtGoe(QUserBillVote userBillVote, Instant fromVotedAt) {
