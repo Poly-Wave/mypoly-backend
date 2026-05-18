@@ -4,6 +4,7 @@ import com.polywave.billservice.api.dto.AgendaResponse;
 import com.polywave.billservice.api.dto.AgendaTabResponse;
 import com.polywave.billservice.api.dto.InterestAgendaResponse;
 import com.polywave.billservice.api.dto.MainAgendaResponse;
+import com.polywave.billservice.api.dto.PopularAgendaResponse;
 import com.polywave.billservice.api.dto.SearchAgendaResponse;
 import com.polywave.billservice.api.example.AgendaApiExamples;
 import com.polywave.common.dto.ErrorResponse;
@@ -179,6 +180,33 @@ public interface AgendaApi {
     ResponseEntity<List<InterestAgendaResponse>> getInterestAgendas(
             @Parameter(hidden = true) Long userId,
             Pageable pageable);
+
+    @Operation(summary = "인기 안건 조회", description = """
+            KST 월요일 00:00 기준 이번 주 조회 증가분 Top 5를 반환합니다. 로그인한 사용자만 호출 가능합니다.
+            - TRENDING 탭(7일 투표 수)과 달리 **조회수** 기준이며, **주간(월~일)** 구간입니다.
+            - 약 10분 주기 배치로 선계산된 `bill_popular_view_ranking` 스냅샷을 조회합니다.
+            - 카테고리 필터 없이 전체 의안 대상입니다.
+            """)
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = PopularAgendaResponse.class)))),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요 (JWT 누락/만료/위조)",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @GetMapping("/popular")
+    ResponseEntity<List<PopularAgendaResponse>> getPopularAgendas(
+            @Parameter(hidden = true) Long userId);
 
     @Operation(summary = "의안 제목 검색", description = """
             입력한 키워드가 의안 제목에 포함된 안건 목록을 반환합니다.

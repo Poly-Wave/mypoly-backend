@@ -2,14 +2,17 @@ package com.polywave.billservice.repository.query.impl;
 
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
+import com.polywave.billservice.application.agenda.query.result.PopularAgendaResult;
 import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
 import com.polywave.billservice.domain.AgeBand;
 import com.polywave.billservice.domain.QBill;
 import com.polywave.billservice.domain.QBillAiAnalysis;
 import com.polywave.billservice.domain.QBillAiCategory;
 import com.polywave.billservice.domain.QBillCategory;
+import com.polywave.billservice.domain.QBillPopularViewRanking;
 import com.polywave.billservice.domain.QBillTrendingSnapshot;
 import com.polywave.billservice.domain.QUserBillVote;
+import java.time.LocalDate;
 import com.polywave.billservice.domain.UserVoteResult;
 import com.polywave.billservice.repository.query.AgendaQueryRepository;
 import com.querydsl.core.types.Projections;
@@ -20,7 +23,6 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
@@ -31,8 +33,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 @RequiredArgsConstructor
 public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
-
-    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Seoul");
 
     private static final String VOTE_RESULT_AGREE = UserVoteResult.AGREE.name();
     private static final String VOTE_RESULT_DISAGREE = UserVoteResult.DISAGREE.name();
@@ -438,6 +438,63 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                 .orderBy(bill.proposalDate.desc(), bill.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
+                .fetch();
+    }
+
+    @Override
+    public List<PopularAgendaResult> findPopularAgendas(Long userId, LocalDate weekStart) {
+        QBillPopularViewRanking ranking = QBillPopularViewRanking.billPopularViewRanking;
+        QBill bill = QBill.bill;
+        QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
+        QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
+        QBillCategory category = QBillCategory.billCategory;
+        QUserBillVote vote = QUserBillVote.userBillVote;
+        QUserBillVote voteSub = new QUserBillVote("voteSub");
+
+        var hasVoted = JPAExpressions
+                .selectOne()
+                .from(voteSub)
+                .where(
+                        voteSub.userId.eq(userId),
+                        voteSub.bill.id.eq(bill.id))
+                .exists();
+
+        NumberExpression<Long> viewCount = bill.viewCount.coalesce(0L);
+        NumberExpression<Long> voteCount = vote.id.count();
+
+        return queryFactory
+                .select(Projections.constructor(
+                        PopularAgendaResult.class,
+                        ranking.id.rank.intValue(),
+                        bill.id,
+                        bill.officialTitle,
+                        category.code,
+                        category.name,
+                        bill.proposalDate,
+                        viewCount,
+                        ranking.viewCountWeekly,
+                        voteCount,
+                        hasVoted))
+                .from(ranking)
+                .innerJoin(bill).on(ranking.billId.eq(bill.id))
+                .leftJoin(vote).on(vote.bill.id.eq(bill.id))
+                .leftJoin(analysis).on(
+                        analysis.bill.id.eq(bill.id),
+                        analysis.current.isTrue())
+                .leftJoin(billAiCategory).on(
+                        billAiCategory.analysis.id.eq(analysis.id),
+                        billAiCategory.rankOrder.eq(1))
+                .leftJoin(billAiCategory.category, category)
+                .where(ranking.id.weekStart.eq(weekStart))
+                .groupBy(
+                        ranking.id.rank,
+                        ranking.viewCountWeekly,
+                        bill.id,
+                        bill.officialTitle,
+                        bill.proposalDate,
+                        category.code,
+                        category.name)
+                .orderBy(ranking.id.rank.asc())
                 .fetch();
     }
 }

@@ -4,15 +4,18 @@ import com.polywave.billservice.api.dto.AgendaResponse;
 import com.polywave.billservice.api.dto.AgendaTabResponse;
 import com.polywave.billservice.api.dto.InterestAgendaResponse;
 import com.polywave.billservice.api.dto.MainAgendaResponse;
+import com.polywave.billservice.api.dto.PopularAgendaResponse;
 import com.polywave.billservice.api.spec.AgendaApi;
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
+import com.polywave.billservice.application.agenda.query.result.PopularAgendaResult;
 import com.polywave.billservice.api.dto.SearchAgendaResponse;
 import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
 import com.polywave.billservice.application.agenda.query.service.AgendaSearchQueryService;
 import com.polywave.billservice.application.agenda.query.service.AgendaTabQueryService;
 import com.polywave.billservice.application.agenda.query.service.HotDebateAgendaQueryService;
 import com.polywave.billservice.application.agenda.query.service.MainAgendaQueryService;
+import com.polywave.billservice.application.agenda.query.service.PopularAgendaQueryService;
 import com.polywave.billservice.application.agenda.query.service.Recent30dAgendaQueryService;
 import com.polywave.billservice.application.agenda.query.service.SameAgeAgendaQueryService;
 import com.polywave.billservice.application.agenda.query.service.TrendingAgendaQueryService;
@@ -37,6 +40,7 @@ public class AgendaController implements AgendaApi {
     private final SameAgeAgendaQueryService sameAgeAgendaQueryService;
     private final MainAgendaQueryService mainAgendaQueryService;
     private final AgendaSearchQueryService agendaSearchQueryService;
+    private final PopularAgendaQueryService popularAgendaQueryService;
 
     @Override
     public ResponseEntity<List<AgendaTabResponse>> getTabs() {
@@ -94,6 +98,15 @@ public class AgendaController implements AgendaApi {
 
         List<InterestAgendaResponse> response = results.stream()
                 .map(InterestAgendaResponse::from)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<List<PopularAgendaResponse>> getPopularAgendas(@LoginUser Long userId) {
+        List<PopularAgendaResult> results = popularAgendaQueryService.getPopularAgendas(userId);
+        List<PopularAgendaResponse> response = results.stream()
+                .map(PopularAgendaResponse::from)
                 .toList();
         return ResponseEntity.ok(response);
     }
