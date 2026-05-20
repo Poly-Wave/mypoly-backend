@@ -61,6 +61,75 @@ public interface CategoryApi {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<List<CategoryResponse>> getCategories();
 
+    @Operation(summary = "내 관심 카테고리 목록 조회", description = """
+            로그인 사용자가 관심으로 설정한 **활성 카테고리** 목록을 반환합니다. (JWT 인증 필요)
+
+            - 반환 순서: `displayOrder` 오름차순
+            - 관심 카테고리가 없으면 빈 배열(`[]`)을 반환합니다.
+            - 비활성화된 카테고리는 결과에서 제외됩니다.
+            """)
+    @SecurityRequirement(name = "bearerAuth")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            array = @ArraySchema(schema = @Schema(implementation = CategoryResponse.class)),
+                            examples = @ExampleObject(
+                                    name = "조회 성공",
+                                    value = CategoryApiExamples.EXAMPLE_GET_MY_INTERESTS_OK
+                            )
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요(JWT 누락/만료/위조)",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "인증 필요",
+                                            value = CommonApiExamples.EXAMPLE_UNAUTHORIZED
+                                    ),
+                                    @ExampleObject(
+                                            name = "JWT 토큰 누락",
+                                            value = CategoryApiExamples.EXAMPLE_MISSING_JWT_TOKEN
+                                    )
+                            }
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "403",
+                    description = "권한 없음",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "권한 없음",
+                                    value = CommonApiExamples.EXAMPLE_FORBIDDEN
+                            )
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "500",
+                    description = "서버 오류",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "서버 오류",
+                                    value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR
+                            )
+                    )
+            )
+    })
+    @GetMapping(value = "/interests", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<List<CategoryResponse>> getMyInterests(
+            @Parameter(hidden = true) Long userId
+    );
+
     @Operation(summary = "내 관심 카테고리 저장(갱신)", description = """
             로그인 사용자의 관심 카테고리 목록을 저장합니다. (JWT 인증 필요)
 

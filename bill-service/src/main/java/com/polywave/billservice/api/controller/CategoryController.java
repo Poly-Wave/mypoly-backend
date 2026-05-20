@@ -7,6 +7,7 @@ import com.polywave.billservice.application.category.UserBillInterestAppService;
 import com.polywave.billservice.application.category.command.service.CategoryInterestCommand;
 import com.polywave.billservice.application.category.query.result.CategoryResult;
 import com.polywave.billservice.application.category.query.service.CategoryQueryService;
+import com.polywave.billservice.application.category.query.service.UserBillInterestQueryService;
 import com.polywave.security.annotation.LoginUser;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CategoryController implements CategoryApi {
 
     private final CategoryQueryService categoryQueryService;
+    private final UserBillInterestQueryService userBillInterestQueryService;
     private final UserBillInterestAppService userBillInterestAppService;
 
     @Value("${bill.category.icon-base-url}")
@@ -29,6 +31,20 @@ public class CategoryController implements CategoryApi {
     @Override
     public ResponseEntity<List<CategoryResponse>> getCategories() {
         List<CategoryResult> results = categoryQueryService.getActiveCategories();
+
+        List<CategoryResponse> categories = results.stream()
+                .map(dto -> {
+                    String iconUrl = iconBaseUrl + "/" + ICON_PREFIX + "/" + dto.code() + ".webp";
+                    return CategoryResponse.from(dto, iconUrl);
+                })
+                .toList();
+
+        return ResponseEntity.ok(categories);
+    }
+
+    @Override
+    public ResponseEntity<List<CategoryResponse>> getMyInterests(@LoginUser Long userId) {
+        List<CategoryResult> results = userBillInterestQueryService.getUserInterestCategories(userId);
 
         List<CategoryResponse> categories = results.stream()
                 .map(dto -> {
