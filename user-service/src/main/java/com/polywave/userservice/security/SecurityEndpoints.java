@@ -18,6 +18,10 @@ public final class SecurityEndpoints {
                         // 닉네임(회원가입 전 기능)
                         "/nicknames/availability", "/nicknames/random",
 
+                        // 서비스 간 internal API: InternalApiKeyFilter 가 별도 가드. Spring Security 단에서는 공개.
+                        "/internal/segments/**",
+                        "/internal/lookup/**",
+
                         // Swagger (운영에서는 필요 시 막아도 됨)
                         "/swagger-ui/**", "/v3/api-docs/**",
 

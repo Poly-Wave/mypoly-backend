@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: notification-service-ingress
+  namespace: mypoly
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # 주의: /internal/**, /dev-notifications/** 는 ingress rules 에 path 가 없으므로
+    # 외부에서 호출되어도 nginx-ingress 가 기본 404 를 돌려준다.
+    # 추가로 코드단 가드(AdminApiKeyFilter, dev 토글) 가 fail-closed 로 막는다.
+    # (예전엔 server-snippet 으로 명시 차단했으나, 클러스터 정책상 snippet annotation 이 비활성화되어 제거함.)
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api-mypoly.kro.kr
+      secretName: api-mypoly-kro-kr-tls
+  rules:
+    - host: api-mypoly.kro.kr
+      http:
+        paths:
+          # /notifications/me, /notifications/{id}/read, /notifications/me/read-all 등
+          - path: /notifications
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 80

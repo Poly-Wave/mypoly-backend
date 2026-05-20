@@ -3,6 +3,7 @@ package com.polywave.userservice.config;
 import com.polywave.security.JwtAuthenticationFilter;
 import com.polywave.common.security.handler.RestAccessDeniedHandler;
 import com.polywave.common.security.handler.RestAuthenticationEntryPoint;
+import com.polywave.userservice.security.InternalApiKeyFilter;
 import com.polywave.userservice.security.SecurityEndpoints;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final InternalApiKeyFilter internalApiKeyFilter;
 
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
@@ -45,7 +47,8 @@ public class SecurityConfig {
 
                     auth.anyRequest().authenticated();
                 })
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(internalApiKeyFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

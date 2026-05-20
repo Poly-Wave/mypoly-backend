@@ -2,5 +2,6 @@ rootProject.name = 'mypoly-backend'
 
 include 'user-service'
 include 'bill-service'
+include 'notification-service'
 include 'mypoly-security'
 include 'mypoly-common'

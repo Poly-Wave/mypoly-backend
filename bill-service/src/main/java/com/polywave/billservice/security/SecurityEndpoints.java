@@ -7,6 +7,9 @@ public final class SecurityEndpoints {
     public static final String[] PUBLIC_ENDPOINTS = {
             "/", "/error",
 
+            // 서비스 간 internal API: InternalApiKeyFilter 가 별도 가드.
+            "/internal/segments/**",
+
             // Swagger (운영에서는 profile로 끄는 게 안전)
             "/swagger-ui/**", "/v3/api-docs/**",
 

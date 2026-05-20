@@ -42,6 +42,10 @@ spec:
             - secretRef:
                 name: mypoly-jwt-secret
 
+            # 서비스 간 internal API 키 (USER_SERVICE_INTERNAL_API_KEY 가드용)
+            - secretRef:
+                name: mypoly-internal-api-secret
+
           readinessProbe:
             httpGet:
               path: /users/actuator/health/readiness

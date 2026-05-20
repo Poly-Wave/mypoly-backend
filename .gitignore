@@ -19,6 +19,10 @@ dist/
 # Editor
 .vscode/
 .idea/
+.claude/
+
+# 단위 테스트는 git 에 올리지 않는 컨벤션 (히스토리 전체에 test 커밋 없음)
+**/src/test/
 
 # OS
 Thumbs.db

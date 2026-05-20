@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-service-config
+  namespace: mypoly
+data:
+  SPRING_PROFILES_ACTIVE: "local"
+  SERVER_PORT: "8080"
+  SERVER_FORWARD_HEADERS_STRATEGY: "framework"
+
+  # DB (notification-service 는 자체 schema 사용)
+  DB_URL: "jdbc:postgresql://mypoly-postgres:5432/mypoly"
+
+  # cross-service 호출용 endpoint (k8s DNS 기반).
+  # user-service / bill-service 가 context-path 를 박고 있어 prefix 포함.
+  USER_SERVICE_URL: "http://user-service/users"
+  BILL_SERVICE_URL: "http://bill-service/bills"
+
+  # 알림 스케줄러 자동 실행 on/off.
+  # 운영 배포 직후엔 "false" 유지. 정책 ACTIVE 전환 끝낸 후 "true" 로 바꾸고 rollout restart.
+  NOTIFICATION_SCHEDULER_ENABLED: "false"
+
+  # DEV 트리거 (/dev-notifications/**). 운영에서는 반드시 "false".
+  NOTIFICATION_DEV_TRIGGER_ENABLED: "false"

@@ -1,5 +1,6 @@
 package com.polywave.billservice.config;
 
+import com.polywave.billservice.security.InternalApiKeyFilter;
 import com.polywave.billservice.security.SecurityEndpoints;
 import com.polywave.common.security.handler.RestAccessDeniedHandler;
 import com.polywave.common.security.handler.RestAuthenticationEntryPoint;
@@ -17,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
+        private final InternalApiKeyFilter internalApiKeyFilter;
 
         private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
         private final RestAccessDeniedHandler restAccessDeniedHandler;
@@ -35,7 +37,8 @@ public class SecurityConfig {
                                                 // 카테고리 전체 목록만 로그인 전 조회 가능 (관심 목록은 인증 필요)
                                                 .requestMatchers(HttpMethod.GET, "/categories").permitAll()
                                                 .anyRequest().authenticated())
-                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                                .addFilterAfter(internalApiKeyFilter, JwtAuthenticationFilter.class);
 
                 return http.build();
         }
