@@ -43,8 +43,8 @@ public class PopularViewRankingBatchService {
         LocalDate weekStart = currentWeekStartKst();
 
         if (!popularViewRankingCommandRepository.existsBaselineForWeek(weekStart)) {
-            log.warn("Skip popular view ranking update because baseline is missing: weekStart={}", weekStart);
-            return;
+            log.info("Baseline missing for current week; creating from current view_count: weekStart={}", weekStart);
+            refreshBaseline(weekStart);
         }
 
         popularViewRankingCommandRepository.deleteRankingByWeekStart(weekStart);
