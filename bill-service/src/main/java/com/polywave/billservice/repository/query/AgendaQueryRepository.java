@@ -2,7 +2,9 @@ package com.polywave.billservice.repository.query;
 
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
+import com.polywave.billservice.application.agenda.query.result.PopularAgendaResult;
 import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
+import java.time.LocalDate;
 import com.polywave.billservice.domain.AgeBand;
 import org.springframework.data.domain.Pageable;
 
@@ -56,4 +58,9 @@ public interface AgendaQueryRepository {
     List<SearchAgendaResult> searchAgendasByTitle(
             String keyword,
             Pageable pageable);
+
+    /**
+     * 주간 조회 증가분 Top N 배치 스냅샷 기준 인기 안건 목록 (rank 오름차순).
+     */
+    List<PopularAgendaResult> findPopularAgendas(Long userId, LocalDate weekStart);
 }
