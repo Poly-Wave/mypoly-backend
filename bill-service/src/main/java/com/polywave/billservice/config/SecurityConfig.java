@@ -32,8 +32,8 @@ public class SecurityConfig {
                                                 .accessDeniedHandler(restAccessDeniedHandler))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(SecurityEndpoints.PUBLIC_ENDPOINTS).permitAll()
-                                                // 카테고리 목록은 로그인 전에도 조회 가능
-                                                .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
+                                                // 카테고리 전체 목록만 로그인 전 조회 가능 (관심 목록은 인증 필요)
+                                                .requestMatchers(HttpMethod.GET, "/categories").permitAll()
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

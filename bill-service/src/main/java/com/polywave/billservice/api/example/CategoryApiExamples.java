@@ -24,6 +24,18 @@ public final class CategoryApiExamples {
       ]
       """;
 
+  public static final String EXAMPLE_GET_MY_INTERESTS_OK = """
+      [
+        {
+          "code": "DIGITAL",
+          "name": "디지털",
+          "displayOrder": 1,
+          "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp",
+          "backgroundColor": "46D9E3"
+        }
+      ]
+      """;
+
   public static final String EXAMPLE_UPDATE_INTERESTS_REQUEST = """
       {
         "categoryCodes": ["DIGITAL", "SECURITY", "ECONOMY"]
