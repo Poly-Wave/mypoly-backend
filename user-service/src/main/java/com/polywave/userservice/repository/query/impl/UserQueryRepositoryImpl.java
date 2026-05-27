@@ -1,12 +1,15 @@
 package com.polywave.userservice.repository.query.impl;
 
 import com.polywave.userservice.application.user.query.result.UserMeResult;
+import com.polywave.userservice.application.user.query.result.UserNicknameResult;
 import com.polywave.userservice.domain.OnBoardingStatus;
 import com.polywave.userservice.domain.QUser;
 import com.polywave.userservice.domain.QUserOauth;
 import com.polywave.userservice.repository.query.UserQueryRepository;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.Collection;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -96,5 +99,22 @@ public class UserQueryRepositoryImpl implements UserQueryRepository {
                 .fetchFirst();
 
         return result != null;
+    }
+
+    @Override
+    public List<UserNicknameResult> findNicknamesByUserIds(Collection<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return List.of();
+        }
+        QUser u = QUser.user;
+        List<Tuple> rows = jpaQueryFactory
+                .select(u.id, u.nickname)
+                .from(u)
+                .where(u.id.in(userIds))
+                .fetch();
+
+        return rows.stream()
+                .map(t -> new UserNicknameResult(t.get(u.id), t.get(u.nickname)))
+                .toList();
     }
 }

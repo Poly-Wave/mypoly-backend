@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: mypoly
+spec:
+  # 스케줄러 중복 회피 위해 replicas=1 유지.
+  # HA 필요해지면 ShedLock 등 분산 락 추가 후 늘릴 것.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: ghcr.io/poly-wave/mypoly-notification-service:0.1
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 8080
+
+          # context-path 를 쓰지 않는다.
+          # 사용자 API(@RequestMapping("/notifications")) + swagger(springdoc path=/notifications/**) 만
+          # /notifications prefix 를 가지므로 ingress 가 라우팅하고,
+          # /internal/**, /dev-notifications/** 는 prefix 밖이라 외부에서 도달하지 못한다.
+
+          envFrom:
+            # 서비스 자체 설정
+            - configMapRef:
+                name: notification-service-config
+            - secretRef:
+                name: notification-service-secret
+
+            # 공통 DB
+            - secretRef:
+                name: mypoly-db-secret
+
+            # 공통 JWT (사용자 access token 검증용)
+            - configMapRef:
+                name: mypoly-jwt-config
+            - secretRef:
+                name: mypoly-jwt-secret
+
+            # 서비스 간 internal API 키 (3종 모두 필요 — admin/user/bill)
+            - secretRef:
+                name: mypoly-internal-api-secret
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

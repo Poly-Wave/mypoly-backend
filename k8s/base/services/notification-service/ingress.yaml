@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: notification-service-ingress
+  namespace: mypoly
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # context-path 미사용 구조:
+    #   - 사용자 API(/notifications/**) + swagger(/notifications/swagger-ui, /notifications/v3/api-docs) 만 아래 prefix 로 라우팅된다.
+    #   - internal API(/internal/notification-policies/**), dev API(/dev-notifications/**) 는
+    #     /notifications prefix 밖이라 ingress 가 애초에 notification-service 로 라우팅하지 않는다 (외부 도달 불가).
+    #   - 코드단 가드(AdminApiKeyFilter 403, dev 토글 OFF)는 cluster 내부 호출에 대한 2차 방어로 유지.
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api-mypoly.kro.kr
+      secretName: api-mypoly-kro-kr-tls
+  rules:
+    - host: api-mypoly.kro.kr
+      http:
+        paths:
+          # /notifications/me, /notifications/{id}/read, /notifications/me/read-all 등
+          - path: /notifications
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 80

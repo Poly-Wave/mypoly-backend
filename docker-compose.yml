@@ -43,6 +43,7 @@ services:
       SERVER_PORT: "8080"
       SERVER_SERVLET_CONTEXT_PATH: ${SERVER_SERVLET_CONTEXT_PATH:-}
       SERVER_FORWARD_HEADERS_STRATEGY: ${SERVER_FORWARD_HEADERS_STRATEGY:-framework}
+      USER_SERVICE_INTERNAL_API_KEY: ${USER_SERVICE_INTERNAL_API_KEY:-}
 
     ports:
       - "${USER_SERVICE_PORT:-8080}:8080"
@@ -51,11 +52,44 @@ services:
       db:
         condition: service_healthy
 
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    image: ghcr.io/poly-wave/mypoly-notification-service:0.1
+    container_name: mypoly-notification-service
+    restart: unless-stopped
+
+    env_file:
+      - ./.env
+      - path: ./notification-service/.env
+        required: false
+
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      SERVER_PORT: "8080"
+      USER_SERVICE_URL: ${NOTIFICATION_USER_SERVICE_URL:-http://user-service:8080}
+      USER_SERVICE_INTERNAL_API_KEY: ${USER_SERVICE_INTERNAL_API_KEY:-}
+      BILL_SERVICE_URL: ${NOTIFICATION_BILL_SERVICE_URL:-http://bill-service:8080}
+      BILL_SERVICE_INTERNAL_API_KEY: ${BILL_SERVICE_INTERNAL_API_KEY:-}
+      NOTIFICATION_ADMIN_API_KEY: ${NOTIFICATION_ADMIN_API_KEY:-}
+
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-8082}:8080"
+
+    depends_on:
+      db:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+
   bill-service:
     build:
       context: .
       dockerfile: bill-service/Dockerfile
-    image: ghcr.io/poly-wave/mypoly-bill-service:0.3
+    image: ghcr.io/poly-wave/mypoly-bill-service:0.1
     container_name: mypoly-bill-service
     restart: unless-stopped
 

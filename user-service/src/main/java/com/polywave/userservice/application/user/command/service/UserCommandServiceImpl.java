@@ -12,6 +12,7 @@ import com.polywave.userservice.domain.OnBoardingStatus;
 import com.polywave.userservice.domain.User;
 import com.polywave.userservice.repository.command.UserCommandRepository;
 import com.polywave.userservice.repository.query.UserQueryRepository;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -76,6 +77,23 @@ public class UserCommandServiceImpl implements UserCommandService {
     public void updateUserOnboardingStatus(Long userId, OnBoardingStatus onBoardingStatus) {
         User user = userCommandRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
+
+        // 마일스톤 시각은 immutable 로 기록한다 (markXxxIfAbsent).
+        // 이미 채워져 있으면 덮어쓰지 않아 D+1 리마인더 알림이 중복 발송되지 않는다.
+        //
+        // 매핑 근거 (회원가입 흐름):
+        //   회원가입 직후 SocialTokenAuthService.signup() 가 닉네임을 박은 채 SIGNUP 으로 PATCH 한다.
+        //   따라서 "별명 설정 완료" = SIGNUP 진입 시점이다.
+        //   ONBOARDING 은 클라이언트가 임의로 PATCH 하는 중간 단계라 별명/카테고리/추가정보 중 어디와도
+        //   직접 매핑되지 않으므로 마일스톤을 박지 않는다.
+        Instant now = Instant.now();
+        if (onBoardingStatus == OnBoardingStatus.SIGNUP) {
+            user.markNicknameSetAtIfAbsent(now);
+        } else if (onBoardingStatus == OnBoardingStatus.CATEGORY) {
+            user.markCategorySetAtIfAbsent(now);
+        } else if (onBoardingStatus == OnBoardingStatus.COMPLETE) {
+            user.markProfileCompletedAtIfAbsent(now);
+        }
 
         user.updateOnBoardingStatus(onBoardingStatus);
     }

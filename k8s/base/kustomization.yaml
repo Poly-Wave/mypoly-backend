@@ -8,8 +8,10 @@ resources:
 
   - infra/postgres
   - infra/jwt
+  - infra/internal-api
   - services/user-service
   - services/bill-service
+  - services/notification-service
   - services/admin-tool
   - services/bill-batch-cronjob
   - services/bill-member-sync-cronjob

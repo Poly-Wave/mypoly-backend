@@ -2,6 +2,7 @@ package com.polywave.userservice.domain;
 
 import com.polywave.common.domain.BaseEntity;
 import jakarta.persistence.*;
+import java.time.Instant;
 import lombok.*;
 
 @Getter
@@ -54,6 +55,20 @@ public class User extends BaseEntity {
     @Column(length = 64)
     private String authSessionId;
 
+    /**
+     * 온보딩 마일스톤 진입 시각.
+     * 한 번 채워지면 갱신되지 않는 immutable 시각으로, D+1 형태 리마인더 알림이
+     * 같은 유저에게 반복 발송되는 것을 방지하기 위해 사용한다.
+     */
+    @Column(name = "nickname_set_at")
+    private Instant nicknameSetAt;
+
+    @Column(name = "category_set_at")
+    private Instant categorySetAt;
+
+    @Column(name = "profile_completed_at")
+    private Instant profileCompletedAt;
+
     public void changeNickname(String nickname) {
         this.nickname = nickname;
     }
@@ -74,5 +89,26 @@ public class User extends BaseEntity {
 
     public void updateAuthSessionId(String authSessionId) {
         this.authSessionId = authSessionId;
+    }
+
+    /** 별명 설정 완료 마일스톤 — 이미 기록되어 있으면 덮어쓰지 않는다. */
+    public void markNicknameSetAtIfAbsent(Instant at) {
+        if (this.nicknameSetAt == null) {
+            this.nicknameSetAt = at;
+        }
+    }
+
+    /** 관심 주제 선택 완료 마일스톤 — 이미 기록되어 있으면 덮어쓰지 않는다. */
+    public void markCategorySetAtIfAbsent(Instant at) {
+        if (this.categorySetAt == null) {
+            this.categorySetAt = at;
+        }
+    }
+
+    /** 추가 정보 입력(=온보딩 완료) 마일스톤 — 이미 기록되어 있으면 덮어쓰지 않는다. */
+    public void markProfileCompletedAtIfAbsent(Instant at) {
+        if (this.profileCompletedAt == null) {
+            this.profileCompletedAt = at;
+        }
     }
 }
