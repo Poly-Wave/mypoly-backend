@@ -3,7 +3,7 @@ package com.polywave.billservice.api.controller.internal;
 import com.polywave.billservice.api.dto.BillStageChangeResponse;
 import com.polywave.billservice.api.dto.BookmarkedUnvotedBillResponse;
 import com.polywave.billservice.api.dto.UserInterestAgendaCountResponse;
-import com.polywave.billservice.repository.query.BillNotificationSegmentQueryRepository;
+import com.polywave.billservice.application.notification.query.service.BillNotificationSegmentQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/internal/segments")
 public class InternalBillSegmentController {
 
-    private final BillNotificationSegmentQueryRepository billNotificationSegmentQueryRepository;
+    private final BillNotificationSegmentQueryService billNotificationSegmentQueryService;
 
     @Operation(summary = "[Internal] 북마크 D+1 미투표 (user, bill) 쌍 조회", description = """
             북마크 저장 시각이 before 이전이고, 같은 사용자가 그 의안에 아직 투표하지 않은 (user, bill) 쌍을 반환한다.
@@ -45,7 +45,7 @@ public class InternalBillSegmentController {
             @Parameter(description = "북마크 저장 시각 cutoff(이 시각 이전에 북마크한 (user, bill) 쌍)", example = "2026-05-19T03:00:00Z")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant before
     ) {
-        List<BookmarkedUnvotedBillResponse> response = billNotificationSegmentQueryRepository
+        List<BookmarkedUnvotedBillResponse> response = billNotificationSegmentQueryService
                 .findBookmarkedUnvotedBefore(before).stream()
                 .map(BookmarkedUnvotedBillResponse::from)
                 .toList();
@@ -68,7 +68,7 @@ public class InternalBillSegmentController {
             @Parameter(description = "수집 종료 시각 (exclusive)", example = "2026-05-21T00:00:00Z")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to
     ) {
-        List<UserInterestAgendaCountResponse> response = billNotificationSegmentQueryRepository
+        List<UserInterestAgendaCountResponse> response = billNotificationSegmentQueryService
                 .findInterestMatchedAgendaCountsBetween(from, to).stream()
                 .map(UserInterestAgendaCountResponse::from)
                 .toList();
@@ -87,7 +87,7 @@ public class InternalBillSegmentController {
             @Parameter(description = "이 시각 이후 발생한 전이만 반환", example = "2026-05-20T23:00:00Z")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant since
     ) {
-        List<BillStageChangeResponse> response = billNotificationSegmentQueryRepository
+        List<BillStageChangeResponse> response = billNotificationSegmentQueryService
                 .findRecentBookmarkedStageChanges(since).stream()
                 .map(BillStageChangeResponse::from)
                 .toList();

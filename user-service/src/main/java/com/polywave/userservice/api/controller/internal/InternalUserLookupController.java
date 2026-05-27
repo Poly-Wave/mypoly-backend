@@ -1,7 +1,7 @@
 package com.polywave.userservice.api.controller.internal;
 
 import com.polywave.userservice.api.dto.UserNicknameResponse;
-import com.polywave.userservice.repository.query.UserQueryRepository;
+import com.polywave.userservice.application.user.query.service.UserLookupQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/internal/lookup")
 public class InternalUserLookupController {
 
-    private final UserQueryRepository userQueryRepository;
+    private final UserLookupQueryService userLookupQueryService;
 
     @Operation(summary = "[Internal] 사용자 닉네임 일괄 조회", description = """
             주어진 userId 목록의 닉네임을 일괄 반환한다. 존재하지 않는 id 는 응답에서 제외된다.
@@ -42,7 +42,7 @@ public class InternalUserLookupController {
             @Parameter(description = "조회할 사용자 ID 목록 (콤마 구분)", example = "1,2,3")
             @RequestParam("ids") Set<Long> ids
     ) {
-        List<UserNicknameResponse> response = userQueryRepository.findNicknamesByUserIds(ids).stream()
+        List<UserNicknameResponse> response = userLookupQueryService.findNicknamesByUserIds(ids).stream()
                 .map(UserNicknameResponse::from)
                 .toList();
         return ResponseEntity.ok(response);

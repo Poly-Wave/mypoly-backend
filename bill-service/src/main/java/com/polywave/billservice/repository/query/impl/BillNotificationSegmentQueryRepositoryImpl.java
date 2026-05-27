@@ -11,6 +11,7 @@ import com.polywave.billservice.domain.QUserBillInterest;
 import com.polywave.billservice.domain.QUserBillVote;
 import com.polywave.billservice.repository.query.BillNotificationSegmentQueryRepository;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -70,8 +71,10 @@ public class BillNotificationSegmentQueryRepositoryImpl implements BillNotificat
         // 사용자의 관심 카테고리(ubi.category) ↔ 안건의 AI 카테고리(bac.category) 가 같고,
         // 해당 분석이 현재 활성(current=true) 인 안건 중,
         // first_collected_at 이 [start, end) 인 안건들의 DISTINCT 개수를 사용자별로 집계.
+        NumberExpression<Long> distinctBillCount = b.id.countDistinct();
+
         List<Tuple> rows = jpaQueryFactory
-                .select(ubi.userId, b.id.countDistinct())
+                .select(ubi.userId, distinctBillCount)
                 .from(ubi)
                 .join(bac).on(bac.category.id.eq(ubi.category.id))
                 .join(baa).on(baa.id.eq(bac.analysis.id).and(baa.current.isTrue()))
@@ -84,10 +87,13 @@ public class BillNotificationSegmentQueryRepositoryImpl implements BillNotificat
                 .fetch();
 
         return rows.stream()
-                .map(t -> new UserInterestAgendaCountResult(
-                        t.get(ubi.userId),
-                        t.get(b.id.countDistinct()) == null ? 0L : t.get(b.id.countDistinct())
-                ))
+                .map(t -> {
+                    Long count = t.get(distinctBillCount);
+                    return new UserInterestAgendaCountResult(
+                            t.get(ubi.userId),
+                            count == null ? 0L : count
+                    );
+                })
                 .toList();
     }
 

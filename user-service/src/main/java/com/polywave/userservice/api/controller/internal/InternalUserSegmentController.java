@@ -1,7 +1,7 @@
 package com.polywave.userservice.api.controller.internal;
 
 import com.polywave.userservice.api.dto.OnboardingReminderUserResponse;
-import com.polywave.userservice.repository.query.UserSegmentQueryRepository;
+import com.polywave.userservice.application.user.query.service.UserSegmentQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/internal/segments")
 public class InternalUserSegmentController {
 
-    private final UserSegmentQueryRepository userSegmentQueryRepository;
+    private final UserSegmentQueryService userSegmentQueryService;
 
     @Operation(summary = "[Internal] 온보딩 리마인더 발급 대상 조회", description = """
             type = NICKNAME : 별명 설정 완료 + 관심 주제 미선택 + nickname_set_at < before
@@ -47,10 +47,10 @@ public class InternalUserSegmentController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant before
     ) {
         List<OnboardingReminderUserResponse> response = switch (type) {
-            case NICKNAME -> userSegmentQueryRepository.findUsersStuckAtNicknameBefore(before).stream()
+            case NICKNAME -> userSegmentQueryService.findUsersStuckAtNicknameBefore(before).stream()
                     .map(OnboardingReminderUserResponse::from)
                     .toList();
-            case CATEGORY -> userSegmentQueryRepository.findUsersStuckAtCategoryBefore(before).stream()
+            case CATEGORY -> userSegmentQueryService.findUsersStuckAtCategoryBefore(before).stream()
                     .map(OnboardingReminderUserResponse::from)
                     .toList();
         };
@@ -66,7 +66,7 @@ public class InternalUserSegmentController {
             @Parameter(in = ParameterIn.HEADER, name = "X-Internal-Api-Key", description = "서비스 간 internal 공유 키", required = true)
             @RequestHeader(value = "X-Internal-Api-Key", required = false) String internalApiKey
     ) {
-        List<OnboardingReminderUserResponse> response = userSegmentQueryRepository
+        List<OnboardingReminderUserResponse> response = userSegmentQueryService
                 .findOnboardingCompletedUsers().stream()
                 .map(OnboardingReminderUserResponse::from)
                 .toList();

@@ -12,8 +12,8 @@ public final class SecurityEndpoints {
             // 알림 정책 관리: AdminApiKeyFilter 가 별도 가드, Spring Security 단에서는 공개.
             "/internal/notification-policies/**",
 
-            // Swagger
-            "/swagger-ui/**", "/v3/api-docs/**",
+            // Swagger (context-path 미사용 → 경로를 /notifications 아래로 명시)
+            "/notifications/swagger-ui/**", "/notifications/swagger-ui.html", "/notifications/v3/api-docs/**",
 
             // Actuator
             "/actuator/health/**", "/actuator/info"

@@ -31,6 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class UserNotificationCommandService {
 
+    // user_notifications 의 title / body 컬럼 길이와 일치시킨다. (치환 후 초과분은 말줄임 처리)
+    private static final int TITLE_MAX_LENGTH = 500;
+    private static final int BODY_MAX_LENGTH = 1000;
+
     private final UserNotificationCommandRepository userNotificationCommandRepository;
     private final NotificationPolicyCommandRepository notificationPolicyCommandRepository;
     private final PushSender pushSender;
@@ -74,8 +78,9 @@ public class UserNotificationCommandService {
             return Optional.empty();
         }
 
-        String renderedTitle = messageTemplateRenderer.render(policy.getTitle(), templateVars);
-        String renderedBody = messageTemplateRenderer.render(policy.getBody(), templateVars);
+        // 토큰 치환 후 길이가 DB 컬럼 한계를 넘을 수 있어 (예: {안건 제목} 이 최대 500자) 안전하게 truncate.
+        String renderedTitle = truncate(messageTemplateRenderer.render(policy.getTitle(), templateVars), TITLE_MAX_LENGTH);
+        String renderedBody = truncate(messageTemplateRenderer.render(policy.getBody(), templateVars), BODY_MAX_LENGTH);
 
         UserNotification draft = UserNotification.create(
                 userId,
@@ -104,6 +109,17 @@ public class UserNotificationCommandService {
 
     public int markAllAsRead(Long userId) {
         return userNotificationCommandRepository.markAllAsRead(userId, Instant.now());
+    }
+
+    /** 치환 후 문자열이 컬럼 한계를 넘으면 말줄임표(…) 를 붙여 자른다. */
+    private static String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        if (maxLength <= 1) {
+            return value.substring(0, maxLength);
+        }
+        return value.substring(0, maxLength - 1) + "…";
     }
 
     private Optional<UserNotification> persistWithDedup(UserNotification draft) {

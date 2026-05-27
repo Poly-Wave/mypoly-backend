@@ -60,7 +60,7 @@ public class UserNotification extends BaseEntity {
     @Column(name = "category", nullable = false, length = 30)
     private NotificationCategory category;
 
-    @Column(name = "title", length = 200)
+    @Column(name = "title", length = 500)
     private String title;
 
     @Column(name = "body", nullable = false, length = 1000)

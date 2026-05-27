@@ -25,12 +25,10 @@ spec:
           ports:
             - containerPort: 8080
 
-          env:
-            # user-service(/users), bill-service(/bills) 와 동일 컨벤션.
-            # context-path 로 prefix 처리하면 swagger/actuator 도 자동으로 같은 prefix 아래로 들어와
-            # 외부 (ingress) 와 내부 path 가 일치한다.
-            - name: SERVER_SERVLET_CONTEXT_PATH
-              value: /notifications
+          # context-path 를 쓰지 않는다.
+          # 사용자 API(@RequestMapping("/notifications")) + swagger(springdoc path=/notifications/**) 만
+          # /notifications prefix 를 가지므로 ingress 가 라우팅하고,
+          # /internal/**, /dev-notifications/** 는 prefix 밖이라 외부에서 도달하지 못한다.
 
           envFrom:
             # 서비스 자체 설정
@@ -55,7 +53,7 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: /notifications/actuator/health/readiness
+              path: /actuator/health/readiness
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -64,7 +62,7 @@ spec:
 
           livenessProbe:
             httpGet:
-              path: /notifications/actuator/health/liveness
+              path: /actuator/health/liveness
               port: 8080
             initialDelaySeconds: 20
             periodSeconds: 20

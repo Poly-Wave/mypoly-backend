@@ -3,8 +3,10 @@ package com.polywave.notificationservice.client;
 import com.polywave.notificationservice.client.dto.OnboardingReminderUserDto;
 import com.polywave.notificationservice.client.dto.UserNicknameDto;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +31,9 @@ public class UserServiceClient {
     private static final String SEGMENT_PATH = "/internal/segments/onboarding-reminder";
     private static final String ONBOARDING_COMPLETED_PATH = "/internal/segments/onboarding-completed";
     private static final String BY_IDS_PATH = "/internal/lookup/by-ids";
+
+    // by-ids 는 GET query 라 URL 길이 제한 회피를 위해 이 단위로 나눠 호출한다.
+    private static final int BY_IDS_BATCH_SIZE = 100;
 
     private final RestTemplate restTemplate;
     private final String userServiceUrl;
@@ -103,6 +108,7 @@ public class UserServiceClient {
 
     /**
      * 사용자 닉네임 일괄 조회 (행 3 본문 변수 치환 등에 사용).
+     * - ids 를 GET query 로 넘기므로 URL 길이 제한을 피하기 위해 BATCH_SIZE 단위로 나눠 호출한다.
      */
     public List<UserNicknameDto> findNicknamesByIds(Collection<Long> userIds) {
         if (userIds == null || userIds.isEmpty()) {
@@ -113,7 +119,17 @@ public class UserServiceClient {
             return List.of();
         }
 
-        String idsParam = userIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+        List<Long> distinctIds = new ArrayList<>(new LinkedHashSet<>(userIds));
+        List<UserNicknameDto> result = new ArrayList<>(distinctIds.size());
+        for (int from = 0; from < distinctIds.size(); from += BY_IDS_BATCH_SIZE) {
+            int to = Math.min(from + BY_IDS_BATCH_SIZE, distinctIds.size());
+            result.addAll(fetchNicknamesBatch(distinctIds.subList(from, to)));
+        }
+        return result;
+    }
+
+    private List<UserNicknameDto> fetchNicknamesBatch(List<Long> batchIds) {
+        String idsParam = batchIds.stream().map(String::valueOf).collect(Collectors.joining(","));
         String url = UriComponentsBuilder.fromHttpUrl(userServiceUrl + BY_IDS_PATH)
                 .queryParam("ids", idsParam)
                 .toUriString();
@@ -128,7 +144,7 @@ public class UserServiceClient {
                     .getBody();
             return response == null ? List.of() : Arrays.asList(response);
         } catch (Exception e) {
-            log.error("user-service by-ids 호출 실패. url={}", url, e);
+            log.error("user-service by-ids 호출 실패. batchSize={}", batchIds.size(), e);
             return List.of();
         }
     }

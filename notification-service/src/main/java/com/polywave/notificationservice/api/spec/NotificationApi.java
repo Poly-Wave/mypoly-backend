@@ -24,8 +24,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Notification", description = "앱 사용자용 내 알림함 API")
 @SecurityRequirement(name = "bearerAuth")
-// 외부 prefix /notifications 는 server.servlet.context-path 가 담당 (user/bill 서비스 컨벤션).
-@RequestMapping
+// 사용자 API 에만 /notifications prefix 를 둔다. (context-path 미사용)
+// internal/dev 컨트롤러는 prefix 가 없어 ingress(/notifications) 라우팅에서 자연 격리된다.
+@RequestMapping("/notifications")
 public interface NotificationApi {
 
     @Operation(summary = "내 알림 목록 조회", description = """
