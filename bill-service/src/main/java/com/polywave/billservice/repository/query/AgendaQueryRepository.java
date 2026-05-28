@@ -1,5 +1,6 @@
 package com.polywave.billservice.repository.query;
 
+import com.polywave.billservice.api.dto.MainAgendaSortType;
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
 import com.polywave.billservice.application.agenda.query.result.PopularAgendaResult;
@@ -50,6 +51,7 @@ public interface AgendaQueryRepository {
             boolean applyInterestFilter,
             Set<Long> interestCategoryIds,
             Set<String> categoryCodes,
+            MainAgendaSortType sortType,
             Pageable pageable);
 
     /**

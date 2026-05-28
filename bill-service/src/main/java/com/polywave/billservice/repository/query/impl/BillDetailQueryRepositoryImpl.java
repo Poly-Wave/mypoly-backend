@@ -82,6 +82,7 @@ public class BillDetailQueryRepositoryImpl implements BillDetailQueryRepository 
                         category.id,
                         category.code,
                         category.name,
+                        category.textColor,
                         billAiCategory.rankOrder
                 ))
                 .from(billAiCategory)

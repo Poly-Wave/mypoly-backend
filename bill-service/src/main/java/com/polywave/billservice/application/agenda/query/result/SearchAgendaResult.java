@@ -9,5 +9,6 @@ public record SearchAgendaResult(
         long viewCount,
         long voteCount,
         String categoryCode,
-        String categoryName) {
+        String categoryName,
+        String categoryTextColor) {
 }

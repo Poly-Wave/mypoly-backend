@@ -3,6 +3,7 @@ package com.polywave.billservice.api.controller;
 import com.polywave.billservice.api.dto.AgendaResponse;
 import com.polywave.billservice.api.dto.AgendaTabResponse;
 import com.polywave.billservice.api.dto.InterestAgendaResponse;
+import com.polywave.billservice.api.dto.MainAgendaSortType;
 import com.polywave.billservice.api.dto.MainAgendaResponse;
 import com.polywave.billservice.api.dto.PopularAgendaResponse;
 import com.polywave.billservice.api.spec.AgendaApi;
@@ -10,7 +11,7 @@ import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
 import com.polywave.billservice.application.agenda.query.result.PopularAgendaResult;
 import com.polywave.billservice.api.dto.SearchAgendaResponse;
-import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
+import com.polywave.billservice.api.dto.SliceResponse;
 import com.polywave.billservice.application.agenda.query.service.AgendaSearchQueryService;
 import com.polywave.billservice.application.agenda.query.service.AgendaTabQueryService;
 import com.polywave.billservice.application.agenda.query.service.HotDebateAgendaQueryService;
@@ -24,7 +25,9 @@ import com.polywave.security.annotation.LoginUser;
 import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -58,10 +61,12 @@ public class AgendaController implements AgendaApi {
             - SAME_AGE: 내 또래 (최근 7일 이내 동일 연령대 투표만 집계, 10건 미만 의안 제외. 일수·최소 투표 수는 쟁쟁한과 동일 설정)
             """)
     @Override
-    public ResponseEntity<List<AgendaResponse>> getAgendasByTab(
+    public ResponseEntity<SliceResponse<AgendaResponse>> getAgendasByTab(
             String tabCode,
             @LoginUser Long userId,
-            Pageable pageable) {
+            int page,
+            int size) {
+        Pageable pageable = PageRequest.of(page, size);
         String normalizedTabCode = tabCode.toUpperCase(Locale.ROOT);
         List<AgendaResult> agendas = switch (normalizedTabCode) {
             case "HOT_DEBATE" -> hotDebateAgendaQueryService.getAgendas(userId, pageable);
@@ -71,35 +76,32 @@ public class AgendaController implements AgendaApi {
             default -> throw new InvalidAgendaTabCodeException();
         };
 
-        List<AgendaResponse> response = agendas.stream()
-                .map(AgendaResponse::from)
-                .toList();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(toSliceResponse(agendas, pageable, AgendaResponse::from));
     }
 
     @Override
-    public ResponseEntity<List<MainAgendaResponse>> getMainAgendas(
+    public ResponseEntity<SliceResponse<MainAgendaResponse>> getMainAgendas(
             List<String> categoryCodes,
+            MainAgendaSortType sortType,
             @LoginUser Long userId,
-            Pageable pageable) {
-        List<MainAgendaResult> results = mainAgendaQueryService.getMainAgendas(userId, categoryCodes, pageable);
+            int page,
+            int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<MainAgendaResult> results = mainAgendaQueryService.getMainAgendas(userId, categoryCodes, sortType, pageable);
 
-        List<MainAgendaResponse> response = results.stream()
-                .map(MainAgendaResponse::from)
-                .toList();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(toSliceResponse(results, pageable, MainAgendaResponse::from));
     }
 
     @Override
-    public ResponseEntity<List<InterestAgendaResponse>> getInterestAgendas(
+    public ResponseEntity<SliceResponse<InterestAgendaResponse>> getInterestAgendas(
+            MainAgendaSortType sortType,
             @LoginUser Long userId,
-            Pageable pageable) {
-        List<MainAgendaResult> results = mainAgendaQueryService.getInterestAgendas(userId, pageable);
+            int page,
+            int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<MainAgendaResult> results = mainAgendaQueryService.getInterestAgendas(userId, sortType, pageable);
 
-        List<InterestAgendaResponse> response = results.stream()
-                .map(InterestAgendaResponse::from)
-                .toList();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(toSliceResponse(results, pageable, InterestAgendaResponse::from));
     }
 
     @Override
@@ -112,15 +114,26 @@ public class AgendaController implements AgendaApi {
     }
 
     @Override
-    public ResponseEntity<List<SearchAgendaResponse>> searchAgendas(
+    public ResponseEntity<SliceResponse<SearchAgendaResponse>> searchAgendas(
             String keyword,
             @LoginUser Long userId,
-            Pageable pageable) {
-        List<SearchAgendaResult> results = agendaSearchQueryService.searchAgendas(keyword, pageable);
+            int page,
+            int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(agendaSearchQueryService.searchAgendas(keyword, pageable));
+    }
 
-        List<SearchAgendaResponse> response = results.stream()
-                .map(SearchAgendaResponse::from)
+    private static <T, R> SliceResponse<R> toSliceResponse(
+            List<T> results,
+            Pageable pageable,
+            Function<T, R> mapper) {
+        int pageSize = pageable.getPageSize();
+        boolean hasNext = results.size() > pageSize;
+        List<R> content = results.stream()
+                .limit(pageSize)
+                .map(mapper)
                 .toList();
-        return ResponseEntity.ok(response);
+
+        return SliceResponse.of(content, pageable.getPageNumber(), pageSize, hasNext);
     }
 }

@@ -15,6 +15,9 @@ public record BillCategorySummaryResponse(
         @Schema(description = "카테고리명", example = "경제", requiredMode = RequiredMode.REQUIRED)
         String categoryName,
 
+        @Schema(description = "카테고리 텍스트색(HEX, # 제외)", example = "503838", requiredMode = RequiredMode.REQUIRED)
+        String categoryTextColor,
+
         @Schema(description = "카테고리 순위", example = "1", requiredMode = RequiredMode.REQUIRED)
         Integer rankOrder
 ) {
@@ -27,12 +30,13 @@ public record BillCategorySummaryResponse(
                 result.categoryId() == null ? 0L : result.categoryId(),
                 nullToEmpty(result.categoryCode()),
                 nullToEmpty(result.categoryName()),
+                nullToEmpty(result.categoryTextColor()),
                 result.rankOrder() == null ? 0 : result.rankOrder()
         );
     }
 
     public static BillCategorySummaryResponse empty() {
-        return new BillCategorySummaryResponse(0L, "", "", 0);
+        return new BillCategorySummaryResponse(0L, "", "", "", 0);
     }
 
     private static String nullToEmpty(String value) {

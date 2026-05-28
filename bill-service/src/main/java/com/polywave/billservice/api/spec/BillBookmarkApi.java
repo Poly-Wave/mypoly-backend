@@ -1,6 +1,7 @@
 package com.polywave.billservice.api.spec;
 
 import com.polywave.billservice.api.dto.BillBookmarkSortType;
+import com.polywave.billservice.api.openapi.DateQueryParameter;
 import com.polywave.billservice.api.dto.BookmarkedBillResponse;
 import com.polywave.billservice.api.dto.BookmarkedBillSliceResponse;
 import com.polywave.billservice.api.dto.SliceResponse;
@@ -15,7 +16,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.Set;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,14 +65,12 @@ public interface BillBookmarkApi {
     })
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<SliceResponse<BookmarkedBillResponse>> getBookmarkedBills(
-            @Parameter(description = "보관 시작일, KST 기준", example = "2026-01-01")
+            @DateQueryParameter(description = "보관 시작일, " + DateQueryParameter.DATE_QUERY_DESCRIPTION_SUFFIX, example = "2026-01-01")
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate fromDate,
 
-            @Parameter(description = "보관 종료일, KST 기준", example = "2026-04-18")
+            @DateQueryParameter(description = "보관 종료일, " + DateQueryParameter.DATE_QUERY_DESCRIPTION_SUFFIX, example = "2026-04-18")
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate toDate,
 
             @Parameter(description = "카테고리 코드 목록", example = "DIGITAL,MEDICAL")

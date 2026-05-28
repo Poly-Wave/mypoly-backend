@@ -4,21 +4,24 @@ import com.polywave.userservice.domain.Gender;
 import com.polywave.userservice.domain.OnBoardingStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "내 정보 조회 응답")
+@Schema(
+        description = "내 정보 조회 응답",
+        requiredProperties = {"userId", "provider", "providerUserId", "nickname", "onboardingStatus"}
+)
 public record UserMeResponse(
-        @Schema(description = "사용자 ID", example = "2")
+        @Schema(description = "사용자 ID", example = "2", requiredMode = Schema.RequiredMode.REQUIRED)
         Long userId,
 
-        @Schema(description = "소셜 provider", example = "dev")
+        @Schema(description = "소셜 provider", example = "dev", requiredMode = Schema.RequiredMode.REQUIRED)
         String provider,
 
-        @Schema(description = "소셜 provider user id", example = "swagger")
+        @Schema(description = "소셜 provider user id", example = "swagger", requiredMode = Schema.RequiredMode.REQUIRED)
         String providerUserId,
 
-        @Schema(description = "닉네임", example = "dev-swagger", nullable = true)
+        @Schema(description = "닉네임", example = "dev-swagger", requiredMode = Schema.RequiredMode.REQUIRED)
         String nickname,
 
-        @Schema(description = "온보딩 상태", example = "SIGNUP", nullable = true)
+        @Schema(description = "온보딩 상태", example = "SIGNUP", requiredMode = Schema.RequiredMode.REQUIRED)
         OnBoardingStatus onboardingStatus,
 
         @Schema(description = "성별", example = "MALE", nullable = true)

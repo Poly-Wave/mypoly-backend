@@ -1,10 +1,9 @@
 package com.polywave.billservice.application.agenda.query.service;
 
-import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
+import com.polywave.billservice.api.dto.SearchAgendaResponse;
+import com.polywave.billservice.api.dto.SliceResponse;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-
 public interface AgendaSearchQueryService {
-    List<SearchAgendaResult> searchAgendas(String keyword, Pageable pageable);
+    SliceResponse<SearchAgendaResponse> searchAgendas(String keyword, Pageable pageable);
 }

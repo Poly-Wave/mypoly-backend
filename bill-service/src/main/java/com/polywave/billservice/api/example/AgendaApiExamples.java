@@ -35,51 +35,87 @@ public final class AgendaApiExamples {
             """;
 
     public static final String EXAMPLE_GET_MAIN_AGENDAS_OK = """
-            [
-              {
-                "categoryCode": "DIGITAL",
-                "categoryName": "디지털",
-                "categoryIconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp",
-                "categoryBackgroundColor": "46D9E3",
-                "title": "인공지능 산업 진흥법 일부개정법률안",
-                "content": "AI 산업 육성 및 안전한 활용을 위한 주요 조항을 담고 있습니다.",
-                "registeredDate": "2026-04-16",
-                "viewCount": 0,
-                "voteCount": 123
-              }
-            ]
+            {
+              "content": [
+                {
+                  "billId": 1,
+                  "categoryCode": "DIGITAL",
+                  "categoryName": "디지털",
+                  "categoryIconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp",
+                  "categoryBackgroundColor": "46D9E3",
+                  "title": "인공지능 산업 진흥법 일부개정법률안",
+                  "content": "AI 산업 육성 및 안전한 활용을 위한 주요 조항을 담고 있습니다.",
+                  "registeredDate": "2026-04-16",
+                  "viewCount": 0,
+                  "voteCount": 123
+                }
+              ],
+              "page": 0,
+              "size": 20,
+              "hasNext": false
+            }
             """;
 
     public static final String EXAMPLE_GET_INTEREST_AGENDAS_OK = """
-            [
-              {
-                "categoryCode": "DIGITAL",
-                "categoryName": "디지털",
-                "categoryIconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp",
-                "categoryBackgroundColor": "46D9E3",
-                "title": "인공지능 산업 진흥법 일부개정법률안",
-                "content": "AI 산업 육성 및 안전한 활용을 위한 주요 조항을 담고 있습니다.",
-                "registeredDate": "2026-04-16"
-              }
-            ]
+            {
+              "content": [
+                {
+                  "categoryCode": "DIGITAL",
+                  "categoryName": "디지털",
+                  "categoryIconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp",
+                  "categoryBackgroundColor": "46D9E3",
+                  "title": "인공지능 산업 진흥법 일부개정법률안",
+                  "content": "AI 산업 육성 및 안전한 활용을 위한 주요 조항을 담고 있습니다.",
+                  "registeredDate": "2026-04-16"
+                }
+              ],
+              "page": 0,
+              "size": 20,
+              "hasNext": false
+            }
             """;
 
     public static final String EXAMPLE_GET_AGENDAS_BY_TAB_OK = """
+            {
+              "content": [
+                {
+                  "billId": 101,
+                  "officialTitle": "인공지능 산업 진흥법 일부개정법률안",
+                  "agreeRatio": 0.52,
+                  "disagreeRatio": 0.48,
+                  "totalVoteCount": 128,
+                  "hasVoted": true
+                },
+                {
+                  "billId": 102,
+                  "officialTitle": "플랫폼 공정거래법 일부개정법률안",
+                  "agreeRatio": 0.49,
+                  "disagreeRatio": 0.51,
+                  "totalVoteCount": 117,
+                  "hasVoted": false
+                }
+              ],
+              "page": 0,
+              "size": 20,
+              "hasNext": true
+            }
+            """;
+
+    public static final String EXAMPLE_GET_POPULAR_AGENDAS_OK = """
             [
               {
-                "billId": 101,
-                "officialTitle": "인공지능 산업 진흥법 일부개정법률안",
-                "agreeRatio": 0.52,
-                "disagreeRatio": 0.48,
-                "totalVoteCount": 128,
-                "hasVoted": true
-              },
-              {
-                "billId": 102,
-                "officialTitle": "플랫폼 공정거래법 일부개정법률안",
-                "agreeRatio": 0.49,
-                "disagreeRatio": 0.51,
-                "totalVoteCount": 117,
+                "rank": 1,
+                "billId": 301,
+                "categoryCode": "DIGITAL",
+                "categoryName": "디지털",
+                "title": "인공지능 산업 진흥법 일부개정법률안",
+                "registeredDate": "2026-04-16",
+                "viewCount": 120,
+                "viewCountWeekly": 45,
+                "previousRank": 3,
+                "rankChangeSteps": 2,
+                "rankChangeType": "UP",
+                "voteCount": 123,
                 "hasVoted": false
               }
             ]

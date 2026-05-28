@@ -8,6 +8,8 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -69,6 +71,20 @@ public class PopularViewRankingCommandRepositoryImpl implements PopularViewRanki
         queryFactory.delete(ranking)
                 .where(ranking.id.weekStart.lt(weekStart))
                 .execute();
+    }
+
+    @Override
+    public Map<Long, Short> findBillRankMapByWeekStart(LocalDate weekStart) {
+        QBillPopularViewRanking ranking = QBillPopularViewRanking.billPopularViewRanking;
+        return queryFactory
+                .select(ranking.billId, ranking.id.rank)
+                .from(ranking)
+                .where(ranking.id.weekStart.eq(weekStart))
+                .fetch()
+                .stream()
+                .collect(Collectors.toMap(
+                        tuple -> tuple.get(ranking.billId),
+                        tuple -> tuple.get(ranking.id.rank)));
     }
 
     @Override

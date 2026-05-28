@@ -12,6 +12,7 @@ import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -41,6 +42,10 @@ public class PopularViewRankingBatchService {
     @Transactional
     public void run() {
         LocalDate weekStart = currentWeekStartKst();
+        Map<Long, Short> previousRankByBillId = popularViewRankingCommandRepository.findBillRankMapByWeekStart(weekStart);
+        if (previousRankByBillId == null) {
+            previousRankByBillId = Map.of();
+        }
 
         if (!popularViewRankingCommandRepository.existsBaselineForWeek(weekStart)) {
             log.info("Baseline missing for current week; creating from current view_count: weekStart={}", weekStart);
@@ -65,6 +70,7 @@ public class PopularViewRankingBatchService {
                     new BillPopularViewRankingId(weekStart, rank),
                     row.billId(),
                     row.viewCountWeekly(),
+                    previousRankByBillId.get(row.billId()),
                     calculatedAt));
             rank++;
         }

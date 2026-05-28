@@ -1,5 +1,6 @@
 package com.polywave.billservice.application.agenda.query.service;
 
+import com.polywave.billservice.api.dto.MainAgendaSortType;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
 import com.polywave.billservice.application.category.query.service.UserBillInterestQueryService;
 import com.polywave.billservice.repository.query.AgendaQueryRepository;
@@ -28,6 +29,7 @@ public class MainAgendaQueryService {
     public List<MainAgendaResult> getMainAgendas(
             Long userId,
             List<String> categoryCodes,
+            MainAgendaSortType sortType,
             Pageable pageable) {
         Set<String> normalizedCategoryCodes = categoryCodes == null
                 ? Set.of()
@@ -51,6 +53,7 @@ public class MainAgendaQueryService {
                 applyInterestFilter,
                 interestCategoryIds,
                 normalizedCategoryCodes,
+                sortType == null ? MainAgendaSortType.LATEST : sortType,
                 pageable);
 
         return rawResults.stream()
@@ -64,11 +67,12 @@ public class MainAgendaQueryService {
                         result.voteCount(),
                         result.categoryCode(),
                         result.categoryName(),
-                        result.categoryBackgroundColor()))
+                        result.categoryBackgroundColor(),
+                        result.categoryTextColor()))
                 .toList();
     }
 
-    public List<MainAgendaResult> getInterestAgendas(Long userId, Pageable pageable) {
+    public List<MainAgendaResult> getInterestAgendas(Long userId, MainAgendaSortType sortType, Pageable pageable) {
         Set<Long> interestCategoryIds = userBillInterestQueryService.getCurrentCategoryIds(userId);
         if (interestCategoryIds.isEmpty()) {
             return List.of();
@@ -79,6 +83,7 @@ public class MainAgendaQueryService {
                 true,
                 interestCategoryIds,
                 Set.of(),
+                sortType == null ? MainAgendaSortType.LATEST : sortType,
                 pageable);
 
         return rawResults.stream()
@@ -92,7 +97,8 @@ public class MainAgendaQueryService {
                         result.voteCount(),
                         result.categoryCode(),
                         result.categoryName(),
-                        result.categoryBackgroundColor()))
+                        result.categoryBackgroundColor(),
+                        result.categoryTextColor()))
                 .toList();
     }
 

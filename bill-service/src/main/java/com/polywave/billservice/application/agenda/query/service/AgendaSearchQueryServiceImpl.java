@@ -1,14 +1,14 @@
 package com.polywave.billservice.application.agenda.query.service;
 
+import com.polywave.billservice.api.dto.SearchAgendaResponse;
+import com.polywave.billservice.api.dto.SliceResponse;
 import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
 import com.polywave.billservice.repository.query.AgendaQueryRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -18,11 +18,19 @@ public class AgendaSearchQueryServiceImpl implements AgendaSearchQueryService {
     private final AgendaQueryRepository agendaQueryRepository;
 
     @Override
-    public List<SearchAgendaResult> searchAgendas(String keyword, Pageable pageable) {
+    public SliceResponse<SearchAgendaResponse> searchAgendas(String keyword, Pageable pageable) {
+        int pageSize = pageable.getPageSize();
         if (keyword == null || keyword.trim().isEmpty()) {
-            return List.of();
+            return SliceResponse.of(List.of(), pageable.getPageNumber(), pageSize, false);
         }
-        
-        return agendaQueryRepository.searchAgendasByTitle(keyword, pageable);
+
+        List<SearchAgendaResult> results = agendaQueryRepository.searchAgendasByTitle(keyword, pageable);
+        boolean hasNext = results.size() > pageSize;
+        List<SearchAgendaResponse> content = results.stream()
+                .limit(pageSize)
+                .map(SearchAgendaResponse::from)
+                .toList();
+
+        return SliceResponse.of(content, pageable.getPageNumber(), pageSize, hasNext);
     }
 }
