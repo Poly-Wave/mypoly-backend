@@ -1,7 +1,5 @@
 package com.polywave.billservice.application.agenda.query.service;
 
-import com.polywave.billservice.api.dto.SearchAgendaResponse;
-import com.polywave.billservice.api.dto.SliceResponse;
 import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
 import com.polywave.billservice.repository.query.AgendaQueryRepository;
 import java.util.List;
@@ -18,19 +16,10 @@ public class AgendaSearchQueryServiceImpl implements AgendaSearchQueryService {
     private final AgendaQueryRepository agendaQueryRepository;
 
     @Override
-    public SliceResponse<SearchAgendaResponse> searchAgendas(String keyword, Pageable pageable) {
-        int pageSize = pageable.getPageSize();
+    public List<SearchAgendaResult> searchAgendas(String keyword, Pageable pageable) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return SliceResponse.of(List.of(), pageable.getPageNumber(), pageSize, false);
+            return List.of();
         }
-
-        List<SearchAgendaResult> results = agendaQueryRepository.searchAgendasByTitle(keyword, pageable);
-        boolean hasNext = results.size() > pageSize;
-        List<SearchAgendaResponse> content = results.stream()
-                .limit(pageSize)
-                .map(SearchAgendaResponse::from)
-                .toList();
-
-        return SliceResponse.of(content, pageable.getPageNumber(), pageSize, hasNext);
+        return agendaQueryRepository.searchAgendasByTitle(keyword, pageable);
     }
 }

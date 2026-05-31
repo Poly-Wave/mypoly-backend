@@ -41,10 +41,11 @@ public record PopularAgendaResponse(
         int rankChangeSteps,
 
         @Schema(
-                description = "순위 변동 유형 (UP: 상승, DOWN: 하락, SAME: 유지, NEW: 신규 진입)",
+                description = "순위 변동 유형",
                 example = "UP",
-                requiredMode = RequiredMode.REQUIRED)
-        String rankChangeType,
+                requiredMode = RequiredMode.REQUIRED,
+                implementation = RankChangeType.class)
+        RankChangeType rankChangeType,
 
         @Schema(description = "투표수", example = "123", requiredMode = RequiredMode.REQUIRED)
         long voteCount,
@@ -77,13 +78,13 @@ public record PopularAgendaResponse(
         return previousRank - currentRank;
     }
 
-    private static String calculateRankChangeType(int currentRank, Short previousRank) {
+    private static RankChangeType calculateRankChangeType(int currentRank, Short previousRank) {
         if (previousRank == null) {
-            return "NEW";
+            return RankChangeType.NEW;
         }
         if (previousRank == currentRank) {
-            return "SAME";
+            return RankChangeType.SAME;
         }
-        return previousRank > currentRank ? "UP" : "DOWN";
+        return previousRank > currentRank ? RankChangeType.UP : RankChangeType.DOWN;
     }
 }

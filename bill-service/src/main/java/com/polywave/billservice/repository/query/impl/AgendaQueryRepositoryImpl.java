@@ -483,7 +483,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         bill.proposalDate,
                         viewCount,
                         ranking.viewCountWeekly,
-                                ranking.previousRank,
+                        ranking.previousRank,
                         voteCount,
                         hasVoted))
                 .from(ranking)

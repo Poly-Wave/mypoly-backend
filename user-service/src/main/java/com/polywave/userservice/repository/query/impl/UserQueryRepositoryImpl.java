@@ -59,7 +59,7 @@ public class UserQueryRepositoryImpl implements UserQueryRepository {
                         u.address
                 )
                 .from(u)
-                .join(o).on(o.user.id.eq(u.id))
+                .leftJoin(o).on(o.user.id.eq(u.id))
                 .where(u.id.eq(userId))
                 .fetchFirst();
 

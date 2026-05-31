@@ -10,6 +10,7 @@ import com.polywave.billservice.api.spec.AgendaApi;
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
 import com.polywave.billservice.application.agenda.query.result.PopularAgendaResult;
+import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
 import com.polywave.billservice.api.dto.SearchAgendaResponse;
 import com.polywave.billservice.api.dto.SliceResponse;
 import com.polywave.billservice.application.agenda.query.service.AgendaSearchQueryService;
@@ -120,7 +121,8 @@ public class AgendaController implements AgendaApi {
             int page,
             int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(agendaSearchQueryService.searchAgendas(keyword, pageable));
+        List<SearchAgendaResult> results = agendaSearchQueryService.searchAgendas(keyword, pageable);
+        return ResponseEntity.ok(toSliceResponse(results, pageable, SearchAgendaResponse::from));
     }
 
     private static <T, R> SliceResponse<R> toSliceResponse(
