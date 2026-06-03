@@ -44,4 +44,7 @@ public class BillCategory extends BaseEntity {
 
     @Column(name = "text_color", length = 6, nullable = false)
     private String textColor;
+
+    @Column(name = "badge_background_color", length = 6, nullable = false)
+    private String badgeBackgroundColor;
 }

@@ -26,7 +26,8 @@ public class CategoryQueryRepositoryImpl implements CategoryQueryRepository {
                         category.name,
                         category.displayOrder,
                         category.backgroundColor,
-                        category.textColor
+                        category.textColor,
+                        category.badgeBackgroundColor
                 ))
                 .from(category)
                 .where(category.isActive.isTrue())

@@ -13,7 +13,8 @@ public final class CategoryApiExamples {
           "displayOrder": 1,
           "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp",
           "backgroundColor": "46D9E3",
-          "textColor": "181B2A"
+          "textColor": "181B2A",
+          "badgeBackgroundColor": "D3DAFF"
         },
         {
           "code": "SECURITY",
@@ -21,7 +22,8 @@ public final class CategoryApiExamples {
           "displayOrder": 2,
           "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/SECURITY.webp",
           "backgroundColor": "FFE9A3",
-          "textColor": "0C300C"
+          "textColor": "0C300C",
+          "badgeBackgroundColor": "CDECCD"
         }
       ]
       """;
@@ -34,7 +36,8 @@ public final class CategoryApiExamples {
           "displayOrder": 1,
           "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp",
           "backgroundColor": "46D9E3",
-          "textColor": "181B2A"
+          "textColor": "181B2A",
+          "badgeBackgroundColor": "D3DAFF"
         }
       ]
       """;
