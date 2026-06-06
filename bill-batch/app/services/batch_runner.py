@@ -115,7 +115,15 @@ class BatchRunner:
                         bill=bill,
                         member_id=representative_member_id,
                     )
-                    bill_repo.insert_status_history_if_needed(bill_id, bill)
+
+                    # 신 API (TVBPMBILL11) 는 단계별 날짜를 분리 제공한다.
+                    # client 가 미리 추출한 entries 가 있으면 multi-insert,
+                    # 없으면 (옛 API/호환) 단일 current stage 만 insert.
+                    history_entries = bill.get("_status_history_entries")
+                    if history_entries:
+                        bill_repo.insert_status_history_entries(bill_id, history_entries)
+                    else:
+                        bill_repo.insert_status_history_if_needed(bill_id, bill)
 
                 batch_repo.add_item(
                     batch_run_id=batch_run_id,

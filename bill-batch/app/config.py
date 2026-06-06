@@ -58,7 +58,6 @@ class Settings:
     db_schema: str
 
     bill_api_base_url: str
-    bill_service_key: str
     bill_start_ord: int
     bill_end_ord: int
 
@@ -123,11 +122,13 @@ class Settings:
             db_password=_require_env("DB_PASSWORD"),
             db_schema=_get_env("DB_SCHEMA", "bill_service"),
 
+            # 의안 API base URL.
+            # 옛 data.go.kr / BillInfoService2 가 deprecated 되어 신 API (open.assembly.go.kr/TVBPMBILL11) 사용.
+            # 인증키는 ASSEMBLY_SERVICE_KEY 재사용 (옛 BILL_SERVICE_KEY 는 폐기).
             bill_api_base_url=_get_env(
                 "BILL_API_BASE_URL",
-                "https://apis.data.go.kr/9710000/BillInfoService2",
+                "https://open.assembly.go.kr/portal/openapi",
             ),
-            bill_service_key=_require_env("BILL_SERVICE_KEY"),
             bill_start_ord=int(_get_env("BILL_START_ORD", "22")),
             bill_end_ord=int(_get_env("BILL_END_ORD", "22")),
 
