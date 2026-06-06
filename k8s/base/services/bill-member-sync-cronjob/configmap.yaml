@@ -11,7 +11,9 @@ data:
   BILL_BATCH_JOB_TYPE: "MONTHLY_MEMBER_SYNC"
   BILL_BATCH_TRIGGER_TYPE: "CRON"
 
-  BILL_API_BASE_URL: "https://apis.data.go.kr/9710000/BillInfoService2"
+  # 이 cronjob 은 의안 API 를 호출하지 않지만 (BILL_BATCH_ENABLE_BILL_COLLECT=false)
+  # bill-batch 이미지와 환경변수 형태를 일치시키기 위해 신 API base URL 로 통일.
+  BILL_API_BASE_URL: "https://open.assembly.go.kr/portal/openapi"
   BILL_START_ORD: "22"
   BILL_END_ORD: "22"
 
