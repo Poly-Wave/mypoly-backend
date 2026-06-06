@@ -4,6 +4,7 @@ public record BillCategoryResult(
         Long categoryId,
         String categoryCode,
         String categoryName,
+        String categoryTextColor,
         Integer rankOrder
 ) {
 }

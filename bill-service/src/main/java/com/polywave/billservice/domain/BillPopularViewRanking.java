@@ -24,6 +24,9 @@ public class BillPopularViewRanking {
     @Column(name = "view_count_weekly", nullable = false)
     private Long viewCountWeekly;
 
+    @Column(name = "previous_rank")
+    private Short previousRank;
+
     @Column(name = "calculated_at", nullable = false)
     private Instant calculatedAt;
 
@@ -31,10 +34,12 @@ public class BillPopularViewRanking {
             BillPopularViewRankingId id,
             Long billId,
             Long viewCountWeekly,
+            Short previousRank,
             Instant calculatedAt) {
         this.id = id;
         this.billId = billId;
         this.viewCountWeekly = viewCountWeekly;
+        this.previousRank = previousRank;
         this.calculatedAt = calculatedAt;
     }
 }

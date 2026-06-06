@@ -18,6 +18,9 @@ public record InterestAgendaResponse(
         @Schema(description = "주제 배경색(HEX, # 제외)", example = "46D9E3")
         String categoryBackgroundColor,
 
+        @Schema(description = "주제 텍스트색(HEX, # 제외)", example = "181B2A")
+        String categoryTextColor,
+
         @Schema(
                 description = "제목",
                 example = "○○법 일부개정법률안",
@@ -41,6 +44,7 @@ public record InterestAgendaResponse(
                 result.categoryName(),
                 result.categoryIconUrl(),
                 result.categoryBackgroundColor(),
+                result.categoryTextColor(),
                 result.officialTitle(),
                 result.summary(),
                 result.proposalDate()

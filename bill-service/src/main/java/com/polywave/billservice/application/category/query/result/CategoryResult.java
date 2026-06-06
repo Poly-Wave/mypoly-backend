@@ -5,6 +5,8 @@ public record CategoryResult(
         String code,
         String name,
         Integer displayOrder,
-        String backgroundColor
+        String backgroundColor,
+        String textColor,
+        String badgeBackgroundColor
 ) {
 }

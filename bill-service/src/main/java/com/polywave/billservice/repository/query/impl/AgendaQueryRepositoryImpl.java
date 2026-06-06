@@ -1,5 +1,6 @@
 package com.polywave.billservice.repository.query.impl;
 
+import com.polywave.billservice.api.dto.MainAgendaSortType;
 import com.polywave.billservice.application.agenda.query.result.AgendaResult;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
 import com.polywave.billservice.application.agenda.query.result.PopularAgendaResult;
@@ -41,6 +42,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
 
     @Override
     public List<AgendaResult> findHotDebateAgendas(Long userId, int days, int minVoteCount, Pageable pageable) {
+        int pageSize = pageable.getPageSize();
         QUserBillVote vote = QUserBillVote.userBillVote;
         QUserBillVote userVote = new QUserBillVote("userVote");
         QBill bill = QBill.bill;
@@ -110,12 +112,13 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                 .having(agreeSum.add(disagreeSum).goe((long) minVoteCount))
                 .orderBy(controversyScore.asc())
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
+                .limit(pageSize + 1L)
                 .fetch();
     }
 
     @Override
     public List<AgendaResult> findTrendingAgendas(Long userId, int days, Pageable pageable) {
+        int pageSize = pageable.getPageSize();
         QBillTrendingSnapshot snapshot = QBillTrendingSnapshot.billTrendingSnapshot;
         QBill bill = QBill.bill;
         QUserBillVote vote = QUserBillVote.userBillVote;
@@ -176,12 +179,13 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         category.code)
                 .orderBy(snapshot.voteCount7d.desc())
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
+                .limit(pageSize + 1L)
                 .fetch();
     }
 
     @Override
     public List<AgendaResult> findRecent30dAgendas(Long userId, int minVoteCount, Pageable pageable) {
+        int pageSize = pageable.getPageSize();
         QBill bill = QBill.bill;
         QUserBillVote vote = QUserBillVote.userBillVote;
         QUserBillVote userVote = new QUserBillVote("userVote");
@@ -243,7 +247,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                 .having(agreeSum.add(disagreeSum).goe((long) minVoteCount))
                 .orderBy(totalVoteCount.desc(), bill.proposalDate.desc())
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
+                .limit(pageSize + 1L)
                 .fetch();
     }
 
@@ -254,6 +258,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
             int days,
             int minVoteCount,
             Pageable pageable) {
+        int pageSize = pageable.getPageSize();
         QBill bill = QBill.bill;
         QUserBillVote vote = QUserBillVote.userBillVote;
         QUserBillVote userVote = new QUserBillVote("userVote");
@@ -315,7 +320,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                 .having(sameAgeVoteCount.goe((long) minVoteCount))
                 .orderBy(sameAgeVoteCount.desc(), bill.proposalDate.desc())
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
+                .limit(pageSize + 1L)
                 .fetch();
     }
 
@@ -325,7 +330,9 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
             boolean applyInterestFilter,
             Set<Long> interestCategoryIds,
             Set<String> categoryCodes,
+            MainAgendaSortType sortType,
             Pageable pageable) {
+        int pageSize = pageable.getPageSize();
         QBill bill = QBill.bill;
         QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
         QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
@@ -348,8 +355,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
             categoryCodeFilter = category.code.in(categoryCodes);
         }
 
-        boolean isPopularSort = pageable.getSort().stream()
-                .anyMatch(order -> order.getProperty().equalsIgnoreCase("popular"));
+        boolean isPopularSort = sortType == MainAgendaSortType.POPULAR;
 
         NumberExpression<Long> selectedVoteCount = isPopularSort ? voteCount7d : voteCount;
         OrderSpecifier<?> primaryOrder = isPopularSort
@@ -368,7 +374,8 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         selectedVoteCount,
                         category.code,
                         category.name,
-                        category.backgroundColor))
+                        category.backgroundColor,
+                        category.textColor))
                 .from(bill)
                 .leftJoin(snapshot).on(snapshot.billId.eq(bill.id))
                 .leftJoin(analysis).on(
@@ -391,12 +398,13 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         category.id)
                 .orderBy(primaryOrder, bill.id.desc())
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
+                .limit(pageSize + 1L)
                 .fetch();
     }
 
     @Override
     public List<SearchAgendaResult> searchAgendasByTitle(String keyword, Pageable pageable) {
+        int pageSize = pageable.getPageSize();
         QBill bill = QBill.bill;
         QBillAiAnalysis analysis = QBillAiAnalysis.billAiAnalysis;
         QBillAiCategory billAiCategory = QBillAiCategory.billAiCategory;
@@ -417,7 +425,8 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         viewCount,
                         voteCount,
                         category.code,
-                        category.name))
+                        category.name,
+                        category.textColor))
                 .from(bill)
                 .leftJoin(analysis).on(
                         analysis.bill.id.eq(bill.id),
@@ -437,7 +446,7 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         category.id)
                 .orderBy(bill.proposalDate.desc(), bill.id.desc())
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
+                .limit(pageSize + 1L)
                 .fetch();
     }
 
@@ -470,9 +479,11 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                         bill.officialTitle,
                         category.code,
                         category.name,
+                        category.textColor,
                         bill.proposalDate,
                         viewCount,
                         ranking.viewCountWeekly,
+                        ranking.previousRank,
                         voteCount,
                         hasVoted))
                 .from(ranking)
@@ -489,11 +500,13 @@ public class AgendaQueryRepositoryImpl implements AgendaQueryRepository {
                 .groupBy(
                         ranking.id.rank,
                         ranking.viewCountWeekly,
+                        ranking.previousRank,
                         bill.id,
                         bill.officialTitle,
                         bill.proposalDate,
                         category.code,
-                        category.name)
+                        category.name,
+                        category.textColor)
                 .orderBy(ranking.id.rank.asc())
                 .fetch();
     }

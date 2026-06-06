@@ -19,6 +19,9 @@ public record PopularAgendaResponse(
         @Schema(description = "주제 이름", example = "디지털", requiredMode = RequiredMode.REQUIRED)
         String categoryName,
 
+        @Schema(description = "주제 텍스트색(HEX, # 제외)", example = "503838", requiredMode = RequiredMode.REQUIRED)
+        String categoryTextColor,
+
         @Schema(description = "제목", example = "○○법 일부개정법률안", requiredMode = RequiredMode.REQUIRED)
         String title,
 
@@ -30,6 +33,19 @@ public record PopularAgendaResponse(
 
         @Schema(description = "이번 주 조회 증가분 (KST 월요일 00:00 기준)", example = "45", requiredMode = RequiredMode.REQUIRED)
         long viewCountWeekly,
+
+        @Schema(description = "이전 배치 기준 순위. 이전 배치 데이터가 없으면 null", example = "3")
+        Integer previousRank,
+
+        @Schema(description = "이전 배치 대비 순위 변동 단계 수(상승: 양수, 하락: 음수, 유지/신규: 0)", example = "2", requiredMode = RequiredMode.REQUIRED)
+        int rankChangeSteps,
+
+        @Schema(
+                description = "순위 변동 유형",
+                example = "UP",
+                requiredMode = RequiredMode.REQUIRED,
+                implementation = RankChangeType.class)
+        RankChangeType rankChangeType,
 
         @Schema(description = "투표수", example = "123", requiredMode = RequiredMode.REQUIRED)
         long voteCount,
@@ -43,11 +59,32 @@ public record PopularAgendaResponse(
                 result.billId(),
                 result.categoryCode(),
                 result.categoryName(),
+                result.categoryTextColor(),
                 result.officialTitle(),
                 result.proposalDate(),
                 result.viewCount(),
                 result.viewCountWeekly(),
+                result.previousRank() == null ? null : result.previousRank().intValue(),
+                calculateRankChangeSteps(result.rank(), result.previousRank()),
+                calculateRankChangeType(result.rank(), result.previousRank()),
                 result.voteCount(),
                 result.hasVoted());
+    }
+
+    private static int calculateRankChangeSteps(int currentRank, Short previousRank) {
+        if (previousRank == null) {
+            return 0;
+        }
+        return previousRank - currentRank;
+    }
+
+    private static RankChangeType calculateRankChangeType(int currentRank, Short previousRank) {
+        if (previousRank == null) {
+            return RankChangeType.NEW;
+        }
+        if (previousRank == currentRank) {
+            return RankChangeType.SAME;
+        }
+        return previousRank > currentRank ? RankChangeType.UP : RankChangeType.DOWN;
     }
 }

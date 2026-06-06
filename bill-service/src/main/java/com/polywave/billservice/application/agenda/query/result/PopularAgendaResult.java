@@ -8,9 +8,11 @@ public record PopularAgendaResult(
         String officialTitle,
         String categoryCode,
         String categoryName,
+        String categoryTextColor,
         LocalDate proposalDate,
         long viewCount,
         long viewCountWeekly,
+        Short previousRank,
         long voteCount,
         boolean hasVoted) {
 }

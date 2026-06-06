@@ -12,5 +12,6 @@ public record MainAgendaResult(
         long voteCount,
         String categoryCode,
         String categoryName,
-        String categoryBackgroundColor) {
+        String categoryBackgroundColor,
+        String categoryTextColor) {
 }

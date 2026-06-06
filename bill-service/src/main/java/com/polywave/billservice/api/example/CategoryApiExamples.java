@@ -12,14 +12,18 @@ public final class CategoryApiExamples {
           "name": "디지털",
           "displayOrder": 1,
           "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp",
-          "backgroundColor": "46D9E3"
+          "backgroundColor": "46D9E3",
+          "textColor": "181B2A",
+          "badgeBackgroundColor": "D3DAFF"
         },
         {
           "code": "SECURITY",
           "name": "보안",
           "displayOrder": 2,
           "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/SECURITY.webp",
-          "backgroundColor": "FFE9A3"
+          "backgroundColor": "FFE9A3",
+          "textColor": "0C300C",
+          "badgeBackgroundColor": "CDECCD"
         }
       ]
       """;
@@ -31,7 +35,9 @@ public final class CategoryApiExamples {
           "name": "디지털",
           "displayOrder": 1,
           "iconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp",
-          "backgroundColor": "46D9E3"
+          "backgroundColor": "46D9E3",
+          "textColor": "181B2A",
+          "badgeBackgroundColor": "D3DAFF"
         }
       ]
       """;

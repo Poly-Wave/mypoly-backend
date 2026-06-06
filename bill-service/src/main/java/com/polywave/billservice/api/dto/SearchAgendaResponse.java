@@ -16,6 +16,9 @@ public record SearchAgendaResponse(
         @Schema(description = "주제 이름", example = "디지털", requiredMode = RequiredMode.REQUIRED)
         String categoryName,
 
+        @Schema(description = "주제 텍스트색(HEX, # 제외)", example = "503838", requiredMode = RequiredMode.REQUIRED)
+        String categoryTextColor,
+
         @Schema(description = "제목", example = "○○법 일부개정법률안", requiredMode = RequiredMode.REQUIRED)
         String title,
 
@@ -33,6 +36,7 @@ public record SearchAgendaResponse(
                 result.billId(),
                 result.categoryCode(),
                 result.categoryName(),
+                result.categoryTextColor(),
                 result.officialTitle(),
                 result.proposalDate(),
                 result.viewCount(),

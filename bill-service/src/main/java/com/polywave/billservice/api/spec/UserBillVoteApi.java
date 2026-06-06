@@ -1,6 +1,7 @@
 package com.polywave.billservice.api.spec;
 
 import com.polywave.billservice.api.dto.MyVotedBillResponse;
+import com.polywave.billservice.api.openapi.DateQueryParameter;
 import com.polywave.billservice.api.dto.MyVotedBillSliceResponse;
 import com.polywave.billservice.api.dto.MyVotedBillSortType;
 import com.polywave.billservice.api.dto.SliceResponse;
@@ -18,7 +19,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.Set;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -122,24 +122,28 @@ public interface UserBillVoteApi {
     })
     @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<SliceResponse<MyVotedBillResponse>> getMyVotedBills(
-            @Parameter(description = "안건 생성 시작일, KST 기준", example = "2026-01-01")
+            @DateQueryParameter(
+                    description = "안건 생성 시작일, " + DateQueryParameter.DATE_QUERY_DESCRIPTION_SUFFIX,
+                    example = "2026-01-01")
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate proposalFromDate,
 
-            @Parameter(description = "안건 생성 종료일, KST 기준", example = "2026-04-18")
+            @DateQueryParameter(
+                    description = "안건 생성 종료일, " + DateQueryParameter.DATE_QUERY_DESCRIPTION_SUFFIX,
+                    example = "2026-04-18")
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate proposalToDate,
 
-            @Parameter(description = "투표한 날짜 시작일, KST 기준", example = "2026-01-01")
+            @DateQueryParameter(
+                    description = "투표한 날짜 시작일, " + DateQueryParameter.DATE_QUERY_DESCRIPTION_SUFFIX,
+                    example = "2026-01-01")
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate votedFromDate,
 
-            @Parameter(description = "투표한 날짜 종료일, KST 기준", example = "2026-04-18")
+            @DateQueryParameter(
+                    description = "투표한 날짜 종료일, " + DateQueryParameter.DATE_QUERY_DESCRIPTION_SUFFIX,
+                    example = "2026-04-18")
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate votedToDate,
 
             @Parameter(description = "투표 결과 목록", example = "AGREE,DISAGREE")

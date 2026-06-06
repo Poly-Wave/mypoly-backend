@@ -16,6 +16,8 @@ public record MainAgendaResponse(
 
         @Schema(description = "주제 배경색(HEX, # 제외)", example = "46D9E3") String categoryBackgroundColor,
 
+        @Schema(description = "주제 텍스트색(HEX, # 제외)", example = "181B2A") String categoryTextColor,
+
         @Schema(description = "제목", example = "○○법 일부개정법률안", requiredMode = Schema.RequiredMode.REQUIRED) String title,
 
         @Schema(description = "내용 요약", example = "AI 분석 요약입니다.") String content,
@@ -27,7 +29,8 @@ public record MainAgendaResponse(
         @Schema(description = "투표수", example = "123", requiredMode = Schema.RequiredMode.REQUIRED) long voteCount) {
     public static MainAgendaResponse from(MainAgendaResult result) {
         return new MainAgendaResponse(result.billId(), result.categoryCode(), result.categoryName(),
-                result.categoryIconUrl(), result.categoryBackgroundColor(), result.officialTitle(), result.summary(),
+                result.categoryIconUrl(), result.categoryBackgroundColor(), result.categoryTextColor(),
+                result.officialTitle(), result.summary(),
                 result.proposalDate(), result.viewCount(), result.voteCount());
     }
 }

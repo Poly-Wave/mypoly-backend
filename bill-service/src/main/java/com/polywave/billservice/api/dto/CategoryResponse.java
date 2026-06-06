@@ -18,7 +18,13 @@ public record CategoryResponse(
         String iconUrl,
 
         @Schema(description = "카테고리 배경색 HEX, # 제외", example = "46D9E3", requiredMode = Schema.RequiredMode.REQUIRED)
-        String backgroundColor
+        String backgroundColor,
+
+        @Schema(description = "카테고리 텍스트색 HEX, # 제외", example = "181B2A", requiredMode = Schema.RequiredMode.REQUIRED)
+        String textColor,
+
+        @Schema(description = "카테고리 뱃지 배경색 HEX, # 제외", example = "D3DAFF", requiredMode = Schema.RequiredMode.REQUIRED)
+        String badgeBackgroundColor
 ) {
     public static CategoryResponse from(CategoryResult dto, String iconUrl) {
         return new CategoryResponse(
@@ -26,7 +32,9 @@ public record CategoryResponse(
                 nullToEmpty(dto.name()),
                 dto.displayOrder() == null ? 0 : dto.displayOrder(),
                 nullToEmpty(iconUrl),
-                nullToEmpty(dto.backgroundColor())
+                nullToEmpty(dto.backgroundColor()),
+                nullToEmpty(dto.textColor()),
+                nullToEmpty(dto.badgeBackgroundColor())
         );
     }
 

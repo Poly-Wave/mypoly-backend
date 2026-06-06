@@ -43,7 +43,9 @@ public class UserBillInterestQueryRepositoryImpl
                         category.code,
                         category.name,
                         category.displayOrder,
-                        category.backgroundColor
+                        category.backgroundColor,
+                        category.textColor,
+                        category.badgeBackgroundColor
                 ))
                 .from(userBillInterest)
                 .join(userBillInterest.category, category)

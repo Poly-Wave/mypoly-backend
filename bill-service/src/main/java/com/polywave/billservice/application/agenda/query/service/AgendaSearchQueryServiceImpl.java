@@ -2,13 +2,11 @@ package com.polywave.billservice.application.agenda.query.service;
 
 import com.polywave.billservice.application.agenda.query.result.SearchAgendaResult;
 import com.polywave.billservice.repository.query.AgendaQueryRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +20,6 @@ public class AgendaSearchQueryServiceImpl implements AgendaSearchQueryService {
         if (keyword == null || keyword.trim().isEmpty()) {
             return List.of();
         }
-        
         return agendaQueryRepository.searchAgendasByTitle(keyword, pageable);
     }
 }
