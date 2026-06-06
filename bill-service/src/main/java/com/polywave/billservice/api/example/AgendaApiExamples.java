@@ -60,6 +60,7 @@ public final class AgendaApiExamples {
             {
               "content": [
                 {
+                  "billId": 1,
                   "categoryCode": "DIGITAL",
                   "categoryName": "디지털",
                   "categoryIconUrl": "https://storage.googleapis.com/mypoly-assets-dev/bill-categories/DIGITAL.webp",

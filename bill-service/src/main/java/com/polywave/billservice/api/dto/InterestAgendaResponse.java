@@ -6,6 +6,9 @@ import java.time.LocalDate;
 
 @Schema(description = "관심 주제 안건 목록 응답")
 public record InterestAgendaResponse(
+        @Schema(description = "의안 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+        Long billId,
+
         @Schema(description = "주제 코드", example = "DIGITAL")
         String categoryCode,
 
@@ -40,6 +43,7 @@ public record InterestAgendaResponse(
 ) {
     public static InterestAgendaResponse from(MainAgendaResult result) {
         return new InterestAgendaResponse(
+                result.billId(),
                 result.categoryCode(),
                 result.categoryName(),
                 result.categoryIconUrl(),
