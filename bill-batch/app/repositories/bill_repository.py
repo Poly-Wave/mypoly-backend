@@ -426,6 +426,46 @@ class BillRepository:
                     inserted += 1
         return inserted
 
+    def get_bills_pending_scrape(self, min_proposal_date: date, limit: int) -> List[Dict[str, Any]]:
+        with self.conn.cursor() as cur:
+            if limit > 0:
+                cur.execute(
+                    f"""
+                    SELECT id, external_bill_id
+                    FROM {self.schema}.bills
+                    WHERE proposal_date >= %s
+                      AND (summary_raw IS NULL OR summary_raw = '')
+                    ORDER BY proposal_date DESC, id DESC
+                    LIMIT %s
+                    """,
+                    (min_proposal_date, limit),
+                )
+            else:
+                cur.execute(
+                    f"""
+                    SELECT id, external_bill_id
+                    FROM {self.schema}.bills
+                    WHERE proposal_date >= %s
+                      AND (summary_raw IS NULL OR summary_raw = '')
+                    ORDER BY proposal_date DESC, id DESC
+                    """,
+                    (min_proposal_date,),
+                )
+            return cur.fetchall()
+
+    def update_summary_raw(self, bill_id: int, summary_raw: str):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                UPDATE {self.schema}.bills
+                SET summary_raw = %s,
+                    summary_raw_hash = %s,
+                    updated_at = now()
+                WHERE id = %s
+                """,
+                (summary_raw, sha256_hex(summary_raw), bill_id),
+            )
+
     def get_pending_ai_bills(self, limit: int, min_proposal_date: date) -> List[Dict[str, Any]]:
         with self.conn.cursor() as cur:
             cur.execute(
