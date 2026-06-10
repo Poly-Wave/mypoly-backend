@@ -427,43 +427,55 @@ class BillRepository:
         return inserted
 
     def get_bills_pending_scrape(self, min_proposal_date: date, limit: int) -> List[Dict[str, Any]]:
+        # summary_raw IS NULL  → 아직 스크래핑 시도 안 된 의안
+        # summary_raw = ''     → 스크래핑 시도했으나 LIKMS에 내용 없음 (mark_scrape_no_content)
+        # 후자는 재시도 대상에서 제외한다.
         with self.conn.cursor() as cur:
-            if limit > 0:
-                cur.execute(
-                    f"""
-                    SELECT id, external_bill_id
-                    FROM {self.schema}.bills
-                    WHERE proposal_date >= %s
-                      AND (summary_raw IS NULL OR summary_raw = '')
-                    ORDER BY proposal_date DESC, id DESC
-                    LIMIT %s
-                    """,
-                    (min_proposal_date, limit),
-                )
-            else:
-                cur.execute(
-                    f"""
-                    SELECT id, external_bill_id
-                    FROM {self.schema}.bills
-                    WHERE proposal_date >= %s
-                      AND (summary_raw IS NULL OR summary_raw = '')
-                    ORDER BY proposal_date DESC, id DESC
-                    """,
-                    (min_proposal_date,),
-                )
+            params: tuple = (min_proposal_date,)
+            limit_clause = f"LIMIT {limit}" if limit > 0 else ""
+            cur.execute(
+                f"""
+                SELECT id, external_bill_id
+                FROM {self.schema}.bills
+                WHERE proposal_date >= %s
+                  AND summary_raw IS NULL
+                ORDER BY proposal_date DESC, id DESC
+                {limit_clause}
+                """,
+                params,
+            )
             return cur.fetchall()
 
     def update_summary_raw(self, bill_id: int, summary_raw: str):
+        # summary_raw를 새로 채웠으면 ai_status를 PENDING으로 초기화해
+        # 이전에 빈 내용으로 AI가 처리됐거나(SUCCESS/PERMANENT_FAILED) 실패했더라도 재분석 대상이 된다.
         with self.conn.cursor() as cur:
             cur.execute(
                 f"""
                 UPDATE {self.schema}.bills
                 SET summary_raw = %s,
                     summary_raw_hash = %s,
+                    ai_status = 'PENDING',
+                    ai_retry_count = 0,
+                    next_ai_retry_at = NULL,
                     updated_at = now()
                 WHERE id = %s
                 """,
                 (summary_raw, sha256_hex(summary_raw), bill_id),
+            )
+
+    def mark_scrape_no_content(self, bill_id: int):
+        # LIKMS에 해당 의안의 #prntSummary가 없음이 확인된 경우 빈 문자열('')로 마킹.
+        # get_bills_pending_scrape는 summary_raw IS NULL 만 조회하므로 이 의안은 이후 스크래핑 대상에서 제외된다.
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                UPDATE {self.schema}.bills
+                SET summary_raw = '',
+                    updated_at = now()
+                WHERE id = %s
+                """,
+                (bill_id,),
             )
 
     def get_pending_ai_bills(self, limit: int, min_proposal_date: date) -> List[Dict[str, Any]]:
@@ -476,6 +488,8 @@ class BillRepository:
                   AND proposal_date >= %s
                   AND ai_status IN ('PENDING', 'RETRY_WAIT')
                   AND (next_ai_retry_at IS NULL OR next_ai_retry_at <= now())
+                  AND summary_raw IS NOT NULL
+                  AND summary_raw != ''
                 ORDER BY proposal_date DESC, id DESC
                 LIMIT %s
                 """,

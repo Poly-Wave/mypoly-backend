@@ -76,6 +76,7 @@ class BatchRunner:
 
         success = 0
         failed = 0
+        skipped = 0
 
         for bill in target_bills:
             bill_id = bill["id"]
@@ -94,14 +95,14 @@ class BatchRunner:
                         action_type="UPDATE",
                         payload={"len": len(content)},
                     )
-                    self._commit(bill_repo.conn)
+                    self._commit(batch_repo.conn)
                     success += 1
                     print(
                         f"[BATCH][SCRAPE] DB 저장 완료 bill_id={bill_id} external_bill_id={external_bill_id}",
                         flush=True,
                     )
                 except Exception as exc:
-                    self._rollback(bill_repo.conn)
+                    self._rollback(batch_repo.conn)
                     batch_repo.add_item(
                         batch_run_id=batch_run_id,
                         item_type="BILL_SCRAPE",
@@ -112,25 +113,39 @@ class BatchRunner:
                         error_message=str(exc),
                         payload={},
                     )
-                    self._commit(bill_repo.conn)
+                    self._commit(batch_repo.conn)
                     failed += 1
                     print(f"[BATCH][SCRAPE][오류] bill_id={bill_id} error={exc}", flush=True)
             else:
-                batch_repo.add_item(
-                    batch_run_id=batch_run_id,
-                    item_type="BILL_SCRAPE",
-                    target_external_id=external_bill_id,
-                    target_internal_id=bill_id,
-                    item_status="FAILED",
-                    action_type=None,
-                    error_message="스크래핑 결과 없음",
-                    payload={},
-                )
-                self._commit(bill_repo.conn)
-                failed += 1
+                # LIKMS에 해당 의안 내용이 없음 — 빈 문자열로 마킹해 다음 배치에서 재시도 대상 제외
+                try:
+                    bill_repo.mark_scrape_no_content(bill_id=bill_id)
+                    batch_repo.add_item(
+                        batch_run_id=batch_run_id,
+                        item_type="BILL_SCRAPE",
+                        target_external_id=external_bill_id,
+                        target_internal_id=bill_id,
+                        item_status="SKIPPED",
+                        action_type="NO_CHANGE",
+                        error_message="LIKMS에 내용 없음",
+                        payload={},
+                    )
+                    self._commit(batch_repo.conn)
+                    skipped += 1
+                    print(
+                        f"[BATCH][SCRAPE] 내용없음 마킹 bill_id={bill_id} external_bill_id={external_bill_id}",
+                        flush=True,
+                    )
+                except Exception as exc:
+                    self._rollback(batch_repo.conn)
+                    failed += 1
+                    print(f"[BATCH][SCRAPE][오류] 내용없음 마킹 실패 bill_id={bill_id} error={exc}", flush=True)
 
-        print(f"[BATCH][SCRAPE] 완료 target={total} success={success} failed={failed}", flush=True)
-        return {"target": total, "success": success, "failed": failed}
+        print(
+            f"[BATCH][SCRAPE] 완료 target={total} success={success} skipped={skipped} failed={failed}",
+            flush=True,
+        )
+        return {"target": total, "success": success, "skipped": skipped, "failed": failed}
 
     def _collect_bills(
         self,
@@ -768,6 +783,7 @@ class BatchRunner:
                 "스크래핑("
                 f"대상={scrape_result['target']}, "
                 f"성공={scrape_result['success']}, "
+                f"내용없음={scrape_result.get('skipped', 0)}, "
                 f"실패={scrape_result['failed']}"
                 ")"
             )

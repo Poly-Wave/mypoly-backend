@@ -1,7 +1,7 @@
 import asyncio
 from typing import Dict, List, Tuple
 
-_LIKMS_URL = "https://likms.assembly.go.kr/bill/billDetail.do?billId={bill_id}"
+_LIKMS_URL = "https://likms.assembly.go.kr/bill/bi/billDetailPage.do?billId={bill_id}"
 _SUMMARY_SELECTOR = "#prntSummary"
 
 
@@ -16,7 +16,11 @@ async def _run_scrape(bills: List[Tuple[int, str]], concurrency: int) -> Dict[in
             page = await browser.new_page()
             try:
                 url = _LIKMS_URL.format(bill_id=external_bill_id)
-                await page.goto(url, timeout=30000)
+                await page.goto(url, timeout=30000, wait_until="domcontentloaded")
+                try:
+                    await page.wait_for_selector(_SUMMARY_SELECTOR, timeout=15000)
+                except Exception:
+                    pass
                 element = await page.query_selector(_SUMMARY_SELECTOR)
                 if element:
                     text = (await element.text_content() or "").strip()
@@ -56,6 +60,8 @@ async def _run_scrape(bills: List[Tuple[int, str]], concurrency: int) -> Dict[in
 
 class LikmsScraper:
     def __init__(self, concurrency: int = 3):
+        if concurrency < 1:
+            raise ValueError(f"BILL_BATCH_SCRAPE_CONCURRENCY는 1 이상이어야 합니다: {concurrency}")
         self.concurrency = concurrency
 
     def scrape(self, bills: List[Tuple[int, str]]) -> Dict[int, str]:
