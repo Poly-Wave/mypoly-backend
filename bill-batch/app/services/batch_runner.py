@@ -4,6 +4,7 @@ from typing import Any, Dict
 from app.clients.assembly_open_api_client import AssemblyOpenApiClient
 from app.clients.bill_info_api_client import BillInfoApiClient
 from app.clients.gemini_client import GeminiApiError, GeminiClient
+from app.clients.likms_scraper import LikmsScraper
 from app.config import Settings
 from app.db import get_connection
 from app.repositories.ai_repository import AiRepository
@@ -50,6 +51,101 @@ class BatchRunner:
             official_title=ai_input["official_title"],
             summary_raw=ai_input["summary_raw"],
         )
+
+    def _scrape_summaries(
+        self,
+        batch_repo: BatchRepository,
+        bill_repo: BillRepository,
+        batch_run_id: int,
+        min_proposal_date: date,
+    ) -> Dict[str, int]:
+        target_bills = bill_repo.get_bills_pending_scrape(
+            min_proposal_date=min_proposal_date,
+            limit=self.settings.bill_batch_max_scrape_per_run,
+        )
+
+        total = len(target_bills)
+        print(f"[BATCH][SCRAPE] 스크래핑 대상 건수={total}", flush=True)
+
+        if not target_bills:
+            return {"target": 0, "success": 0, "failed": 0}
+
+        scraper = LikmsScraper(concurrency=self.settings.bill_batch_scrape_concurrency)
+        bills_input = [(b["id"], b["external_bill_id"]) for b in target_bills]
+        scraped = scraper.scrape(bills_input)
+
+        success = 0
+        failed = 0
+        skipped = 0
+
+        for bill in target_bills:
+            bill_id = bill["id"]
+            external_bill_id = bill["external_bill_id"]
+            content = scraped.get(bill_id)
+
+            if content:
+                try:
+                    bill_repo.update_summary_raw(bill_id=bill_id, summary_raw=content)
+                    batch_repo.add_item(
+                        batch_run_id=batch_run_id,
+                        item_type="BILL_SCRAPE",
+                        target_external_id=external_bill_id,
+                        target_internal_id=bill_id,
+                        item_status="SUCCESS",
+                        action_type="UPDATE",
+                        payload={"len": len(content)},
+                    )
+                    self._commit(batch_repo.conn)
+                    success += 1
+                    print(
+                        f"[BATCH][SCRAPE] DB 저장 완료 bill_id={bill_id} external_bill_id={external_bill_id}",
+                        flush=True,
+                    )
+                except Exception as exc:
+                    self._rollback(batch_repo.conn)
+                    batch_repo.add_item(
+                        batch_run_id=batch_run_id,
+                        item_type="BILL_SCRAPE",
+                        target_external_id=external_bill_id,
+                        target_internal_id=bill_id,
+                        item_status="FAILED",
+                        action_type=None,
+                        error_message=str(exc),
+                        payload={},
+                    )
+                    self._commit(batch_repo.conn)
+                    failed += 1
+                    print(f"[BATCH][SCRAPE][오류] bill_id={bill_id} error={exc}", flush=True)
+            else:
+                # LIKMS에 해당 의안 내용이 없음 — 빈 문자열로 마킹해 다음 배치에서 재시도 대상 제외
+                try:
+                    bill_repo.mark_scrape_no_content(bill_id=bill_id)
+                    batch_repo.add_item(
+                        batch_run_id=batch_run_id,
+                        item_type="BILL_SCRAPE",
+                        target_external_id=external_bill_id,
+                        target_internal_id=bill_id,
+                        item_status="SKIPPED",
+                        action_type="NO_CHANGE",
+                        error_message="LIKMS에 내용 없음",
+                        payload={},
+                    )
+                    self._commit(batch_repo.conn)
+                    skipped += 1
+                    print(
+                        f"[BATCH][SCRAPE] 내용없음 마킹 bill_id={bill_id} external_bill_id={external_bill_id}",
+                        flush=True,
+                    )
+                except Exception as exc:
+                    self._rollback(batch_repo.conn)
+                    failed += 1
+                    print(f"[BATCH][SCRAPE][오류] 내용없음 마킹 실패 bill_id={bill_id} error={exc}", flush=True)
+
+        print(
+            f"[BATCH][SCRAPE] 완료 target={total} success={success} skipped={skipped} failed={failed}",
+            flush=True,
+        )
+        return {"target": total, "success": success, "skipped": skipped, "failed": failed}
 
     def _collect_bills(
         self,
@@ -115,7 +211,15 @@ class BatchRunner:
                         bill=bill,
                         member_id=representative_member_id,
                     )
-                    bill_repo.insert_status_history_if_needed(bill_id, bill)
+
+                    # 신 API (TVBPMBILL11) 는 단계별 날짜를 분리 제공한다.
+                    # client 가 미리 추출한 entries 가 있으면 multi-insert,
+                    # 없으면 (옛 API/호환) 단일 current stage 만 insert.
+                    history_entries = bill.get("_status_history_entries")
+                    if history_entries:
+                        bill_repo.insert_status_history_entries(bill_id, history_entries)
+                    else:
+                        bill_repo.insert_status_history_if_needed(bill_id, bill)
 
                 batch_repo.add_item(
                     batch_run_id=batch_run_id,
@@ -654,6 +758,7 @@ class BatchRunner:
     def _build_run_message(
         self,
         collect_result: Dict[str, int] | None,
+        scrape_result: Dict[str, int] | None,
         member_result: Dict[str, int] | None,
         vote_result: Dict[str, int] | None,
         ai_result: Dict[str, Any] | None,
@@ -670,6 +775,16 @@ class BatchRunner:
                 f"변경없음={collect_result['no_change']}, "
                 f"수집제외={collect_result['filtered_out']}, "
                 f"실패={collect_result['failed']}"
+                ")"
+            )
+
+        if scrape_result is not None:
+            parts.append(
+                "스크래핑("
+                f"대상={scrape_result['target']}, "
+                f"성공={scrape_result['success']}, "
+                f"내용없음={scrape_result.get('skipped', 0)}, "
+                f"실패={scrape_result['failed']}"
                 ")"
             )
 
@@ -726,6 +841,7 @@ class BatchRunner:
             f"enable_bill_collect={self.settings.bill_batch_enable_bill_collect} "
             f"enable_member_sync={self.settings.bill_batch_enable_member_sync} "
             f"enable_vote_sync={self.settings.bill_batch_enable_vote_sync} "
+            f"enable_scrape={self.settings.bill_batch_enable_scrape} "
             f"enable_ai={self.settings.bill_batch_enable_ai}",
             flush=True,
         )
@@ -757,6 +873,7 @@ class BatchRunner:
             print(f"[BATCH] batch_run_id={batch_run_id} 실행 이력을 생성했습니다", flush=True)
 
             collect_result = None
+            scrape_result = None
             member_result = None
             vote_result = None
             ai_result = None
@@ -767,6 +884,14 @@ class BatchRunner:
                     bill_repo=bill_repo,
                     member_repo=member_repo,
                     api_client=bill_api_client,
+                    batch_run_id=batch_run_id,
+                    min_proposal_date=min_proposal_date,
+                )
+
+            if self.settings.bill_batch_enable_scrape:
+                scrape_result = self._scrape_summaries(
+                    batch_repo=batch_repo,
+                    bill_repo=bill_repo,
                     batch_run_id=batch_run_id,
                     min_proposal_date=min_proposal_date,
                 )
@@ -813,6 +938,8 @@ class BatchRunner:
             total_failed = 0
             if collect_result:
                 total_failed += collect_result["failed"]
+            if scrape_result:
+                total_failed += scrape_result["failed"]
             if member_result:
                 total_failed += member_result["failed"]
             if vote_result:
@@ -829,6 +956,7 @@ class BatchRunner:
 
             message = self._build_run_message(
                 collect_result=collect_result,
+                scrape_result=scrape_result,
                 member_result=member_result,
                 vote_result=vote_result,
                 ai_result=ai_result,
@@ -877,6 +1005,7 @@ class BatchRunner:
                 "batch_run_id": batch_run_id,
                 "run_status": run_status,
                 "collect": collect_result,
+                "scrape": scrape_result,
                 "member": member_result,
                 "vote": vote_result,
                 "ai": ai_result,

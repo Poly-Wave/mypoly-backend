@@ -25,7 +25,11 @@ class BillRepository:
 
     def upsert_bill(self, bill: Dict[str, Any]) -> Tuple[int, str]:
         existing = self._find_by_external_bill_id(bill["external_bill_id"])
-        summary_hash = sha256_hex(bill.get("summary_raw"))
+
+        # summary_raw 가 dict 에 명시되지 않으면(= 신 API 가 제공하지 않으면) 기존 DB 값 유지.
+        # 신 TVBPMBILL11 응답에는 summary 가 없어 빈 값으로 덮어쓰지 않는다 (D1 정책).
+        has_summary_field = "summary_raw" in bill
+        summary_hash = sha256_hex(bill.get("summary_raw")) if has_summary_field else None
 
         comparable = {
             "bill_no": bill.get("bill_no"),
@@ -34,8 +38,6 @@ class BillRepository:
             "proposer_kind": bill.get("proposer_kind"),
             "representative_proposer_name": bill.get("representative_proposer_name"),
             "proposer_count": bill.get("proposer_count", 0),
-            "summary_raw": bill.get("summary_raw"),
-            "summary_raw_hash": summary_hash,
             "detail_url": bill.get("detail_url"),
             "current_proc_stage_code": bill.get("current_proc_stage_code"),
             "current_proc_stage_name": bill.get("current_proc_stage_name"),
@@ -43,6 +45,10 @@ class BillRepository:
             "current_pass_gubn": bill.get("current_pass_gubn"),
             "current_general_result": bill.get("current_general_result"),
         }
+        # summary 필드가 명시된 경우에만 비교 대상에 포함
+        if has_summary_field:
+            comparable["summary_raw"] = bill.get("summary_raw")
+            comparable["summary_raw_hash"] = summary_hash
 
         if not existing:
             with self.conn.cursor() as cur:
@@ -119,11 +125,9 @@ class BillRepository:
             ]
         )
 
-        ai_input_changed = any(
-            [
-                existing.get("official_title") != bill.get("official_title"),
-                existing.get("summary_raw_hash") != summary_hash,
-            ]
+        ai_input_changed = (
+            existing.get("official_title") != bill.get("official_title")
+            or (has_summary_field and existing.get("summary_raw_hash") != summary_hash)
         )
 
         no_change = all(existing.get(key) == value for key, value in comparable.items())
@@ -161,8 +165,10 @@ class BillRepository:
                     proposer_kind = %s,
                     representative_proposer_name = %s,
                     proposer_count = %s,
-                    summary_raw = %s,
-                    summary_raw_hash = %s,
+                    -- summary 필드가 None 으로 전달되면 기존 DB 값을 유지한다.
+                    -- 신 TVBPMBILL11 API 가 summary 를 제공하지 않아도 옛 summary 가 보존된다.
+                    summary_raw = COALESCE(%s, summary_raw),
+                    summary_raw_hash = COALESCE(%s, summary_raw_hash),
                     detail_url = %s,
                     current_proc_stage_code = %s,
                     current_proc_stage_name = %s,
@@ -366,6 +372,112 @@ class BillRepository:
                 ),
             )
 
+    def insert_status_history_entries(self, bill_id: int, entries: List[Dict[str, Any]]) -> int:
+        """
+        신 API (TVBPMBILL11) 의 단계별 날짜로부터 추출된 entries 를 일괄 INSERT.
+
+        - 각 entry: {stage_code, stage_name, stage_order, pass_gubn, general_result, proc_date}
+        - bill_status_history 의 unique index (bill_id, stage_code, pass_gubn, general_result, proc_date)
+          가 멱등성을 보장. 같은 단계가 이미 있으면 ON CONFLICT DO NOTHING.
+        - 반환: 새로 삽입된 row 수.
+        """
+        if not entries:
+            return 0
+
+        inserted = 0
+        with self.conn.cursor() as cur:
+            for entry in entries:
+                cur.execute(
+                    f"""
+                    INSERT INTO {self.schema}.bill_status_history (
+                        bill_id,
+                        proc_stage_code,
+                        proc_stage_name,
+                        proc_stage_order,
+                        pass_gubn,
+                        general_result,
+                        proc_date,
+                        observed_at,
+                        status_payload
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, now(), %s
+                    )
+                    ON CONFLICT DO NOTHING
+                    """,
+                    (
+                        bill_id,
+                        entry.get("stage_code"),
+                        entry.get("stage_name"),
+                        entry.get("stage_order"),
+                        entry.get("pass_gubn"),
+                        entry.get("general_result"),
+                        entry.get("proc_date"),
+                        Json({
+                            "stage_code": entry.get("stage_code"),
+                            "stage_name": entry.get("stage_name"),
+                            "stage_order": entry.get("stage_order"),
+                            "pass_gubn": entry.get("pass_gubn"),
+                            "general_result": entry.get("general_result"),
+                            "proc_date": str(entry.get("proc_date")) if entry.get("proc_date") else None,
+                        }),
+                    ),
+                )
+                if cur.rowcount:
+                    inserted += 1
+        return inserted
+
+    def get_bills_pending_scrape(self, min_proposal_date: date, limit: int) -> List[Dict[str, Any]]:
+        # summary_raw IS NULL  → 아직 스크래핑 시도 안 된 의안
+        # summary_raw = ''     → 스크래핑 시도했으나 LIKMS에 내용 없음 (mark_scrape_no_content)
+        # 후자는 재시도 대상에서 제외한다.
+        with self.conn.cursor() as cur:
+            params: tuple = (min_proposal_date,)
+            limit_clause = f"LIMIT {limit}" if limit > 0 else ""
+            cur.execute(
+                f"""
+                SELECT id, external_bill_id
+                FROM {self.schema}.bills
+                WHERE proposal_date >= %s
+                  AND summary_raw IS NULL
+                ORDER BY proposal_date DESC, id DESC
+                {limit_clause}
+                """,
+                params,
+            )
+            return cur.fetchall()
+
+    def update_summary_raw(self, bill_id: int, summary_raw: str):
+        # summary_raw를 새로 채웠으면 ai_status를 PENDING으로 초기화해
+        # 이전에 빈 내용으로 AI가 처리됐거나(SUCCESS/PERMANENT_FAILED) 실패했더라도 재분석 대상이 된다.
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                UPDATE {self.schema}.bills
+                SET summary_raw = %s,
+                    summary_raw_hash = %s,
+                    ai_status = 'PENDING',
+                    ai_retry_count = 0,
+                    next_ai_retry_at = NULL,
+                    updated_at = now()
+                WHERE id = %s
+                """,
+                (summary_raw, sha256_hex(summary_raw), bill_id),
+            )
+
+    def mark_scrape_no_content(self, bill_id: int):
+        # LIKMS에 해당 의안의 #prntSummary가 없음이 확인된 경우 빈 문자열('')로 마킹.
+        # get_bills_pending_scrape는 summary_raw IS NULL 만 조회하므로 이 의안은 이후 스크래핑 대상에서 제외된다.
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                UPDATE {self.schema}.bills
+                SET summary_raw = '',
+                    updated_at = now()
+                WHERE id = %s
+                """,
+                (bill_id,),
+            )
+
     def get_pending_ai_bills(self, limit: int, min_proposal_date: date) -> List[Dict[str, Any]]:
         with self.conn.cursor() as cur:
             cur.execute(
@@ -376,6 +488,8 @@ class BillRepository:
                   AND proposal_date >= %s
                   AND ai_status IN ('PENDING', 'RETRY_WAIT')
                   AND (next_ai_retry_at IS NULL OR next_ai_retry_at <= now())
+                  AND summary_raw IS NOT NULL
+                  AND summary_raw != ''
                 ORDER BY proposal_date DESC, id DESC
                 LIMIT %s
                 """,

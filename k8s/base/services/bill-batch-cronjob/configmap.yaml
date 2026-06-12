@@ -11,7 +11,10 @@ data:
   BILL_BATCH_JOB_TYPE: "DAILY_BILL_PIPELINE"
   BILL_BATCH_TRIGGER_TYPE: "CRON"
 
-  BILL_API_BASE_URL: "https://apis.data.go.kr/9710000/BillInfoService2"
+  # 의안 API base URL.
+  # 옛 data.go.kr/9710000/BillInfoService2 는 deprecated (2026-05 경).
+  # 신 API: open.assembly.go.kr/portal/openapi/TVBPMBILL11 — ASSEMBLY_SERVICE_KEY 재사용.
+  BILL_API_BASE_URL: "https://open.assembly.go.kr/portal/openapi"
   BILL_START_ORD: "22"
   BILL_END_ORD: "22"
 
@@ -24,7 +27,11 @@ data:
   BILL_BATCH_ENABLE_BILL_COLLECT: "true"
   BILL_BATCH_ENABLE_MEMBER_SYNC: "false"
   BILL_BATCH_ENABLE_VOTE_SYNC: "true"
+  BILL_BATCH_ENABLE_SCRAPE: "true"
   BILL_BATCH_ENABLE_AI: "true"
+
+  BILL_BATCH_SCRAPE_CONCURRENCY: "3"
+  BILL_BATCH_MAX_SCRAPE_PER_RUN: "0"
 
   BILL_BATCH_MEMBER_AGE: "22"
   BILL_BATCH_MEMBER_SYNC_PAGE_SIZE: "300"

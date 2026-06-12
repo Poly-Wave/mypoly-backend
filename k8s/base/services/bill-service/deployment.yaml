@@ -76,9 +76,13 @@ spec:
             failureThreshold: 6
 
           resources:
+            # 2026-06 OOM 발생 (Last OOMKilled @ 2026-06-06).
+            # bill-batch 가 신 API 마이그레이션 후 의안 row 가 늘면서
+            # getInterestAgendas / RECENT_30D 같은 무거운 쿼리에서 메모리 spike 발생.
+            # 안전 마진 위해 request 768Mi / limit 1.5Gi 로 상향.
             requests:
               cpu: "100m"
-              memory: "512Mi"
+              memory: "768Mi"
             limits:
               cpu: "500m"
-              memory: "1Gi"
+              memory: "1536Mi"

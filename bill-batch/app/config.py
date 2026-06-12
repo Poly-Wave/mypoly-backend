@@ -58,7 +58,6 @@ class Settings:
     db_schema: str
 
     bill_api_base_url: str
-    bill_service_key: str
     bill_start_ord: int
     bill_end_ord: int
 
@@ -82,7 +81,11 @@ class Settings:
     bill_batch_enable_bill_collect: bool
     bill_batch_enable_member_sync: bool
     bill_batch_enable_vote_sync: bool
+    bill_batch_enable_scrape: bool
     bill_batch_enable_ai: bool
+
+    bill_batch_scrape_concurrency: int
+    bill_batch_max_scrape_per_run: int
 
     bill_batch_vote_sync_missing_only: bool
     bill_batch_vote_sync_lookback_days: int
@@ -123,11 +126,13 @@ class Settings:
             db_password=_require_env("DB_PASSWORD"),
             db_schema=_get_env("DB_SCHEMA", "bill_service"),
 
+            # 의안 API base URL.
+            # 옛 data.go.kr / BillInfoService2 가 deprecated 되어 신 API (open.assembly.go.kr/TVBPMBILL11) 사용.
+            # 인증키는 ASSEMBLY_SERVICE_KEY 재사용 (옛 BILL_SERVICE_KEY 는 폐기).
             bill_api_base_url=_get_env(
                 "BILL_API_BASE_URL",
-                "https://apis.data.go.kr/9710000/BillInfoService2",
+                "https://open.assembly.go.kr/portal/openapi",
             ),
-            bill_service_key=_require_env("BILL_SERVICE_KEY"),
             bill_start_ord=int(_get_env("BILL_START_ORD", "22")),
             bill_end_ord=int(_get_env("BILL_END_ORD", "22")),
 
@@ -151,7 +156,11 @@ class Settings:
             bill_batch_enable_bill_collect=_parse_bool(_get_env("BILL_BATCH_ENABLE_BILL_COLLECT", "true"), default=True),
             bill_batch_enable_member_sync=_parse_bool(_get_env("BILL_BATCH_ENABLE_MEMBER_SYNC", "false"), default=False),
             bill_batch_enable_vote_sync=_parse_bool(_get_env("BILL_BATCH_ENABLE_VOTE_SYNC", "true"), default=True),
+            bill_batch_enable_scrape=_parse_bool(_get_env("BILL_BATCH_ENABLE_SCRAPE", "false"), default=False),
             bill_batch_enable_ai=enable_ai,
+
+            bill_batch_scrape_concurrency=int(_get_env("BILL_BATCH_SCRAPE_CONCURRENCY", "3")),
+            bill_batch_max_scrape_per_run=int(_get_env("BILL_BATCH_MAX_SCRAPE_PER_RUN", "0")),
 
             bill_batch_vote_sync_missing_only=_parse_bool(_get_env("BILL_BATCH_VOTE_SYNC_MISSING_ONLY", "true"), default=True),
             bill_batch_vote_sync_lookback_days=int(_get_env("BILL_BATCH_VOTE_SYNC_LOOKBACK_DAYS", "365")),
