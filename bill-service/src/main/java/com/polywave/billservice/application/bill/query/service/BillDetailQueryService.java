@@ -2,6 +2,7 @@ package com.polywave.billservice.application.bill.query.service;
 
 import com.polywave.billservice.api.dto.BillDetailResponse;
 import com.polywave.billservice.api.dto.BillStatusHistoryResponse;
+import com.polywave.billservice.api.dto.BillVoteDetailResponse;
 import com.polywave.billservice.api.dto.BillVoteSummaryResponse;
 import com.polywave.billservice.api.dto.SimilarTopicBillResponse;
 import com.polywave.billservice.api.dto.SimilarTopicSortType;
@@ -45,6 +46,11 @@ public class BillDetailQueryService {
         validateBillExists(billId);
         BillVoteSummaryResult result = billDetailQueryRepository.findVoteSummaryByBillId(billId, userId);
         return BillVoteSummaryResponse.from(result);
+    }
+
+    public BillVoteDetailResponse getBillVoteDetail(Long billId, Long userId) {
+        validateBillExists(billId);
+        return BillVoteDetailResponse.from(billDetailQueryRepository.findVoteDetailByBillId(billId));
     }
 
     public List<SimilarTopicBillResponse> getSimilarTopics(
