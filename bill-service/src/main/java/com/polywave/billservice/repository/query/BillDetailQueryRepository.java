@@ -3,6 +3,7 @@ package com.polywave.billservice.repository.query;
 import com.polywave.billservice.application.bill.query.result.BillCategoryResult;
 import com.polywave.billservice.application.bill.query.result.BillDetailResult;
 import com.polywave.billservice.application.bill.query.result.BillStatusHistoryResult;
+import com.polywave.billservice.application.bill.query.result.BillVoteDetailResult;
 import com.polywave.billservice.application.bill.query.result.BillVoteSummaryResult;
 import com.polywave.billservice.application.bill.query.result.SimilarTopicBillResult;
 import java.util.List;
@@ -15,6 +16,8 @@ public interface BillDetailQueryRepository {
     List<BillCategoryResult> findCategoriesByBillId(Long billId);
 
     BillVoteSummaryResult findVoteSummaryByBillId(Long billId, Long userId);
+
+    BillVoteDetailResult findVoteDetailByBillId(Long billId);
 
     List<SimilarTopicBillResult> findSimilarTopicsByBillId(Long billId, int size);
 

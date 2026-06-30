@@ -3,6 +3,7 @@ package com.polywave.billservice.api.spec;
 import com.polywave.billservice.api.dto.BillBookmarkStatusResponse;
 import com.polywave.billservice.api.dto.BillDetailResponse;
 import com.polywave.billservice.api.dto.BillStatusHistoryResponse;
+import com.polywave.billservice.api.dto.BillVoteDetailResponse;
 import com.polywave.billservice.api.dto.BillVoteSummaryResponse;
 import com.polywave.billservice.api.dto.SimilarTopicBillResponse;
 import com.polywave.billservice.api.dto.SimilarTopicSortType;
@@ -100,6 +101,31 @@ public interface BillDetailApi {
     })
     @GetMapping("/{billId}/vote-summary")
     ResponseEntity<BillVoteSummaryResponse> getBillVoteSummary(
+            @Parameter(description = "의안 ID", required = true)
+            @PathVariable Long billId,
+            @Parameter(hidden = true) Long userId
+    );
+
+    @Operation(
+            summary = "의안 투표 상세 조회",
+            description = """
+                    의안 투표 참여자의 전체 찬반 집계와 연령대·성별 분포를 반환합니다.
+                    vote-summary와 달리 인구통계 breakdown을 함께 제공합니다.
+                    breakdown의 ratio 분모는 해당 구분값(연령대/성별)이 저장된 투표 수 합계입니다.
+                    """
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "의안을 찾을 수 없음",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @GetMapping("/{billId}/vote-detail")
+    ResponseEntity<BillVoteDetailResponse> getBillVoteDetail(
             @Parameter(description = "의안 ID", required = true)
             @PathVariable Long billId,
             @Parameter(hidden = true) Long userId

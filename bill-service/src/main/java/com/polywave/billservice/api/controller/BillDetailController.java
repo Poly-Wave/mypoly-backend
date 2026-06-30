@@ -3,6 +3,7 @@ package com.polywave.billservice.api.controller;
 import com.polywave.billservice.api.dto.BillBookmarkStatusResponse;
 import com.polywave.billservice.api.dto.BillDetailResponse;
 import com.polywave.billservice.api.dto.BillStatusHistoryResponse;
+import com.polywave.billservice.api.dto.BillVoteDetailResponse;
 import com.polywave.billservice.api.dto.BillVoteSummaryResponse;
 import com.polywave.billservice.api.dto.SimilarTopicBillResponse;
 import com.polywave.billservice.api.dto.SimilarTopicSortType;
@@ -42,6 +43,11 @@ public class BillDetailController implements BillDetailApi {
     @Override
     public ResponseEntity<BillVoteSummaryResponse> getBillVoteSummary(Long billId, @LoginUser Long userId) {
         return ResponseEntity.ok(billDetailQueryService.getBillVoteSummary(billId, userId));
+    }
+
+    @Override
+    public ResponseEntity<BillVoteDetailResponse> getBillVoteDetail(Long billId, @LoginUser Long userId) {
+        return ResponseEntity.ok(billDetailQueryService.getBillVoteDetail(billId, userId));
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.polywave.billservice.repository.query.impl;
 import com.polywave.billservice.application.bill.query.result.BillCategoryResult;
 import com.polywave.billservice.application.bill.query.result.BillDetailResult;
 import com.polywave.billservice.application.bill.query.result.BillStatusHistoryResult;
+import com.polywave.billservice.application.bill.query.result.BillVoteDetailResult;
 import com.polywave.billservice.application.bill.query.result.BillVoteSummaryResult;
 import com.polywave.billservice.application.bill.query.result.SimilarTopicBillResult;
 import com.polywave.billservice.domain.QBill;
@@ -22,7 +23,9 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -132,6 +135,70 @@ public class BillDetailQueryRepositoryImpl implements BillDetailQueryRepository 
         }
 
         return BillVoteSummaryResult.of(myVoteResult, agreeCount, disagreeCount);
+    }
+
+    @Override
+    public BillVoteDetailResult findVoteDetailByBillId(Long billId) {
+        QUserBillVote vote = QUserBillVote.userBillVote;
+
+        NumberExpression<Integer> agreeCase = new CaseBuilder()
+                .when(vote.voteResult.eq(VOTE_RESULT_AGREE)).then(1)
+                .otherwise(0);
+        NumberExpression<Integer> disagreeCase = new CaseBuilder()
+                .when(vote.voteResult.eq(VOTE_RESULT_DISAGREE)).then(1)
+                .otherwise(0);
+
+        NumberExpression<Integer> agreeSum = agreeCase.sum().coalesce(0);
+        NumberExpression<Integer> disagreeSum = disagreeCase.sum().coalesce(0);
+
+        Tuple overallTuple = queryFactory
+                .select(agreeSum, disagreeSum)
+                .from(vote)
+                .where(vote.bill.id.eq(billId))
+                .fetchOne();
+
+        int agreeCount = overallTuple != null ? overallTuple.get(agreeSum) : 0;
+        int disagreeCount = overallTuple != null ? overallTuple.get(disagreeSum) : 0;
+
+        List<Tuple> ageBandTuples = queryFactory
+                .select(vote.voterAgeBand, vote.count())
+                .from(vote)
+                .where(
+                        vote.bill.id.eq(billId),
+                        vote.voterAgeBand.isNotNull()
+                )
+                .groupBy(vote.voterAgeBand)
+                .fetch();
+
+        List<Tuple> genderTuples = queryFactory
+                .select(vote.voterGender, vote.count())
+                .from(vote)
+                .where(
+                        vote.bill.id.eq(billId),
+                        vote.voterGender.isNotNull()
+                )
+                .groupBy(vote.voterGender)
+                .fetch();
+
+        return BillVoteDetailResult.of(
+                agreeCount,
+                disagreeCount,
+                toCountMap(ageBandTuples, tuple -> tuple.get(vote.voterAgeBand)),
+                toCountMap(genderTuples, tuple -> tuple.get(vote.voterGender))
+        );
+    }
+
+    private Map<String, Long> toCountMap(List<Tuple> tuples, java.util.function.Function<Tuple, String> segmentExtractor) {
+        Map<String, Long> counts = new HashMap<>();
+        for (Tuple tuple : tuples) {
+            String segment = segmentExtractor.apply(tuple);
+            Long count = tuple.get(1, Long.class);
+            if (segment == null || count == null) {
+                continue;
+            }
+            counts.merge(segment, count, Long::sum);
+        }
+        return counts;
     }
 
     @Override

@@ -94,7 +94,7 @@ public class UserServiceClient {
         }
     }
 
-    public String getMyBirthDate(Long userId) {
+    public UserProfileResponse getMyProfile(Long userId) {
         String url = userServiceUrl + "me";
 
         HttpHeaders headers = new HttpHeaders();
@@ -106,29 +106,30 @@ public class UserServiceClient {
         headers.set(AUTHORIZATION_HEADER, "Bearer " + bearerToken);
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        Supplier<String> supplier = () -> {
+        Supplier<UserProfileResponse> supplier = () -> {
             var response = restTemplate.exchange(url, HttpMethod.GET, entity, UserProfileResponse.class);
             UserProfileResponse body = response.getBody();
-            if (body == null || body.birthDate() == null || body.birthDate().isBlank()) {
-                throw new UserBirthDateRequiredException();
+            if (body == null) {
+                throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
             }
-            return body.birthDate();
+            return body;
         };
 
-        Supplier<String> retrySupplier = Retry.decorateSupplier(userServiceRetry, supplier);
+        Supplier<UserProfileResponse> retrySupplier = Retry.decorateSupplier(userServiceRetry, supplier);
         try {
             return userServiceCircuitBreaker.executeSupplier(retrySupplier);
-        } catch (UserBirthDateRequiredException e) {
-            throw e;
         } catch (Exception e) {
-            for (Throwable t = e; t != null; t = t.getCause()) {
-                if (t instanceof UserBirthDateRequiredException u) {
-                    throw u;
-                }
-            }
             log.error("user-service 프로필 조회 최종 실패: userId={}, url={}", userId, url, e);
             throw new BillServiceClientException(BillErrorCode.USER_SERVICE_API_FAILED);
         }
+    }
+
+    public String getMyBirthDate(Long userId) {
+        UserProfileResponse profile = getMyProfile(userId);
+        if (profile.birthDate() == null || profile.birthDate().isBlank()) {
+            throw new UserBirthDateRequiredException();
+        }
+        return profile.birthDate();
     }
 
     public void updateOnboardingStatus(Long userId, String onboardingStatus) {

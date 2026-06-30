@@ -20,10 +20,11 @@ public class UserBillVoteAppService {
 
     @Transactional
     public void voteOnBill(UserBillVoteCommand command) {
-        String birthDate = userServiceClient.getMyBirthDate(command.userId());
-        String voterAgeBand = AgeBand.tryFromBirthDate(birthDate)
+        var profile = userServiceClient.getMyProfile(command.userId());
+        String voterAgeBand = AgeBand.tryFromBirthDate(profile.birthDate())
                 .orElseThrow(InvalidUserBirthDateException::new)
                 .name();
+        String voterGender = normalizeGender(profile.gender());
 
         Long existingVoteId = userBillVoteQueryService
                 .findVoteId(command.userId(), command.billId())
@@ -34,7 +35,15 @@ public class UserBillVoteAppService {
                 command.billId(),
                 command.voteResult().name(),
                 voterAgeBand,
+                voterGender,
                 existingVoteId
         );
+    }
+
+    private static String normalizeGender(String gender) {
+        if (gender == null || gender.isBlank()) {
+            return null;
+        }
+        return gender.trim().toUpperCase();
     }
 }

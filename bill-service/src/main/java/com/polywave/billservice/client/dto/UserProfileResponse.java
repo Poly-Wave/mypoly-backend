@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record UserProfileResponse(
         Long userId,
-        String birthDate
+        String birthDate,
+        String gender
 ) {
 }
