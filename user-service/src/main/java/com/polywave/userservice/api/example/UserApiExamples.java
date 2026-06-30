@@ -135,4 +135,11 @@ public final class UserApiExamples {
         "code": "NICKNAME_DATA_NOT_FOUND"
       }
       """;
+
+  public static final String EXAMPLE_WITHDRAW_REQUEST = """
+      {
+        "reasons": ["INFREQUENT_USE", "ETC"],
+        "etcText": "원하는 정치인 정보가 부족해요"
+      }
+      """;
 }

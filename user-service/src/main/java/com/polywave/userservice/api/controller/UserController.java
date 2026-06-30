@@ -7,7 +7,9 @@ import com.polywave.userservice.application.address.query.result.AddressSearchRe
 import com.polywave.userservice.application.address.query.service.AddressQueryService;
 import com.polywave.userservice.application.user.command.UserUpdateBasicProfileCommand;
 import com.polywave.userservice.application.user.command.UserUpdateProfileCommand;
+import com.polywave.userservice.application.user.command.UserWithdrawCommand;
 import com.polywave.userservice.application.user.command.service.UserCommandService;
+import com.polywave.userservice.application.user.command.service.UserWithdrawalService;
 import com.polywave.userservice.application.nickname.query.result.NicknameAvailabilityResult;
 import com.polywave.userservice.application.nickname.query.result.RandomNicknameResult;
 import com.polywave.userservice.application.nickname.query.service.NicknameQueryService;
@@ -27,6 +29,7 @@ public class UserController implements UserApi {
         private final AddressQueryService addressQueryService;
         private final UserQueryService userQueryService;
         private final UserCommandService userCommandService;
+        private final UserWithdrawalService userWithdrawalService;
 
         @Override
         public ResponseEntity<UserMeResponse> getMe(@LoginUser Long userId) {
@@ -105,6 +108,16 @@ public class UserController implements UserApi {
                 }
                 userCommandService.updateUserOnboardingStatus(userId, request.onboardingStatus());
                 return ResponseEntity.ok().build();
+        }
+
+        @Override
+        public ResponseEntity<Void> withdraw(
+                        UserWithdrawRequest request,
+                        @LoginUser Long userId) {
+
+                UserWithdrawCommand command = new UserWithdrawCommand(request.reasons(), request.etcText());
+                userWithdrawalService.withdraw(userId, command);
+                return ResponseEntity.noContent().build();
         }
 
         @Override

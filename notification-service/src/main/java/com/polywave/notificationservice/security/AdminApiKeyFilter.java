@@ -13,7 +13,7 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * /internal/notification-policies/** 경로에 대한 어드민 API 키 가드.
+ * /internal/** 경로에 대한 어드민 API 키 가드.
  *
  * - X-Admin-Api-Key 헤더가 설정값(notification.admin-api.key)과 일치할 때만 통과.
  * - 키가 설정되지 않은 환경에서는 fail-closed: 무조건 403.
@@ -23,7 +23,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class AdminApiKeyFilter extends OncePerRequestFilter {
 
     static final String HEADER_NAME = "X-Admin-Api-Key";
-    static final String PROTECTED_PATTERN = "/internal/notification-policies/**";
+    static final String[] PROTECTED_PATTERNS = {
+            "/internal/notification-policies/**", // 알림 정책 관리
+            "/internal/user-notifications/**"     // user-service 회원 탈퇴 시 알림 삭제
+    };
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
     private final String configuredKey;
@@ -41,7 +44,7 @@ public class AdminApiKeyFilter extends OncePerRequestFilter {
 
         // getServletPath() 는 context-path 가 stripped 된 경로를 반환한다.
         // (getRequestURI() 는 context-path 를 포함하므로 PROTECTED_PATTERN 과 매칭되지 않아 가드가 무력화된다)
-        if (!pathMatcher.match(PROTECTED_PATTERN, request.getServletPath())) {
+        if (!isProtected(request.getServletPath())) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -58,6 +61,15 @@ public class AdminApiKeyFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isProtected(String servletPath) {
+        for (String pattern : PROTECTED_PATTERNS) {
+            if (pathMatcher.match(pattern, servletPath)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void writeForbidden(HttpServletResponse response, String code) throws IOException {

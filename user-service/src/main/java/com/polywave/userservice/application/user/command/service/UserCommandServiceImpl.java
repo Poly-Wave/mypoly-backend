@@ -4,6 +4,7 @@ import com.polywave.userservice.application.nickname.policy.NicknameNormalizer;
 import com.polywave.userservice.application.nickname.policy.NicknamePolicyService;
 import com.polywave.userservice.application.user.command.UserUpdateBasicProfileCommand;
 import com.polywave.userservice.application.user.command.UserUpdateProfileCommand;
+import com.polywave.userservice.application.user.command.UserWithdrawCommand;
 import com.polywave.userservice.common.exception.DuplicateNicknameException;
 import com.polywave.userservice.common.exception.ForbiddenNicknameException;
 import com.polywave.userservice.common.exception.InvalidOnboardingStatusException;
@@ -11,6 +12,7 @@ import com.polywave.userservice.common.exception.UserNotFoundException;
 import com.polywave.userservice.domain.OnBoardingStatus;
 import com.polywave.userservice.domain.User;
 import com.polywave.userservice.repository.command.UserCommandRepository;
+import com.polywave.userservice.repository.command.UserTermsCommandRepository;
 import com.polywave.userservice.repository.query.UserQueryRepository;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final UserCommandRepository userCommandRepository;
     private final UserQueryRepository userQueryRepository;
     private final NicknamePolicyService nicknamePolicyService;
+    private final UserTermsCommandRepository userTermsCommandRepository;
 
     @Override
     public void updateUserProfile(Long userId, UserUpdateProfileCommand command) {
@@ -104,6 +107,28 @@ public class UserCommandServiceImpl implements UserCommandService {
                 .orElseThrow(UserNotFoundException::new);
 
         userCommandRepository.delete(user);
+    }
+
+    /**
+     * 회원 탈퇴의 user-service DB 작업(soft-delete)만 담당한다.
+     * 타 서비스 데이터 삭제(북마크/관심사/조회/알림)는 트랜잭션 밖에서 {@code UserWithdrawalService} 가 선행 호출한다.
+     */
+    @Override
+    public void withdraw(Long userId, UserWithdrawCommand command) {
+        User user = userCommandRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+
+        if (user.isWithdrawn()) {
+            // 이미 탈퇴한 계정 — 멱등하게 처리(없는 사용자 취급).
+            throw new UserNotFoundException();
+        }
+
+        // 약관 동의 내역 말소(재가입 시 재동의로 채워짐).
+        userTermsCommandRepository.deleteAllByUserId(userId);
+
+        // soft-delete: PII 말소 + WITHDRAWN + 세션 무효화 + 사유 기록.
+        // user 행/uid 와 user_oauths 매핑은 보존되어 7일 후 재가입 시 같은 uid 로 재활성된다.
+        user.withdraw(command.reasons(), command.etcText());
     }
 
     private void validateBasicProfileUpdatable(User user) {

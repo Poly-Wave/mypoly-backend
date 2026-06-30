@@ -9,6 +9,7 @@ public final class SecurityEndpoints {
 
             // 서비스 간 internal API: InternalApiKeyFilter 가 별도 가드.
             "/internal/segments/**",
+            "/internal/users/**",
 
             // Swagger (운영에서는 profile로 끄는 게 안전)
             "/swagger-ui/**", "/v3/api-docs/**",

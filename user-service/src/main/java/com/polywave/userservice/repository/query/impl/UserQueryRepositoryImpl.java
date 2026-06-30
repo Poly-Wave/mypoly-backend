@@ -5,6 +5,7 @@ import com.polywave.userservice.application.user.query.result.UserNicknameResult
 import com.polywave.userservice.domain.OnBoardingStatus;
 import com.polywave.userservice.domain.QUser;
 import com.polywave.userservice.domain.QUserOauth;
+import com.polywave.userservice.domain.UserStatus;
 import com.polywave.userservice.repository.query.UserQueryRepository;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -34,7 +35,10 @@ public class UserQueryRepositoryImpl implements UserQueryRepository {
         return jpaQueryFactory
                 .select(QUser.user.onboardingStatus)
                 .from(QUser.user)
-                .where(QUser.user.id.eq(userId))
+                .where(
+                        QUser.user.id.eq(userId),
+                        QUser.user.status.eq(UserStatus.ACTIVE)
+                )
                 .fetchOne();
     }
 
@@ -60,7 +64,7 @@ public class UserQueryRepositoryImpl implements UserQueryRepository {
                 )
                 .from(u)
                 .leftJoin(o).on(o.user.id.eq(u.id))
-                .where(u.id.eq(userId))
+                .where(u.id.eq(userId), u.status.eq(UserStatus.ACTIVE))
                 .fetchFirst();
 
         if (t == null) {
@@ -94,7 +98,8 @@ public class UserQueryRepositoryImpl implements UserQueryRepository {
                 .from(QUser.user)
                 .where(
                         QUser.user.id.eq(userId),
-                        QUser.user.authSessionId.eq(sessionId)
+                        QUser.user.authSessionId.eq(sessionId),
+                        QUser.user.status.eq(UserStatus.ACTIVE)
                 )
                 .fetchFirst();
 
@@ -110,7 +115,7 @@ public class UserQueryRepositoryImpl implements UserQueryRepository {
         List<Tuple> rows = jpaQueryFactory
                 .select(u.id, u.nickname)
                 .from(u)
-                .where(u.id.in(userIds))
+                .where(u.id.in(userIds), u.status.eq(UserStatus.ACTIVE))
                 .fetch();
 
         return rows.stream()

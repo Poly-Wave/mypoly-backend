@@ -23,3 +23,10 @@ data:
   APPLE_ALLOWED_AUDIENCES: "kr.kro.mypoly.app.dev,kr.kro.mypoly.app"
 
   DB_URL: "jdbc:postgresql://mypoly-postgres:5432/mypoly"
+
+  # 회원 탈퇴 시 타 서비스 사용자 데이터 삭제 호출 endpoint (k8s DNS 기반).
+  # bill-service 는 context-path(/bills)를 박고 있어 prefix 포함, notification-service 는 미사용.
+  # internal 호출 키(BILL_SERVICE_INTERNAL_API_KEY / NOTIFICATION_ADMIN_API_KEY)는
+  # mypoly-internal-api-secret 에서 주입된다(이미 마운트됨).
+  BILL_SERVICE_URL: "http://bill-service/bills"
+  NOTIFICATION_SERVICE_URL: "http://notification-service"

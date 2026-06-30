@@ -13,17 +13,21 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * /internal/segments/** 경로에 대한 서비스 간 internal API 키 가드.
+ * /internal/** 경로에 대한 서비스 간 internal API 키 가드.
  *
  * - X-Internal-Api-Key 헤더가 설정값(bill-service.internal-api.key)과 일치할 때만 통과.
  * - 키가 설정되지 않은 환경에서는 fail-closed: 무조건 403.
- * - 사용자 JWT 와는 별도 채널. notification-service 스케줄러처럼 사용자 컨텍스트가 없는 호출 전용.
+ * - 사용자 JWT 와는 별도 채널. notification-service 스케줄러나 user-service 탈퇴처럼
+ *   사용자 컨텍스트가 없는 서버-서버 호출 전용.
  */
 @Component
 public class InternalApiKeyFilter extends OncePerRequestFilter {
 
     static final String HEADER_NAME = "X-Internal-Api-Key";
-    static final String PROTECTED_PATTERN = "/internal/segments/**";
+    static final String[] PROTECTED_PATTERNS = {
+            "/internal/segments/**",  // notification-service 세그먼트 조회
+            "/internal/users/**"      // user-service 회원 탈퇴 시 파생 데이터 삭제
+    };
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
     private final String configuredKey;
@@ -41,7 +45,7 @@ public class InternalApiKeyFilter extends OncePerRequestFilter {
 
         // getServletPath() 는 context-path 가 stripped 된 경로를 반환한다.
         // (getRequestURI() 는 context-path 를 포함하므로 PROTECTED_PATTERN 과 매칭되지 않아 가드가 무력화된다)
-        if (!pathMatcher.match(PROTECTED_PATTERN, request.getServletPath())) {
+        if (!isProtected(request.getServletPath())) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -58,6 +62,15 @@ public class InternalApiKeyFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isProtected(String servletPath) {
+        for (String pattern : PROTECTED_PATTERNS) {
+            if (pathMatcher.match(pattern, servletPath)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void writeForbidden(HttpServletResponse response, String code) throws IOException {

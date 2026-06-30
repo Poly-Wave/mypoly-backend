@@ -2,6 +2,7 @@ package com.polywave.userservice.application.user.command.service;
 
 import com.polywave.userservice.application.user.command.UserUpdateBasicProfileCommand;
 import com.polywave.userservice.application.user.command.UserUpdateProfileCommand;
+import com.polywave.userservice.application.user.command.UserWithdrawCommand;
 import com.polywave.userservice.domain.OnBoardingStatus;
 
 public interface UserCommandService {
@@ -12,4 +13,6 @@ public interface UserCommandService {
     void updateUserOnboardingStatus(Long userId, OnBoardingStatus onBoardingStatus);
 
     void deleteUser(Long userId);
+
+    void withdraw(Long userId, UserWithdrawCommand command);
 }

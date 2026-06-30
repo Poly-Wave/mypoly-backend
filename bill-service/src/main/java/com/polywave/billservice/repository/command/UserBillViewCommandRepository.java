@@ -31,4 +31,9 @@ public interface UserBillViewCommandRepository extends JpaRepository<UserBillVie
             WHERE user_bill_views.last_viewed_at <= now() - INTERVAL '24 hours'
             """, nativeQuery = true)
     int upsertIfViewCountable(@Param("userId") Long userId, @Param("billId") Long billId);
+
+    // 회원 탈퇴 시 해당 사용자의 조회 기록 전체 삭제 (멱등).
+    @Modifying
+    @Query("DELETE FROM UserBillView v WHERE v.userId = :userId")
+    int deleteAllByUserId(@Param("userId") Long userId);
 }

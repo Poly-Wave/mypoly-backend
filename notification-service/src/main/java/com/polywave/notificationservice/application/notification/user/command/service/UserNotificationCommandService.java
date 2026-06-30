@@ -111,6 +111,13 @@ public class UserNotificationCommandService {
         return userNotificationCommandRepository.markAllAsRead(userId, Instant.now());
     }
 
+    /** 회원 탈퇴 시 해당 사용자의 알림을 모두 삭제한다. 멱등(0건이어도 정상). */
+    public int deleteAllByUser(Long userId) {
+        int deleted = userNotificationCommandRepository.deleteAllByUserId(userId);
+        log.info("[WITHDRAW] 사용자 알림 삭제 userId={} deleted={}", userId, deleted);
+        return deleted;
+    }
+
     /** 치환 후 문자열이 컬럼 한계를 넘으면 말줄임표(…) 를 붙여 자른다. */
     private static String truncate(String value, int maxLength) {
         if (value == null || value.length() <= maxLength) {
