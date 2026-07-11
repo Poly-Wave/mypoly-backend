@@ -8,8 +8,14 @@ import java.util.List;
 @Schema(description = "회원 탈퇴 요청")
 public record UserWithdrawRequest(
         @Schema(
-                description = "탈퇴 사유(중복 선택). 가능 값: "
-                        + "INFREQUENT_USE, MISSING_FEATURE, HARD_TO_USE, LOW_QUALITY, USING_ALTERNATIVE, ETC",
+                description = """
+                        탈퇴 사유(중복 선택). 코드 값:
+                        - INFREQUENT_USE: 사용하는 빈도가 낮아요
+                        - MISSING_FEATURE: 원하는 기능이 없어요
+                        - HARD_TO_USE: 사용방법이 어렵고 불편해요
+                        - LOW_QUALITY: 결과물 품질이 기대와 달라요
+                        - USING_ALTERNATIVE: 다른 유사 서비스를 이용해요
+                        - ETC: 기타""",
                 example = "[\"INFREQUENT_USE\", \"ETC\"]"
         )
         List<WithdrawalReason> reasons,
