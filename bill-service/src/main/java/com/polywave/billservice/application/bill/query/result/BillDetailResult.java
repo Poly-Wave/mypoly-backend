@@ -16,6 +16,8 @@ public record BillDetailResult(
         String currentPassGubn,
         String currentGeneralResult,
         String aiHeadline,
-        String aiSummary
+        String aiSummary1,
+        String aiSummary2,
+        String aiSummary3
 ) {
 }

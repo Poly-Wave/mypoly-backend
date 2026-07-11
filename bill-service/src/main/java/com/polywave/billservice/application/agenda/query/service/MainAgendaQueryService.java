@@ -60,7 +60,9 @@ public class MainAgendaQueryService {
                 .map(result -> new MainAgendaResult(
                         result.billId(),
                         result.officialTitle(),
-                        result.summary(),
+                        result.summary1(),
+                        result.summary2(),
+                        result.summary3(),
                         toCategoryIconUrl(result.categoryCode()),
                         result.proposalDate(),
                         result.viewCount(),
@@ -90,7 +92,9 @@ public class MainAgendaQueryService {
                 .map(result -> new MainAgendaResult(
                         result.billId(),
                         result.officialTitle(),
-                        result.summary(),
+                        result.summary1(),
+                        result.summary2(),
+                        result.summary3(),
                         toCategoryIconUrl(result.categoryCode()),
                         result.proposalDate(),
                         result.viewCount(),

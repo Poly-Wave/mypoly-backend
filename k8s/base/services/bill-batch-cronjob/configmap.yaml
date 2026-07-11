@@ -51,7 +51,7 @@ data:
 
   GEMINI_MODEL: "gemini-2.5-flash"
   GEMINI_TEMPERATURE: "0.2"
-  PROMPT_VERSION: "v1-mypoly-17cats"
+  PROMPT_VERSION: "v2-mypoly-3line"
 
   IMAGE_TAG: "0.1"
   GIT_COMMIT_SHA: "manual"

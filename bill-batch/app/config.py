@@ -174,7 +174,7 @@ class Settings:
 
             min_proposal_date=_get_env("MIN_PROPOSAL_DATE", "2026-01-01"),
 
-            prompt_version=_get_env("PROMPT_VERSION", "v1-mypoly-17cats"),
+            prompt_version=_get_env("PROMPT_VERSION", "v2-mypoly-3line"),
             image_tag=_get_env("IMAGE_TAG", "unknown"),
             git_commit_sha=_get_env("GIT_COMMIT_SHA", "unknown"),
         )
