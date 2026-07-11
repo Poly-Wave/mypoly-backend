@@ -85,6 +85,12 @@ public final class AuthApiExamples {
       }
       """;
 
+  public static final String EXAMPLE_REJOIN_BLOCKED = """
+      {
+        "code": "REJOIN_BLOCKED"
+      }
+      """;
+
   public static final String EXAMPLE_DEV_AUTH_KEY_NOT_SET = """
       {
         "code": "FORBIDDEN"

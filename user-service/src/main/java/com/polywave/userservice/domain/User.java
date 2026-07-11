@@ -3,6 +3,8 @@ package com.polywave.userservice.domain;
 import com.polywave.common.domain.BaseEntity;
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.*;
 
 @Getter
@@ -69,6 +71,23 @@ public class User extends BaseEntity {
     @Column(name = "profile_completed_at")
     private Instant profileCompletedAt;
 
+    /** 계정 상태. 탈퇴(soft-delete) 시 WITHDRAWN 으로 전이된다. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10, nullable = false)
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
+
+    @Column(name = "withdrawn_at")
+    private Instant withdrawnAt;
+
+    /** 탈퇴 사유(다중 선택)를 enum 이름 콤마 조합으로 저장. */
+    @Column(name = "withdrawal_reasons", columnDefinition = "TEXT")
+    private String withdrawalReasons;
+
+    /** 기타(ETC) 사유 직접 입력. 최대 200자. */
+    @Column(name = "reason_etc", length = 200)
+    private String reasonEtc;
+
     public void changeNickname(String nickname) {
         this.nickname = nickname;
     }
@@ -110,5 +129,53 @@ public class User extends BaseEntity {
         if (this.profileCompletedAt == null) {
             this.profileCompletedAt = at;
         }
+    }
+
+    public boolean isWithdrawn() {
+        return this.status == UserStatus.WITHDRAWN;
+    }
+
+    /**
+     * 회원 탈퇴(soft-delete). 행과 id 는 보존하되 PII 를 말소하고 WITHDRAWN 으로 전이한다.
+     * - 닉네임 NULL 처리로 슬롯을 해제(타인이 재사용 가능).
+     * - authSessionId NULL 로 잔존 토큰을 무효화.
+     * - 온보딩 마일스톤 초기화로 재가입 시 온보딩을 처음부터 진행.
+     * - 표결(user_bill_votes)은 user-service 밖이라 여기서 다루지 않으며, uid 보존으로 그대로 연결 유지된다.
+     */
+    public void withdraw(List<WithdrawalReason> reasons, String etcText) {
+        this.status = UserStatus.WITHDRAWN;
+        this.withdrawnAt = Instant.now();
+        this.withdrawalReasons = (reasons == null || reasons.isEmpty())
+                ? null
+                : reasons.stream().map(Enum::name).collect(Collectors.joining(","));
+        this.reasonEtc = (etcText == null || etcText.isBlank()) ? null : etcText.strip();
+
+        this.nickname = null;
+        this.gender = null;
+        this.birthDate = null;
+        this.profileImageUrl = null;
+        this.sido = null;
+        this.sigungu = null;
+        this.emdName = null;
+        this.address = null;
+
+        this.authSessionId = null;
+
+        this.nicknameSetAt = null;
+        this.categorySetAt = null;
+        this.profileCompletedAt = null;
+    }
+
+    /**
+     * 탈퇴 후 7일이 지난 같은 소셜 계정의 재가입 — 동일 uid 를 재활성한다.
+     * 온보딩을 처음부터 다시 진행하도록 상태를 SIGNUP 으로 리셋한다.
+     */
+    public void reactivate(String nickname) {
+        this.status = UserStatus.ACTIVE;
+        this.withdrawnAt = null;
+        this.withdrawalReasons = null;
+        this.reasonEtc = null;
+        this.nickname = nickname;
+        this.onboardingStatus = OnBoardingStatus.SIGNUP;
     }
 }

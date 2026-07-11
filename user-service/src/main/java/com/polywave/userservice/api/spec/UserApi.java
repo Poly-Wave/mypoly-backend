@@ -10,6 +10,7 @@ import com.polywave.userservice.api.dto.UpdateOnboardingStatusRequest;
 import com.polywave.userservice.api.dto.UserMeResponse;
 import com.polywave.userservice.api.dto.UserUpdateBasicProfileRequest;
 import com.polywave.userservice.api.dto.UserUpdateProfileRequest;
+import com.polywave.userservice.api.dto.UserWithdrawRequest;
 
 import com.polywave.common.dto.ErrorResponse;
 import com.polywave.common.example.CommonApiExamples;
@@ -27,6 +28,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "User", description = "사용자 정보(닉네임/프로필/주소) 관련 API")
@@ -199,4 +201,30 @@ public interface UserApi {
         @GetMapping("/{userId}/onboarding-status")
         ResponseEntity<OnboardingStatusResponse> getOnboardingStatus(
                         @Parameter(description = "사용자 ID") @PathVariable Long userId);
+
+        @Operation(summary = "회원 탈퇴", description = """
+                        로그인한 사용자를 즉시 탈퇴 처리합니다.
+
+                        처리 내용
+                        - user-service 의 계정/소셜 연동/약관 동의 등 개인정보가 즉시 삭제됩니다.
+                        - 닉네임은 즉시 말소되어 다른 사용자가 사용할 수 있습니다(소셜 신원 기준 차단이며 닉네임 기준이 아닙니다).
+                        - 탈퇴 후 7일간 동일 소셜 계정으로는 재가입할 수 없습니다(가입 시 REJOIN_BLOCKED).
+                        - 탈퇴 사유(중복 선택)와 기타 텍스트(최대 200자)는 통계 목적으로 저장됩니다. 사유 입력은 선택값입니다.
+
+                        인증
+                        - JWT 인증이 필요합니다.
+                        - Swagger 우측 상단 Authorize에 `Bearer {jwt}` 입력 후 호출하세요.
+                        """)
+        @io.swagger.v3.oas.annotations.responses.ApiResponses({
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "탈퇴 성공"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패(기타 사유 200자 초과 등)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "요청 값 검증 실패", value = UserApiExamples.EXAMPLE_VALIDATION_ERROR))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요(JWT 누락/만료/위조)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "인증 필요", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자 없음", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "사용자를 찾을 수 없음", value = UserApiExamples.EXAMPLE_USER_NOT_FOUND))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "서버 오류", value = CommonApiExamples.EXAMPLE_INTERNAL_SERVER_ERROR)))
+        })
+        @PostMapping("/me/withdraw")
+        ResponseEntity<Void> withdraw(
+                        @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "탈퇴 사유(선택)", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserWithdrawRequest.class), examples = @ExampleObject(name = "요청 예시", value = UserApiExamples.EXAMPLE_WITHDRAW_REQUEST)))
+                        @RequestBody @Valid UserWithdrawRequest request,
+                        @Parameter(hidden = true) Long userId);
 }
