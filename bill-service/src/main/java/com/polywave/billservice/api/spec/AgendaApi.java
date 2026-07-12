@@ -120,6 +120,7 @@ public interface AgendaApi {
             - sortType=POPULAR: 최근 7일 투표 완료 수(배치 스냅샷) 기준 내림차순
             - categoryCodes 미지정 시: 사용자 관심 주제와 일치하는 카테고리만 상시 필터링됩니다.
             - categoryCodes 지정 시: 전달된 주제 코드 목록으로 필터링합니다.
+            - 각 항목은 AI 헤드라인(`headline`)과 요약 본문(`content`)을 포함합니다.
             """)
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
@@ -175,6 +176,7 @@ public interface AgendaApi {
             - sortType=POPULAR: 최근 7일 투표 완료 수(배치 스냅샷) 기준 내림차순
             - 사용자 관심 주제와 일치하는 카테고리만 필터링됩니다.
             - 본 API는 조회수/투표수를 반환하지 않습니다.
+            - 각 항목은 AI 헤드라인(`headline`)과 요약 본문(`content`)을 포함합니다.
             """)
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
@@ -229,6 +231,7 @@ public interface AgendaApi {
             - `previousRank`: 직전 배치 실행 시점의 순위 (없으면 null)
             - `rankChangeSteps`: 직전 배치 대비 순위 변동 단계 수 (상승=양수, 하락=음수, 유지/신규=0)
             - `rankChangeType`: 순위 변동 유형 (UP, DOWN, SAME, NEW)
+            - 각 항목은 AI 헤드라인(`headline`)을 포함합니다.
             """)
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
@@ -258,6 +261,7 @@ public interface AgendaApi {
     @Operation(summary = "의안 제목 검색", description = """
             입력한 키워드가 의안 제목에 포함된 안건 목록을 반환합니다.
             최신 등록일(proposalDate) 기준 내림차순으로 정렬됩니다.
+            각 항목은 AI 헤드라인(`headline`)을 포함합니다.
             """)
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({

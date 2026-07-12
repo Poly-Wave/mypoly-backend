@@ -60,6 +60,7 @@ public class MainAgendaQueryService {
                 .map(result -> new MainAgendaResult(
                         result.billId(),
                         result.officialTitle(),
+                        result.headline(),
                         result.summary(),
                         toCategoryIconUrl(result.categoryCode()),
                         result.proposalDate(),
@@ -90,6 +91,7 @@ public class MainAgendaQueryService {
                 .map(result -> new MainAgendaResult(
                         result.billId(),
                         result.officialTitle(),
+                        result.headline(),
                         result.summary(),
                         toCategoryIconUrl(result.categoryCode()),
                         result.proposalDate(),

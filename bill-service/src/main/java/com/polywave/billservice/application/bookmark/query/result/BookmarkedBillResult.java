@@ -6,6 +6,7 @@ import java.time.LocalDate;
 public record BookmarkedBillResult(
         Long billId,
         String title,
+        String headline,
         LocalDate registeredDate,
         Instant bookmarkedAt,
         Integer currentProcStageOrder,
