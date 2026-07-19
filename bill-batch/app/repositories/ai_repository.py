@@ -83,7 +83,7 @@ class AiRepository:
                 ) VALUES (
                     %s, %s, 'SUCCESS',
                     %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, NULL, TRUE, now(), now()
+                    %s, %s, %s, NULL, TRUE, now(), now()
                 )
                 RETURNING id
                 """,
