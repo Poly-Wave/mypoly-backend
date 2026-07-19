@@ -6,6 +6,7 @@ import java.time.LocalDate;
 public record MyVotedBillResult(
         Long billId,
         String title,
+        String headline,
         LocalDate registeredDate,
         Instant votedAt,
         String voteResult,

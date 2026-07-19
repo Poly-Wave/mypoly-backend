@@ -92,6 +92,7 @@ public interface UserBillVoteApi {
             - sortType 기본값은 LATEST입니다.
             - 정렬은 pageable.sort가 아닌 sortType으로 제어합니다.
             - 사용 가능 값: LATEST, POPULAR
+            - 각 항목은 AI 헤드라인(`headline`)을 포함합니다.
             """)
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
