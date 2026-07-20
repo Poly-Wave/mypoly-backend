@@ -6,6 +6,7 @@ public record PopularAgendaResult(
         int rank,
         Long billId,
         String officialTitle,
+        String headline,
         String categoryCode,
         String categoryName,
         String categoryTextColor,

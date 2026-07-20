@@ -22,6 +22,9 @@ public record SearchAgendaResponse(
         @Schema(description = "제목", example = "○○법 일부개정법률안", requiredMode = RequiredMode.REQUIRED)
         String title,
 
+        @Schema(description = "AI 헤드라인", example = "직장인 세부담 조정", requiredMode = RequiredMode.REQUIRED)
+        String headline,
+
         @Schema(description = "등록일자", example = "2026-04-16", requiredMode = RequiredMode.REQUIRED)
         LocalDate registeredDate,
 
@@ -38,8 +41,13 @@ public record SearchAgendaResponse(
                 result.categoryName(),
                 result.categoryTextColor(),
                 result.officialTitle(),
+                nullToEmpty(result.headline()),
                 result.proposalDate(),
                 result.viewCount(),
                 result.voteCount());
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 }

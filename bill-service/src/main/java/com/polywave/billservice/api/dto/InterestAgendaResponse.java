@@ -32,6 +32,9 @@ public record InterestAgendaResponse(
         )
         String title,
 
+        @Schema(description = "AI 헤드라인", example = "직장인 세부담 조정", requiredMode = Schema.RequiredMode.REQUIRED)
+        String headline,
+
         @Schema(description = "내용 요약", example = "AI 분석 요약입니다.")
         String content,
 
@@ -57,9 +60,14 @@ public record InterestAgendaResponse(
                 result.categoryBackgroundColor(),
                 result.categoryTextColor(),
                 result.officialTitle(),
+                nullToEmpty(result.headline()),
                 result.summary(),
                 result.summaryLines(),
                 result.proposalDate()
         );
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 }

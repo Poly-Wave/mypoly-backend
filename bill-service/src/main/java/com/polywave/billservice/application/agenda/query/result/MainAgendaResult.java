@@ -7,6 +7,7 @@ import java.util.List;
 public record MainAgendaResult(
         Long billId,
         String officialTitle,
+        String headline,
         String summary1,
         String summary2,
         String summary3,

@@ -16,6 +16,9 @@ public record MyVotedBillResponse(
         @Schema(description = "의안 제목", example = "소득세법 일부개정법률안", requiredMode = Schema.RequiredMode.REQUIRED)
         String title,
 
+        @Schema(description = "AI 헤드라인", example = "직장인 세부담 조정", requiredMode = Schema.RequiredMode.REQUIRED)
+        String headline,
+
         @Schema(description = "의안 접수일", example = "2026-04-18", requiredMode = Schema.RequiredMode.REQUIRED)
         LocalDate registeredDate,
 
@@ -57,6 +60,7 @@ public record MyVotedBillResponse(
         return new MyVotedBillResponse(
                 result.billId(),
                 nullToEmpty(result.title()),
+                nullToEmpty(result.headline()),
                 result.registeredDate(),
                 toKstOffsetDateTime(result.votedAt()),
                 nullToEmpty(result.voteResult()),

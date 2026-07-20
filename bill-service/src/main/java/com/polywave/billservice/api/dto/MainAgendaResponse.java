@@ -21,6 +21,9 @@ public record MainAgendaResponse(
 
         @Schema(description = "제목", example = "○○법 일부개정법률안", requiredMode = Schema.RequiredMode.REQUIRED) String title,
 
+        @Schema(description = "AI 헤드라인", example = "직장인 세부담 조정", requiredMode = Schema.RequiredMode.REQUIRED)
+        String headline,
+
         @Schema(description = "내용 요약", example = "AI 분석 요약입니다.") String content,
 
         @Schema(
@@ -36,7 +39,11 @@ public record MainAgendaResponse(
     public static MainAgendaResponse from(MainAgendaResult result) {
         return new MainAgendaResponse(result.billId(), result.categoryCode(), result.categoryName(),
                 result.categoryIconUrl(), result.categoryBackgroundColor(), result.categoryTextColor(),
-                result.officialTitle(), result.summary(), result.summaryLines(),
+                result.officialTitle(), nullToEmpty(result.headline()), result.summary(), result.summaryLines(),
                 result.proposalDate(), result.viewCount(), result.voteCount());
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 }

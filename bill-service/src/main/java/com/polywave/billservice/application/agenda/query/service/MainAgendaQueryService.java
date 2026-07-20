@@ -60,6 +60,7 @@ public class MainAgendaQueryService {
                 .map(result -> new MainAgendaResult(
                         result.billId(),
                         result.officialTitle(),
+                        result.headline(),
                         result.summary1(),
                         result.summary2(),
                         result.summary3(),
@@ -92,6 +93,7 @@ public class MainAgendaQueryService {
                 .map(result -> new MainAgendaResult(
                         result.billId(),
                         result.officialTitle(),
+                        result.headline(),
                         result.summary1(),
                         result.summary2(),
                         result.summary3(),
