@@ -3,6 +3,7 @@ package com.polywave.billservice.api.dto;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
+import java.util.List;
 
 @Schema(description = "관심 주제 안건 목록 응답")
 public record InterestAgendaResponse(
@@ -35,6 +36,12 @@ public record InterestAgendaResponse(
         String content,
 
         @Schema(
+                description = "AI 3줄 요약. 각 줄이 배열 원소로 내려간다.",
+                example = "[\"소득세 과세표준 구간을 조정합니다.\", \"중산층 세부담이 낮아집니다.\", \"내년 1월부터 적용됩니다.\"]"
+        )
+        List<String> summaryLines,
+
+        @Schema(
                 description = "등록일자",
                 example = "2026-04-16",
                 requiredMode = Schema.RequiredMode.REQUIRED
@@ -51,6 +58,7 @@ public record InterestAgendaResponse(
                 result.categoryTextColor(),
                 result.officialTitle(),
                 result.summary(),
+                result.summaryLines(),
                 result.proposalDate()
         );
     }

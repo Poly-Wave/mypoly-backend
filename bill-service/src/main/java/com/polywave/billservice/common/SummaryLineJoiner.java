@@ -1,5 +1,8 @@
 package com.polywave.billservice.common;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class SummaryLineJoiner {
 
     private SummaryLineJoiner() {
@@ -16,5 +19,15 @@ public final class SummaryLineJoiner {
             }
         }
         return joined.toString();
+    }
+
+    public static List<String> toLines(String... lines) {
+        List<String> result = new ArrayList<>();
+        for (String line : lines) {
+            if (line != null && !line.isBlank()) {
+                result.add(line.strip());
+            }
+        }
+        return result;
     }
 }

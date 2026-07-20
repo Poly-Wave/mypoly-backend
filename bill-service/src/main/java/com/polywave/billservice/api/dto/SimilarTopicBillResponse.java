@@ -3,6 +3,7 @@ package com.polywave.billservice.api.dto;
 import com.polywave.billservice.application.bill.query.result.SimilarTopicBillResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
+import java.util.List;
 
 @Schema(description = "유사 주제 의안 응답")
 public record SimilarTopicBillResponse(
@@ -20,6 +21,12 @@ public record SimilarTopicBillResponse(
 
         @Schema(description = "AI 요약")
         String summary,
+
+        @Schema(
+                description = "AI 3줄 요약. 각 줄이 배열 원소로 내려간다.",
+                example = "[\"소득세 과세표준 구간을 조정합니다.\", \"중산층 세부담이 낮아집니다.\", \"내년 1월부터 적용됩니다.\"]"
+        )
+        List<String> summaryLines,
 
         @Schema(description = "원문 URL")
         String detailUrl,
@@ -40,6 +47,7 @@ public record SimilarTopicBillResponse(
                 result.proposalDate(),
                 result.headline(),
                 result.summary(),
+                result.summaryLines(),
                 result.detailUrl(),
                 result.categoryId(),
                 result.categoryCode(),

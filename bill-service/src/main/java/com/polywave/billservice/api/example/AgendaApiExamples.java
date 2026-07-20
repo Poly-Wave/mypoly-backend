@@ -45,6 +45,11 @@ public final class AgendaApiExamples {
                   "categoryBackgroundColor": "46D9E3",
                   "title": "인공지능 산업 진흥법 일부개정법률안",
                   "content": "AI 산업 육성 및 안전한 활용을 위한 주요 조항을 담고 있습니다.",
+                  "summaryLines": [
+                    "AI 산업 육성을 위한 지원 근거를 마련합니다.",
+                    "안전한 AI 활용을 위한 관리 체계를 도입합니다.",
+                    "공포 후 6개월이 경과한 날부터 시행됩니다."
+                  ],
                   "registeredDate": "2026-04-16",
                   "viewCount": 0,
                   "voteCount": 123
@@ -67,6 +72,11 @@ public final class AgendaApiExamples {
                   "categoryBackgroundColor": "46D9E3",
                   "title": "인공지능 산업 진흥법 일부개정법률안",
                   "content": "AI 산업 육성 및 안전한 활용을 위한 주요 조항을 담고 있습니다.",
+                  "summaryLines": [
+                    "AI 산업 육성을 위한 지원 근거를 마련합니다.",
+                    "안전한 AI 활용을 위한 관리 체계를 도입합니다.",
+                    "공포 후 6개월이 경과한 날부터 시행됩니다."
+                  ],
                   "registeredDate": "2026-04-16"
                 }
               ],
