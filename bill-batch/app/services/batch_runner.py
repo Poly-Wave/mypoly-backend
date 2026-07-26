@@ -157,7 +157,7 @@ class BatchRunner:
     ) -> Dict[str, int]:
         target_bills = bill_repo.get_bills_pending_proposer_scrape(
             min_proposal_date=min_proposal_date,
-            limit=self.settings.bill_batch_max_scrape_per_run,
+            limit=self.settings.bill_batch_max_proposer_scrape_per_run,
         )
 
         total = len(target_bills)

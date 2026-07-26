@@ -87,6 +87,7 @@ class Settings:
 
     bill_batch_scrape_concurrency: int
     bill_batch_max_scrape_per_run: int
+    bill_batch_max_proposer_scrape_per_run: int
 
     bill_batch_vote_sync_missing_only: bool
     bill_batch_vote_sync_lookback_days: int
@@ -163,6 +164,7 @@ class Settings:
 
             bill_batch_scrape_concurrency=int(_get_env("BILL_BATCH_SCRAPE_CONCURRENCY", "3")),
             bill_batch_max_scrape_per_run=int(_get_env("BILL_BATCH_MAX_SCRAPE_PER_RUN", "0")),
+            bill_batch_max_proposer_scrape_per_run=int(_get_env("BILL_BATCH_MAX_PROPOSER_SCRAPE_PER_RUN", "200")),
 
             bill_batch_vote_sync_missing_only=_parse_bool(_get_env("BILL_BATCH_VOTE_SYNC_MISSING_ONLY", "true"), default=True),
             bill_batch_vote_sync_lookback_days=int(_get_env("BILL_BATCH_VOTE_SYNC_LOOKBACK_DAYS", "365")),
