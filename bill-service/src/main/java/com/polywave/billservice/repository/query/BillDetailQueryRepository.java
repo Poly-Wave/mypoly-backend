@@ -1,6 +1,7 @@
 package com.polywave.billservice.repository.query;
 
 import com.polywave.billservice.application.bill.query.result.BillCategoryResult;
+import com.polywave.billservice.application.bill.query.result.CoProposerResult;
 import com.polywave.billservice.application.bill.query.result.BillDetailResult;
 import com.polywave.billservice.application.bill.query.result.BillStatusHistoryResult;
 import com.polywave.billservice.application.bill.query.result.BillVoteDetailResult;
@@ -14,6 +15,8 @@ public interface BillDetailQueryRepository {
     Optional<BillDetailResult> findBillDetailById(Long billId);
 
     List<BillCategoryResult> findCategoriesByBillId(Long billId);
+
+    List<CoProposerResult> findCoProposersByBillId(Long billId);
 
     BillVoteSummaryResult findVoteSummaryByBillId(Long billId, Long userId);
 

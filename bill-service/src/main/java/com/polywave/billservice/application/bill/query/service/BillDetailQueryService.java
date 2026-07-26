@@ -8,6 +8,7 @@ import com.polywave.billservice.api.dto.SimilarTopicBillResponse;
 import com.polywave.billservice.api.dto.SimilarTopicSortType;
 import com.polywave.billservice.application.bill.query.result.BillCategoryResult;
 import com.polywave.billservice.application.bill.query.result.BillDetailResult;
+import com.polywave.billservice.application.bill.query.result.CoProposerResult;
 import com.polywave.billservice.application.bill.query.result.BillStatusHistoryResult;
 import com.polywave.billservice.application.bill.query.result.BillVoteSummaryResult;
 import com.polywave.billservice.application.bill.query.result.SimilarTopicBillResult;
@@ -36,10 +37,11 @@ public class BillDetailQueryService {
                 .orElseThrow(BillNotFoundException::new);
 
         List<BillCategoryResult> categories = billDetailQueryRepository.findCategoriesByBillId(billId);
+        List<CoProposerResult> coProposers = billDetailQueryRepository.findCoProposersByBillId(billId);
         BillVoteSummaryResult voteSummary = billDetailQueryRepository.findVoteSummaryByBillId(billId, userId);
         boolean bookmarked = billBookmarkQueryRepository.existsBookmark(userId, billId);
 
-        return BillDetailResponse.from(detail, categories, voteSummary, bookmarked);
+        return BillDetailResponse.from(detail, categories, coProposers, voteSummary, bookmarked);
     }
 
     public BillVoteSummaryResponse getBillVoteSummary(Long billId, Long userId) {

@@ -331,6 +331,58 @@ class BillRepository:
                     ),
                 )
 
+    def get_bills_pending_proposer_scrape(self, min_proposal_date: date, limit: int) -> List[Dict[str, Any]]:
+        # 공동발의자(proposer_count > 1)가 있는데 bill_proposers에 아직 공동발의자 행이
+        # 하나도 없는 의안만 대상으로 한다. 공동발의자 명단은 불변 데이터라 한 번 채워지면
+        # 다시 재시도 대상이 되지 않는다(요약 스크래핑과 동일한 1회성 패턴).
+        with self.conn.cursor() as cur:
+            limit_clause = f"LIMIT {limit}" if limit > 0 else ""
+            cur.execute(
+                f"""
+                SELECT b.id, b.external_bill_id, b.representative_proposer_name
+                FROM {self.schema}.bills b
+                WHERE b.proposal_date >= %s
+                  AND b.proposer_count > 1
+                  AND NOT EXISTS (
+                        SELECT 1
+                        FROM {self.schema}.bill_proposers p
+                        WHERE p.bill_id = b.id
+                          AND p.is_representative = FALSE
+                  )
+                ORDER BY b.proposal_date DESC, b.id DESC
+                {limit_clause}
+                """,
+                (min_proposal_date,),
+            )
+            return cur.fetchall()
+
+    def insert_co_proposers(self, bill_id: int, proposers: List[Dict[str, Any]]):
+        with self.conn.cursor() as cur:
+            display_order = 2
+            for proposer in proposers:
+                cur.execute(
+                    f"""
+                    INSERT INTO {self.schema}.bill_proposers (
+                        bill_id,
+                        member_id,
+                        proposer_name,
+                        proposer_type,
+                        is_representative,
+                        display_order,
+                        source_payload,
+                        created_at
+                    ) VALUES (%s, %s, %s, NULL, FALSE, %s, %s, now())
+                    """,
+                    (
+                        bill_id,
+                        proposer.get("member_id"),
+                        proposer["name"],
+                        display_order,
+                        Json({"party_name": proposer.get("party_name")}),
+                    ),
+                )
+                display_order += 1
+
     def insert_status_history_if_needed(self, bill_id: int, bill: Dict[str, Any]):
         with self.conn.cursor() as cur:
             cur.execute(
