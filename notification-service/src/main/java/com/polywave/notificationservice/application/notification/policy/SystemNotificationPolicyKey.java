@@ -40,6 +40,9 @@ public final class SystemNotificationPolicyKey {
     /** 행 6: 북마크된 의안의 진행 단계가 바뀌었을 때 (10분 polling) */
     public static final String BILL_STAGE_CHANGE_NOTIFY = "BILL_STAGE_CHANGE_NOTIFY";
 
+    /** 공지사항이 새로 등록(노출)됐을 때 → 전체 유저 broadcast (5분 polling) */
+    public static final String NOTICE_PUBLISHED_BROADCAST = "NOTICE_PUBLISHED_BROADCAST";
+
     /**
      * 정책 키별로 발급 시점에 supply 되는 템플릿 토큰 집합.
      * - 운영자가 PATCH 로 본문을 수정해 이 집합 밖의 토큰을 끼워넣으면 검증에서 거부된다.
@@ -52,7 +55,8 @@ public final class SystemNotificationPolicyKey {
             HOME_RECENT_30D_POPULAR_DAILY,    Set.of("별명"),
             HOME_NEW_INTEREST_AGENDA_DAILY,   Set.of("별명", "개수"),
             BILL_BOOKMARK_NO_VOTE_REMIND_D1,  Set.of("안건 제목"),
-            BILL_STAGE_CHANGE_NOTIFY,         Set.of("안건 제목", "이전 단계", "현재 단계")
+            BILL_STAGE_CHANGE_NOTIFY,         Set.of("안건 제목", "이전 단계", "현재 단계"),
+            NOTICE_PUBLISHED_BROADCAST,       Set.of("제목")
     );
 
     /**

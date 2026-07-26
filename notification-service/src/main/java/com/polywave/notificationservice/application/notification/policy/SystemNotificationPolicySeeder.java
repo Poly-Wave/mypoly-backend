@@ -135,6 +135,21 @@ public class SystemNotificationPolicySeeder implements ApplicationRunner {
                 .landingUrl(null)
                 .status(NotificationPolicyStatus.READY)
                 .build());
+
+        seedIfAbsent(NotificationPolicy.builder()
+                .policyKey(SystemNotificationPolicyKey.NOTICE_PUBLISHED_BROADCAST)
+                .name("공지사항 등록 broadcast")
+                .depth("공지사항")
+                .channel(NotificationChannel.PUSH)
+                .category(NotificationCategory.NOTICE)
+                .targetAudience("관심 주제 선택 완료 유저")
+                .sendSchedule("공지사항 등록 후 5분 이내 (polling)")
+                .title("새로운 공지사항이 등록됐어요.")
+                .body("{제목}")
+                .landingType(LandingType.NOTICE_DETAIL)
+                .landingUrl(null)
+                .status(NotificationPolicyStatus.READY)
+                .build());
     }
 
     private void seedIfAbsent(NotificationPolicy policy) {
