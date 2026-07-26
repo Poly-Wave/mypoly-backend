@@ -17,7 +17,9 @@ SYSTEM_PROMPT = """
 출력 형식:
 {
   "headline": "문자열",
-  "summary": "문자열",
+  "summary1": "문자열",
+  "summary2": "문자열",
+  "summary3": "문자열",
   "categories": ["카테고리코드"],
   "vote": {
     "for": {"P": 1, "U": 1},
@@ -49,13 +51,16 @@ P, M, U, T, N, S, O, R
 
 규칙:
 - headline: 20~36자 내외, 중립적이고 쉬운 뉴스형 문장
-- summary: 2~3문장, 과장 없이 쉬운 설명
+- summary1, summary2, summary3: 핵심을 3줄로 나눠 설명한다. 세 줄 모두 필수.
+  · 각 줄은 하나의 완결된 문장(각 25~45자 내외), 과장 없이 쉬운 말
+  · summary1: 이 의안이 무엇을 하려는지 / summary2: 어떻게 바뀌는지 / summary3: 기대 효과나 대상
+  · 세 줄이 서로 중복되지 않게 한다
 - categories: 1개 권장, 정말 애매할 때만 2개
 - vote.for / vote.against 는 각 1~3개 축만 사용
 - 같은 축쌍(P/M, U/T, N/S, O/R)을 같은 쪽에 동시에 넣지 않는다
 - 값은 항상 정수 1
 - 입력에 없는 사실을 추정하지 않는다
-- 법률안, 개정법률안 같은 형식 단어는 headline/summary에서 남발하지 않는다
+- 법률안, 개정법률안 같은 형식 단어는 headline/summary 에서 남발하지 않는다
 """.strip()
 
 
@@ -332,7 +337,9 @@ class GeminiClient:
                 parsed = json.loads(json_text)
 
                 headline = str(parsed.get("headline", "")).strip()
-                summary = str(parsed.get("summary", "")).strip()
+                summary1 = str(parsed.get("summary1", "")).strip()
+                summary2 = str(parsed.get("summary2", "")).strip()
+                summary3 = str(parsed.get("summary3", "")).strip()
                 categories = parsed.get("categories", []) or []
                 categories = [str(v).strip() for v in categories if str(v).strip()]
 
@@ -342,10 +349,10 @@ class GeminiClient:
                         message="headline 값이 비어 있습니다",
                         retryable=True,
                     )
-                if not summary:
+                if not (summary1 and summary2 and summary3):
                     raise GeminiApiError(
                         code="INVALID_RESPONSE",
-                        message="summary 값이 비어 있습니다",
+                        message="3줄 요약(summary1/2/3) 중 빈 줄이 있습니다",
                         retryable=True,
                     )
                 if not categories:
@@ -357,7 +364,9 @@ class GeminiClient:
 
                 return {
                     "headline": headline,
-                    "summary": summary,
+                    "summary1": summary1,
+                    "summary2": summary2,
+                    "summary3": summary3,
                     "categories": categories[:2],
                     "vote": self._normalize_vote(parsed.get("vote", {})),
                     "raw_response": parsed,

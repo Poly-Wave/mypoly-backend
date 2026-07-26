@@ -67,7 +67,9 @@ class AiRepository:
                     analysis_version,
                     analysis_status,
                     headline,
-                    summary,
+                    summary1,
+                    summary2,
+                    summary3,
                     source_text_hash,
                     model_name,
                     prompt_version,
@@ -80,8 +82,8 @@ class AiRepository:
                     created_at
                 ) VALUES (
                     %s, %s, 'SUCCESS',
-                    %s, %s, %s, %s, %s, %s,
-                    %s, %s, NULL, TRUE, now(), now()
+                    %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, NULL, TRUE, now(), now()
                 )
                 RETURNING id
                 """,
@@ -89,7 +91,9 @@ class AiRepository:
                     bill_id,
                     version,
                     analysis_output["headline"],
-                    analysis_output["summary"],
+                    analysis_output.get("summary1"),
+                    analysis_output.get("summary2"),
+                    analysis_output.get("summary3"),
                     source_text_hash,
                     model_name,
                     prompt_version,

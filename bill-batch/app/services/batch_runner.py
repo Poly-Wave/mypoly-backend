@@ -1,3 +1,4 @@
+import time
 from datetime import date, datetime
 from typing import Any, Dict
 
@@ -397,6 +398,9 @@ class BatchRunner:
                     external_bill_id=external_bill_id,
                     age=self.settings.bill_batch_member_age,
                 )
+
+                if self.settings.bill_batch_sleep_ms > 0:
+                    time.sleep(self.settings.bill_batch_sleep_ms / 1000)
 
                 if not votes:
                     bills_with_no_vote += 1

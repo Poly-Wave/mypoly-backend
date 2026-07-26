@@ -164,7 +164,7 @@ class Settings:
 
             bill_batch_vote_sync_missing_only=_parse_bool(_get_env("BILL_BATCH_VOTE_SYNC_MISSING_ONLY", "true"), default=True),
             bill_batch_vote_sync_lookback_days=int(_get_env("BILL_BATCH_VOTE_SYNC_LOOKBACK_DAYS", "365")),
-            bill_batch_vote_sync_max_target_bills=int(_get_env("BILL_BATCH_VOTE_SYNC_MAX_TARGET_BILLS", "300")),
+            bill_batch_vote_sync_max_target_bills=int(_get_env("BILL_BATCH_VOTE_SYNC_MAX_TARGET_BILLS", "10000")),
 
             bill_batch_max_ai_per_run=int(_get_env("BILL_BATCH_MAX_AI_PER_RUN", "200")),
             bill_batch_ai_max_retry_count=int(_get_env("BILL_BATCH_AI_MAX_RETRY_COUNT", "3")),
@@ -174,7 +174,7 @@ class Settings:
 
             min_proposal_date=_get_env("MIN_PROPOSAL_DATE", "2026-01-01"),
 
-            prompt_version=_get_env("PROMPT_VERSION", "v1-mypoly-17cats"),
+            prompt_version=_get_env("PROMPT_VERSION", "v2-mypoly-3line"),
             image_tag=_get_env("IMAGE_TAG", "unknown"),
             git_commit_sha=_get_env("GIT_COMMIT_SHA", "unknown"),
         )

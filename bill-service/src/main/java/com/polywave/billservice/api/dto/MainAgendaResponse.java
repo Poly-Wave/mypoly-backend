@@ -3,6 +3,7 @@ package com.polywave.billservice.api.dto;
 import com.polywave.billservice.application.agenda.query.result.MainAgendaResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
+import java.util.List;
 
 @Schema(description = "안건 메인 목록 응답")
 public record MainAgendaResponse(
@@ -25,6 +26,11 @@ public record MainAgendaResponse(
 
         @Schema(description = "내용 요약", example = "AI 분석 요약입니다.") String content,
 
+        @Schema(
+                description = "AI 3줄 요약. 각 줄이 배열 원소로 내려간다.",
+                example = "[\"소득세 과세표준 구간을 조정합니다.\", \"중산층 세부담이 낮아집니다.\", \"내년 1월부터 적용됩니다.\"]"
+        ) List<String> summaryLines,
+
         @Schema(description = "등록일자", example = "2026-04-16", requiredMode = Schema.RequiredMode.REQUIRED) LocalDate registeredDate,
 
         @Schema(description = "조회수", example = "0", requiredMode = Schema.RequiredMode.REQUIRED) long viewCount,
@@ -33,7 +39,7 @@ public record MainAgendaResponse(
     public static MainAgendaResponse from(MainAgendaResult result) {
         return new MainAgendaResponse(result.billId(), result.categoryCode(), result.categoryName(),
                 result.categoryIconUrl(), result.categoryBackgroundColor(), result.categoryTextColor(),
-                result.officialTitle(), nullToEmpty(result.headline()), result.summary(),
+                result.officialTitle(), nullToEmpty(result.headline()), result.summary(), result.summaryLines(),
                 result.proposalDate(), result.viewCount(), result.voteCount());
     }
 

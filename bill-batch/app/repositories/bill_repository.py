@@ -632,7 +632,10 @@ class BillRepository:
                   AND b.proposal_date >= %s
                   AND b.proposal_date >= current_date - (%s || ' days')::interval
                   {missing_only_sql}
-                ORDER BY b.proposal_date DESC, b.id DESC
+                ORDER BY
+                    (b.current_general_result IS NOT NULL AND b.current_general_result != '') DESC,
+                    b.proposal_date ASC,
+                    b.id ASC
                 LIMIT %s
                 """,
                 (min_proposal_date, str(lookback_days), limit),
