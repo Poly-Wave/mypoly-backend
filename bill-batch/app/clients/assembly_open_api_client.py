@@ -34,7 +34,7 @@ def parse_api_datetime(value: str | None):
     if not value:
         return None
 
-    for fmt in ("%Y%m%d%H%M%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%Y%m%d"):
+    for fmt in ("%Y%m%d%H%M%S", "%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%Y%m%d"):
         try:
             dt = datetime.strptime(value, fmt)
             return dt.replace(tzinfo=_KST)
@@ -68,11 +68,23 @@ class AssemblyOpenApiClient:
         response.raise_for_status()
 
         try:
-            return ET.fromstring(response.text)
+            root = ET.fromstring(response.text)
         except ET.ParseError as exc:
             raise RuntimeError(
                 f"국회 OpenAPI 응답 XML 파싱 실패 status={response.status_code} body_head={response.text[:500]}"
             ) from exc
+
+        # 루트가 RESULT 단독인 경우 두 가지로 나뉜다.
+        # - INFO-2xx (예: INFO-200 해당하는 데이터가 없습니다): 정상 응답, 단순히 조회 결과가 없다는 뜻.
+        #   기존 "row 없음"과 동일하게 취급해야 하므로 예외를 던지지 않는다.
+        # - ERROR-xxx (예: ERROR-290 인증키 오류): 실제 오류이므로 명시적으로 실패 처리한다.
+        if root.tag == "RESULT":
+            code = (root.findtext("CODE") or "").strip()
+            message = (root.findtext("MESSAGE") or "").strip()
+            if code.upper().startswith("ERROR"):
+                raise RuntimeError(f"국회 OpenAPI 오류 응답 code={code} message={message}")
+
+        return root
 
     def iter_members(self, age: int) -> Iterator[Dict[str, Any]]:
         page = 1

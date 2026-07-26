@@ -52,8 +52,14 @@ public class BillAiAnalysis {
     @Column(name = "headline", length = 300)
     private String headline;
 
-    @Column(name = "summary", columnDefinition = "TEXT")
-    private String summary;
+    @Column(name = "summary1", columnDefinition = "TEXT")
+    private String summary1;
+
+    @Column(name = "summary2", columnDefinition = "TEXT")
+    private String summary2;
+
+    @Column(name = "summary3", columnDefinition = "TEXT")
+    private String summary3;
 
     @Column(name = "source_text_hash", length = 64)
     private String sourceTextHash;
