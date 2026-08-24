@@ -22,8 +22,16 @@ public interface BillMemberApi {
     @Operation(
             summary = "국회의원 상세 조회",
             description = """
-                    국회의원 상세 화면에 필요한 기본 프로필 정보, 의원실 연락처, 보좌진 정보, 최근 대표 발의 의안 목록을 반환합니다.
-                    관심 분야 통계와 사용자 관심사 일치도는 후속 API 확장에서 같은 응답에 추가할 예정입니다.
+                    국회의원 상세 화면에 필요한 기본 프로필 정보, 의원실 연락처, 보좌진 정보, 최근 대표 발의 의안 목록,
+                    그리고 로그인 사용자와의 관심 분야 일치도(interestAffinity)를 반환합니다.
+
+                    관심 분야 일치도
+                    - 의원 비율: 의원이 발의(대표 + 공동)한 의안의 대표 카테고리 분포
+                    - 사용자 비율: 사용자가 투표한 의안의 대표 카테고리 분포
+                    - 일치도 = 카테고리마다 두 비율 중 작은 값을 취해 모두 합한 값 (0.0~1.0)
+                    - AI 분석이 없어 카테고리가 없는 의안은 비율 계산에서 제외합니다.
+                    - 의원의 발의 이력이나 사용자의 투표 이력이 없으면 일치도는 0.0 입니다.
+                    - topCategories 는 의원의 발의 비율이 높은 상위 4개 카테고리입니다.
                     """
     )
     @SecurityRequirement(name = "bearerAuth")
@@ -52,6 +60,7 @@ public interface BillMemberApi {
     @GetMapping("/{memberId}")
     ResponseEntity<BillMemberDetailResponse> getMemberDetail(
             @Parameter(description = "국회의원 ID", required = true, example = "1")
-            @PathVariable Long memberId
+            @PathVariable Long memberId,
+            @Parameter(hidden = true) Long userId
     );
 }
