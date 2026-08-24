@@ -2,6 +2,7 @@ package com.polywave.billservice.api.dto;
 
 import com.polywave.billservice.application.member.query.result.BillMemberDetailResult;
 import com.polywave.billservice.application.member.query.result.BillMemberRepresentativeBillResult;
+import com.polywave.billservice.application.member.query.result.MemberInterestAffinityResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -85,12 +86,16 @@ public record BillMemberDetailResponse(
         List<String> secretaries,
 
         @Schema(description = "최근 대표 발의 의안 목록")
-        List<BillMemberRepresentativeBillResponse> representativeBills
+        List<BillMemberRepresentativeBillResponse> representativeBills,
+
+        @Schema(description = "로그인 사용자와의 관심 분야 일치도")
+        MemberInterestAffinityResponse interestAffinity
 ) {
 
     public static BillMemberDetailResponse from(
             BillMemberDetailResult result,
-            List<BillMemberRepresentativeBillResult> representativeBills
+            List<BillMemberRepresentativeBillResult> representativeBills,
+            MemberInterestAffinityResult interestAffinity
     ) {
         return new BillMemberDetailResponse(
                 result.memberId(),
@@ -118,7 +123,8 @@ public record BillMemberDetailResponse(
                 splitNames(result.aideNames()),
                 splitNames(result.chiefSecretaryNames()),
                 splitNames(result.secretaryNames()),
-                toRepresentativeBillResponses(representativeBills)
+                toRepresentativeBillResponses(representativeBills),
+                MemberInterestAffinityResponse.from(interestAffinity)
         );
     }
 

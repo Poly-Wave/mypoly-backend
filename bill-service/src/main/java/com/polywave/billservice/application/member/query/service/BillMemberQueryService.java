@@ -3,6 +3,7 @@ package com.polywave.billservice.application.member.query.service;
 import com.polywave.billservice.api.dto.BillMemberDetailResponse;
 import com.polywave.billservice.application.member.query.result.BillMemberDetailResult;
 import com.polywave.billservice.application.member.query.result.BillMemberRepresentativeBillResult;
+import com.polywave.billservice.application.member.query.result.MemberInterestAffinityResult;
 import com.polywave.billservice.common.exception.BillMemberNotFoundException;
 import com.polywave.billservice.repository.query.BillMemberQueryRepository;
 import java.util.List;
@@ -18,14 +19,18 @@ public class BillMemberQueryService {
     private static final int REPRESENTATIVE_BILL_LIMIT = 10;
 
     private final BillMemberQueryRepository billMemberQueryRepository;
+    private final MemberInterestAffinityQueryService memberInterestAffinityQueryService;
 
-    public BillMemberDetailResponse getMemberDetail(Long memberId) {
+    public BillMemberDetailResponse getMemberDetail(Long memberId, Long userId) {
         BillMemberDetailResult memberDetail = billMemberQueryRepository.findMemberDetailById(memberId)
                 .orElseThrow(BillMemberNotFoundException::new);
 
         List<BillMemberRepresentativeBillResult> representativeBills =
                 billMemberQueryRepository.findRepresentativeBillsByMemberId(memberId, REPRESENTATIVE_BILL_LIMIT);
 
-        return BillMemberDetailResponse.from(memberDetail, representativeBills);
+        MemberInterestAffinityResult interestAffinity =
+                memberInterestAffinityQueryService.getInterestAffinity(memberId, userId);
+
+        return BillMemberDetailResponse.from(memberDetail, representativeBills, interestAffinity);
     }
 }
