@@ -297,8 +297,11 @@ class BillRepository:
         proposer_kind = (bill.get("proposer_kind") or "").strip()
 
         with self.conn.cursor() as cur:
+            # 대표발의자 행만 지우고 다시 넣는다. bill_id 전체를 지우면 별도 배치로
+            # 채워진 공동발의자(is_representative = FALSE) 행까지 매 안건 갱신마다
+            # 사라졌다가 재스크래핑되는 문제가 생긴다.
             cur.execute(
-                f"DELETE FROM {self.schema}.bill_proposers WHERE bill_id = %s",
+                f"DELETE FROM {self.schema}.bill_proposers WHERE bill_id = %s AND is_representative = TRUE",
                 (bill_id,),
             )
 
@@ -323,7 +326,7 @@ class BillRepository:
                         proposer_kind or None,
                         Json(
                             {
-                                "note": "1차 배치에서는 대표 발의자 1명 기준 저장",
+                                "note": "대표 발의자 1명 저장(공동발의자는 별도 스크래핑 배치에서 채움)",
                                 "member_id_resolved": member_id is not None,
                                 "raw": bill.get("source_payload", {}),
                             }
@@ -332,9 +335,10 @@ class BillRepository:
                 )
 
     def get_bills_pending_proposer_scrape(self, min_proposal_date: date, limit: int) -> List[Dict[str, Any]]:
-        # 공동발의자(proposer_count > 1)가 있는데 bill_proposers에 아직 공동발의자 행이
-        # 하나도 없는 의안만 대상으로 한다. 공동발의자 명단은 불변 데이터라 한 번 채워지면
-        # 다시 재시도 대상이 되지 않는다(요약 스크래핑과 동일한 1회성 패턴).
+        # 공동발의자(proposer_count > 1)가 있는데 아직 스크래핑을 확인 완료(checked)하지
+        # 못한 의안만 대상으로 한다. bill_proposers에 행이 있는지가 아니라
+        # proposer_scrape_checked_at 로 판단해야 "공동발의자가 진짜 0명" 인 경우도
+        # 재시도 대상에서 정상적으로 빠진다.
         with self.conn.cursor() as cur:
             limit_clause = f"LIMIT {limit}" if limit > 0 else ""
             cur.execute(
@@ -343,18 +347,24 @@ class BillRepository:
                 FROM {self.schema}.bills b
                 WHERE b.proposal_date >= %s
                   AND b.proposer_count > 1
-                  AND NOT EXISTS (
-                        SELECT 1
-                        FROM {self.schema}.bill_proposers p
-                        WHERE p.bill_id = b.id
-                          AND p.is_representative = FALSE
-                  )
+                  AND b.proposer_scrape_checked_at IS NULL
                 ORDER BY b.proposal_date DESC, b.id DESC
                 {limit_clause}
                 """,
                 (min_proposal_date,),
             )
             return cur.fetchall()
+
+    def mark_proposer_scrape_checked(self, bill_id: int):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""
+                UPDATE {self.schema}.bills
+                SET proposer_scrape_checked_at = now()
+                WHERE id = %s
+                """,
+                (bill_id,),
+            )
 
     def insert_co_proposers(self, bill_id: int, proposers: List[Dict[str, Any]]):
         with self.conn.cursor() as cur:

@@ -180,9 +180,12 @@ class BatchRunner:
         for bill in target_bills:
             bill_id = bill["id"]
             external_bill_id = bill["external_bill_id"]
-            proposers = scraped.get(bill_id)
 
-            if proposers:
+            # bill_id가 scraped에 키로 존재하면(값이 빈 리스트여도) 페이지 조회 자체는
+            # 성공한 것 — "확인 완료"로 마킹해 재시도 대상에서 뺀다. 키 자체가 없으면
+            # 스크래핑이 실패한 것이므로 checked 마킹 없이 다음 배치에서 재시도한다.
+            if bill_id in scraped:
+                proposers = scraped[bill_id]
                 try:
                     # 대표발의자는 이미 별도로 저장돼 있으므로 팝업 명단에서 제외한다.
                     representative_name = (bill.get("representative_proposer_name") or "").strip()
@@ -199,14 +202,16 @@ class BatchRunner:
                         )
                         resolved.append({**p, "member_id": member_id})
 
-                    bill_repo.insert_co_proposers(bill_id=bill_id, proposers=resolved)
+                    if resolved:
+                        bill_repo.insert_co_proposers(bill_id=bill_id, proposers=resolved)
+                    bill_repo.mark_proposer_scrape_checked(bill_id=bill_id)
                     batch_repo.add_item(
                         batch_run_id=batch_run_id,
                         item_type="BILL_PROPOSER_SCRAPE",
                         target_external_id=external_bill_id,
                         target_internal_id=bill_id,
                         item_status="SUCCESS",
-                        action_type="INSERT",
+                        action_type="INSERT" if resolved else "NO_CHANGE",
                         payload={"count": len(co_proposers)},
                     )
                     self._commit(batch_repo.conn)
@@ -232,8 +237,7 @@ class BatchRunner:
                     failed += 1
                     print(f"[BATCH][PROPOSER_SCRAPE][오류] bill_id={bill_id} error={exc}", flush=True)
             else:
-                # 요약과 달리 "진짜 없음"을 확정할 근거가 없어 SKIPPED로만 기록하고
-                # bill_proposers에 아무 것도 추가하지 않는다 — 다음 배치에서 다시 대상이 된다.
+                # 페이지 조회 자체가 실패한 경우 — checked 마킹하지 않고 다음 배치에서 재시도한다.
                 batch_repo.add_item(
                     batch_run_id=batch_run_id,
                     item_type="BILL_PROPOSER_SCRAPE",

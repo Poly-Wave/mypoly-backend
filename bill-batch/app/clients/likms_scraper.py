@@ -88,15 +88,19 @@ async def _run_scrape_proposers(bills: List[Tuple[int, str]], concurrency: int) 
                     if name:
                         proposers.append({"name": name, "party_name": party_name})
 
+                # 예외 없이 여기까지 도달했으면 페이지 조회 자체는 성공한 것이므로,
+                # 목록이 비어있어도(진짜 공동발의자 0명) results에 빈 리스트로 기록해
+                # "확인 완료"로 처리한다. results에 bill_id가 아예 없는 경우만
+                # (아래 except) 다음 배치에서 재시도 대상이 된다.
+                results[bill_id] = proposers
                 if proposers:
-                    results[bill_id] = proposers
                     print(
                         f"[SCRAPE][PROPOSER] 성공 bill_id={bill_id} external_bill_id={external_bill_id} count={len(proposers)}",
                         flush=True,
                     )
                 else:
                     print(
-                        f"[SCRAPE][PROPOSER] 빈 내용 bill_id={bill_id} external_bill_id={external_bill_id}",
+                        f"[SCRAPE][PROPOSER] 빈 내용(공동발의자 0명으로 확인) bill_id={bill_id} external_bill_id={external_bill_id}",
                         flush=True,
                     )
             except Exception as exc:
