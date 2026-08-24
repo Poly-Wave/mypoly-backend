@@ -52,9 +52,6 @@ public interface SocialTokenAuthApi {
                         })),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "소셜 토큰 검증 실패", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = {
                                         @ExampleObject(name = "인증 실패", value = CommonApiExamples.EXAMPLE_UNAUTHORIZED)
-                        })),
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "탈퇴 후 7일 재가입 제한 기간 내 동일 소셜 계정 재가입 시도", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = {
-                                        @ExampleObject(name = "재가입 차단", value = AuthApiExamples.EXAMPLE_REJOIN_BLOCKED)
                         }))
         })
         @PostMapping("/token/{provider}/signup")

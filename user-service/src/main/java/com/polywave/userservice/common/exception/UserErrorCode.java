@@ -18,9 +18,6 @@ public enum UserErrorCode implements ErrorCode {
     /** 소셜 로그인 제공자 및 고유 ID로 조회 시 이미 가입된 사용자인 경우 */
     USER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "USER_ALREADY_EXISTS"),
 
-    /** 탈퇴 후 재가입 제한 기간(7일) 내에 동일 소셜 계정으로 재가입을 시도한 경우 */
-    REJOIN_BLOCKED(HttpStatus.CONFLICT, "REJOIN_BLOCKED"),
-
     /** 닉네임 설정 시 이미 다른 사용자가 사용 중인 경우 중복 에러 */
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "DUPLICATE_NICKNAME"),
 
