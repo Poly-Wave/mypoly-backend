@@ -16,7 +16,10 @@ public enum NotificationErrorCode implements ErrorCode {
     INVALID_NOTIFICATION_POLICY(HttpStatus.BAD_REQUEST, "INVALID_NOTIFICATION_POLICY"),
 
     /** 사용자 알림을 찾을 수 없는 경우 */
-    USER_NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOTIFICATION_NOT_FOUND");
+    USER_NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOTIFICATION_NOT_FOUND"),
+
+    /** 공지사항을 찾을 수 없거나 비공개인 경우 */
+    NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTICE_NOT_FOUND");
 
     private final HttpStatus httpStatus;
     private final String code;

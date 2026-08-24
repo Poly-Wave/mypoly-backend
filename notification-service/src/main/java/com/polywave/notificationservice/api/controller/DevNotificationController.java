@@ -6,8 +6,10 @@ import com.polywave.notificationservice.api.dto.RunBillStageChangeResponse;
 import com.polywave.notificationservice.api.dto.RunBookmarkNoVoteRemindResponse;
 import com.polywave.notificationservice.api.dto.RunDailyHomeBroadcastResponse;
 import com.polywave.notificationservice.api.dto.RunDailyInterestAgendaResponse;
+import com.polywave.notificationservice.api.dto.RunNoticeBroadcastResponse;
 import com.polywave.notificationservice.api.dto.RunOnboardingRemindResponse;
 import com.polywave.notificationservice.api.spec.DevNotificationApi;
+import com.polywave.notificationservice.application.notice.scheduler.NoticeBroadcastScheduler;
 import com.polywave.notificationservice.application.notification.scheduler.BillStageChangeNotifier;
 import com.polywave.notificationservice.application.notification.scheduler.BookmarkNoVoteReminderScheduler;
 import com.polywave.notificationservice.application.notification.scheduler.DailyHomeBroadcastScheduler;
@@ -36,6 +38,7 @@ public class DevNotificationController implements DevNotificationApi {
     private final BookmarkNoVoteReminderScheduler bookmarkNoVoteReminderScheduler;
     private final DailyInterestAgendaScheduler dailyInterestAgendaScheduler;
     private final BillStageChangeNotifier billStageChangeNotifier;
+    private final NoticeBroadcastScheduler noticeBroadcastScheduler;
 
     @Override
     public ResponseEntity<DevDeliverNotificationResponse> deliver(DevDeliverNotificationRequest request) {
@@ -80,5 +83,11 @@ public class DevNotificationController implements DevNotificationApi {
     public ResponseEntity<RunBillStageChangeResponse> runBillStageChange() {
         BillStageChangeNotifier.Result result = billStageChangeNotifier.run();
         return ResponseEntity.ok(RunBillStageChangeResponse.from(result));
+    }
+
+    @Override
+    public ResponseEntity<RunNoticeBroadcastResponse> runNoticeBroadcast() {
+        NoticeBroadcastScheduler.Result result = noticeBroadcastScheduler.run();
+        return ResponseEntity.ok(RunNoticeBroadcastResponse.from(result));
     }
 }
