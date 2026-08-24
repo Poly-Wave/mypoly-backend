@@ -18,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 공지사항이 새로 등록(is_visible=true)되면 전체 유저에게 알림함(UserNotification) 항목을 자동 발급한다.
@@ -34,6 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * 멱등성:
  * - dedupKey = "NOTICE_PUBLISHED_BROADCAST:{noticeId}:{userId}" — 재실행/재시도에도 중복 발급되지 않는다.
+ * - run() 전체를 하나의 트랜잭션으로 묶지 않는다. 한 유저의 dedup unique 충돌이 트랜잭션을
+ *   rollback-only 로 만들어 그 실행에서 이미 발급된 모든 알림까지 되돌리는 것을 막기 위함이며,
+ *   다른 broadcast 스케줄러들과 동일한 패턴이다(발급 1건 = 트랜잭션 1개).
  */
 @Component
 @RequiredArgsConstructor
@@ -62,7 +64,6 @@ public class NoticeBroadcastScheduler {
         }
     }
 
-    @Transactional
     public Result run() {
         Optional<NotificationPolicy> policyOpt = notificationPolicyCommandRepository
                 .findByPolicyKey(SystemNotificationPolicyKey.NOTICE_PUBLISHED_BROADCAST);
@@ -86,6 +87,7 @@ public class NoticeBroadcastScheduler {
             int sent = broadcastOne(notice, policyId, targets);
             notificationsSent += sent;
             notice.markBroadcasted(Instant.now());
+            noticeCommandRepository.save(notice);
             noticesBroadcasted++;
         }
 

@@ -42,6 +42,6 @@ public class Notice extends BaseEntity {
     private Instant broadcastAt;
 
     public void markBroadcasted(Instant broadcastAt) {
-        this.broadcastAt = broadcastAt == null ? Instant.now() : broadcastAt;
+        this.broadcastAt = broadcastAt;
     }
 }
