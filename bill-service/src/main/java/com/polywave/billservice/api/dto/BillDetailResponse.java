@@ -3,6 +3,7 @@ package com.polywave.billservice.api.dto;
 import com.polywave.billservice.application.bill.query.result.BillCategoryResult;
 import com.polywave.billservice.application.bill.query.result.BillDetailResult;
 import com.polywave.billservice.application.bill.query.result.BillVoteSummaryResult;
+import com.polywave.billservice.application.bill.query.result.CoProposerResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import java.time.LocalDate;
@@ -25,6 +26,9 @@ public record BillDetailResponse(
 
         @Schema(description = "제안자 수", example = "10", requiredMode = RequiredMode.REQUIRED)
         int proposerCount,
+
+        @Schema(description = "공동발의자 명단(대표발의자 제외)", requiredMode = RequiredMode.REQUIRED)
+        List<CoProposerResponse> coProposers,
 
         @Schema(description = "원문 URL", requiredMode = RequiredMode.REQUIRED)
         String detailUrl,
@@ -53,6 +57,7 @@ public record BillDetailResponse(
     public static BillDetailResponse from(
             BillDetailResult detail,
             List<BillCategoryResult> categories,
+            List<CoProposerResult> coProposers,
             BillVoteSummaryResult voteSummary,
             boolean bookmarked
     ) {
@@ -62,6 +67,7 @@ public record BillDetailResponse(
                 detail.proposalDate(),
                 nullToEmpty(detail.representativeProposerName()),
                 detail.proposerCount() == null ? 0 : detail.proposerCount(),
+                coProposers.stream().map(CoProposerResponse::from).toList(),
                 nullToEmpty(detail.detailUrl()),
                 detail.viewCount() == null ? 0L : detail.viewCount(),
                 bookmarked,
@@ -79,6 +85,7 @@ public record BillDetailResponse(
                 proposalDate,
                 representativeProposerName,
                 proposerCount,
+                coProposers,
                 detailUrl,
                 viewCount,
                 bookmarked,

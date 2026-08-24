@@ -148,6 +148,116 @@ class BatchRunner:
         )
         return {"target": total, "success": success, "skipped": skipped, "failed": failed}
 
+    def _scrape_proposers(
+        self,
+        batch_repo: BatchRepository,
+        bill_repo: BillRepository,
+        member_repo: MemberRepository,
+        batch_run_id: int,
+        min_proposal_date: date,
+    ) -> Dict[str, int]:
+        target_bills = bill_repo.get_bills_pending_proposer_scrape(
+            min_proposal_date=min_proposal_date,
+            limit=self.settings.bill_batch_max_proposer_scrape_per_run,
+        )
+
+        total = len(target_bills)
+        print(f"[BATCH][PROPOSER_SCRAPE] 스크래핑 대상 건수={total}", flush=True)
+
+        if not target_bills:
+            return {"target": 0, "success": 0, "skipped": 0, "failed": 0}
+
+        scraper = LikmsScraper(concurrency=self.settings.bill_batch_scrape_concurrency)
+        bills_input = [(b["id"], b["external_bill_id"]) for b in target_bills]
+        scraped = scraper.scrape_proposers(bills_input)
+
+        lookup_maps = member_repo.build_lookup_maps()
+
+        success = 0
+        failed = 0
+        skipped = 0
+
+        for bill in target_bills:
+            bill_id = bill["id"]
+            external_bill_id = bill["external_bill_id"]
+
+            # bill_id가 scraped에 키로 존재하면(값이 빈 리스트여도) 페이지 조회 자체는
+            # 성공한 것 — "확인 완료"로 마킹해 재시도 대상에서 뺀다. 키 자체가 없으면
+            # 스크래핑이 실패한 것이므로 checked 마킹 없이 다음 배치에서 재시도한다.
+            if bill_id in scraped:
+                proposers = scraped[bill_id]
+                try:
+                    # 대표발의자는 이미 별도로 저장돼 있으므로 팝업 명단에서 제외한다.
+                    representative_name = (bill.get("representative_proposer_name") or "").strip()
+                    co_proposers = [p for p in proposers if p["name"] != representative_name]
+
+                    resolved = []
+                    for p in co_proposers:
+                        member_id = member_repo.resolve_member_id(
+                            lookup_maps=lookup_maps,
+                            member_no=None,
+                            mona_cd=None,
+                            member_name=p["name"],
+                            party_name=p.get("party_name"),
+                        )
+                        resolved.append({**p, "member_id": member_id})
+
+                    if resolved:
+                        bill_repo.insert_co_proposers(bill_id=bill_id, proposers=resolved)
+                    bill_repo.mark_proposer_scrape_checked(bill_id=bill_id)
+                    batch_repo.add_item(
+                        batch_run_id=batch_run_id,
+                        item_type="BILL_PROPOSER_SCRAPE",
+                        target_external_id=external_bill_id,
+                        target_internal_id=bill_id,
+                        item_status="SUCCESS",
+                        action_type="INSERT" if resolved else "NO_CHANGE",
+                        payload={"count": len(co_proposers)},
+                    )
+                    self._commit(batch_repo.conn)
+                    success += 1
+                    print(
+                        f"[BATCH][PROPOSER_SCRAPE] DB 저장 완료 bill_id={bill_id} "
+                        f"external_bill_id={external_bill_id} count={len(co_proposers)}",
+                        flush=True,
+                    )
+                except Exception as exc:
+                    self._rollback(batch_repo.conn)
+                    batch_repo.add_item(
+                        batch_run_id=batch_run_id,
+                        item_type="BILL_PROPOSER_SCRAPE",
+                        target_external_id=external_bill_id,
+                        target_internal_id=bill_id,
+                        item_status="FAILED",
+                        action_type=None,
+                        error_message=str(exc),
+                        payload={},
+                    )
+                    self._commit(batch_repo.conn)
+                    failed += 1
+                    print(f"[BATCH][PROPOSER_SCRAPE][오류] bill_id={bill_id} error={exc}", flush=True)
+            else:
+                # 페이지 조회 자체가 실패한 경우 — checked 마킹하지 않고 다음 배치에서 재시도한다.
+                batch_repo.add_item(
+                    batch_run_id=batch_run_id,
+                    item_type="BILL_PROPOSER_SCRAPE",
+                    target_external_id=external_bill_id,
+                    target_internal_id=bill_id,
+                    item_status="SKIPPED",
+                    action_type="NO_CHANGE",
+                    error_message="공동발의자 목록을 가져오지 못함(다음 배치에서 재시도)",
+                    payload={},
+                )
+                self._commit(batch_repo.conn)
+                skipped += 1
+                print(f"[BATCH][PROPOSER_SCRAPE] 내용없음(재시도 예정) bill_id={bill_id}", flush=True)
+
+        print(
+            f"[BATCH][PROPOSER_SCRAPE] 완료 target={total} success={success} skipped={skipped} failed={failed}",
+            flush=True,
+        )
+        return {"target": total, "success": success, "skipped": skipped, "failed": failed}
+
     def _collect_bills(
         self,
         batch_repo: BatchRepository,
@@ -763,6 +873,7 @@ class BatchRunner:
         self,
         collect_result: Dict[str, int] | None,
         scrape_result: Dict[str, int] | None,
+        proposer_scrape_result: Dict[str, int] | None,
         member_result: Dict[str, int] | None,
         vote_result: Dict[str, int] | None,
         ai_result: Dict[str, Any] | None,
@@ -789,6 +900,16 @@ class BatchRunner:
                 f"성공={scrape_result['success']}, "
                 f"내용없음={scrape_result.get('skipped', 0)}, "
                 f"실패={scrape_result['failed']}"
+                ")"
+            )
+
+        if proposer_scrape_result is not None:
+            parts.append(
+                "공동발의자 스크래핑("
+                f"대상={proposer_scrape_result['target']}, "
+                f"성공={proposer_scrape_result['success']}, "
+                f"내용없음={proposer_scrape_result.get('skipped', 0)}, "
+                f"실패={proposer_scrape_result['failed']}"
                 ")"
             )
 
@@ -846,6 +967,7 @@ class BatchRunner:
             f"enable_member_sync={self.settings.bill_batch_enable_member_sync} "
             f"enable_vote_sync={self.settings.bill_batch_enable_vote_sync} "
             f"enable_scrape={self.settings.bill_batch_enable_scrape} "
+            f"enable_proposer_scrape={self.settings.bill_batch_enable_proposer_scrape} "
             f"enable_ai={self.settings.bill_batch_enable_ai}",
             flush=True,
         )
@@ -878,6 +1000,7 @@ class BatchRunner:
 
             collect_result = None
             scrape_result = None
+            proposer_scrape_result = None
             member_result = None
             vote_result = None
             ai_result = None
@@ -896,6 +1019,15 @@ class BatchRunner:
                 scrape_result = self._scrape_summaries(
                     batch_repo=batch_repo,
                     bill_repo=bill_repo,
+                    batch_run_id=batch_run_id,
+                    min_proposal_date=min_proposal_date,
+                )
+
+            if self.settings.bill_batch_enable_proposer_scrape:
+                proposer_scrape_result = self._scrape_proposers(
+                    batch_repo=batch_repo,
+                    bill_repo=bill_repo,
+                    member_repo=member_repo,
                     batch_run_id=batch_run_id,
                     min_proposal_date=min_proposal_date,
                 )
@@ -944,6 +1076,8 @@ class BatchRunner:
                 total_failed += collect_result["failed"]
             if scrape_result:
                 total_failed += scrape_result["failed"]
+            if proposer_scrape_result:
+                total_failed += proposer_scrape_result["failed"]
             if member_result:
                 total_failed += member_result["failed"]
             if vote_result:
@@ -961,6 +1095,7 @@ class BatchRunner:
             message = self._build_run_message(
                 collect_result=collect_result,
                 scrape_result=scrape_result,
+                proposer_scrape_result=proposer_scrape_result,
                 member_result=member_result,
                 vote_result=vote_result,
                 ai_result=ai_result,
@@ -1010,6 +1145,7 @@ class BatchRunner:
                 "run_status": run_status,
                 "collect": collect_result,
                 "scrape": scrape_result,
+                "proposer_scrape": proposer_scrape_result,
                 "member": member_result,
                 "vote": vote_result,
                 "ai": ai_result,

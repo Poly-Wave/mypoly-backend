@@ -2,6 +2,7 @@ package com.polywave.billservice.repository.query.impl;
 
 import com.polywave.billservice.application.bill.query.result.BillCategoryResult;
 import com.polywave.billservice.application.bill.query.result.BillDetailResult;
+import com.polywave.billservice.application.bill.query.result.CoProposerResult;
 import com.polywave.billservice.application.bill.query.result.BillStatusHistoryResult;
 import com.polywave.billservice.application.bill.query.result.BillVoteDetailResult;
 import com.polywave.billservice.application.bill.query.result.BillVoteSummaryResult;
@@ -10,6 +11,8 @@ import com.polywave.billservice.domain.QBill;
 import com.polywave.billservice.domain.QBillAiAnalysis;
 import com.polywave.billservice.domain.QBillAiCategory;
 import com.polywave.billservice.domain.QBillCategory;
+import com.polywave.billservice.domain.QBillMember;
+import com.polywave.billservice.domain.QBillProposer;
 import com.polywave.billservice.domain.QBillStatusHistory;
 import com.polywave.billservice.domain.QBillTrendingSnapshot;
 import com.polywave.billservice.domain.QUserBillVote;
@@ -98,6 +101,29 @@ public class BillDetailQueryRepositoryImpl implements BillDetailQueryRepository 
                         analysis.current.isTrue()
                 )
                 .orderBy(billAiCategory.rankOrder.asc(), category.displayOrder.asc())
+                .fetch();
+    }
+
+    @Override
+    public List<CoProposerResult> findCoProposersByBillId(Long billId) {
+        QBillProposer proposer = QBillProposer.billProposer;
+        QBillMember member = QBillMember.billMember;
+
+        return queryFactory
+                .select(Projections.constructor(
+                        CoProposerResult.class,
+                        member.id,
+                        proposer.proposerName,
+                        member.partyName,
+                        member.photoUrl
+                ))
+                .from(proposer)
+                .leftJoin(proposer.member, member)
+                .where(
+                        proposer.bill.id.eq(billId),
+                        proposer.representative.isFalse()
+                )
+                .orderBy(proposer.displayOrder.asc())
                 .fetch();
     }
 
