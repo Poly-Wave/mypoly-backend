@@ -30,6 +30,8 @@ import org.springframework.stereotype.Component;
  *   (운영자가 ACTIVE 로 전환하기 전까지는 notices.broadcast_at 을 채우지 않고 계속 재시도 대상으로 남긴다.
  *    deliverFromPolicy 는 status!=ACTIVE 이면 항상 empty 를 반환하므로, 여기서 status 를 미리 확인해
  *    "실제로는 발송되지 않았는데 broadcast_at 만 채워지는" 상황을 방지한다.)
+ * - 같은 이유로 대상 유저가 0명이거나 모든 발송이 예외로 실패한 경우에도 broadcast_at 을 채우지 않는다.
+ *   broadcast_at 이 한 번 채워지면 재시도 대상(broadcast_at IS NULL)에서 영구히 빠지기 때문이다.
  *
  * 멱등성:
  * - dedupKey = "NOTICE_PUBLISHED_BROADCAST:{noticeId}:{userId}" — 재실행/재시도에도 중복 발급되지 않는다.
@@ -80,12 +82,27 @@ public class NoticeBroadcastScheduler {
         }
 
         List<OnboardingReminderUserDto> targets = userServiceClient.findOnboardingCompletedUsers();
+        if (targets.isEmpty()) {
+            // UserServiceClient 는 internal API 키 미설정이나 호출 실패 시에도 예외 없이 빈 목록을 돌려준다.
+            // 여기서 막지 않으면 아무에게도 발송되지 않은 공지에 broadcast_at 이 찍혀 영구히 유실된다.
+            log.warn("Skip notice broadcast: 대상 유저가 0명입니다. pendingNotices={}", pending.size());
+            return new Result(0, 0);
+        }
 
         int noticesBroadcasted = 0;
         int notificationsSent = 0;
         for (Notice notice : pending) {
-            int sent = broadcastOne(notice, policyId, targets);
-            notificationsSent += sent;
+            DeliveryOutcome outcome = broadcastOne(notice, policyId, targets);
+            notificationsSent += outcome.sent();
+
+            // 이미 발급된 유저는 dedup 으로 skip 되어 sent=0 이 될 수 있으므로 sent 로는 실패를 판정할 수 없다.
+            // 모든 대상이 예외로 실패한 경우에만 완료 처리를 보류하고 다음 실행에서 다시 시도한다.
+            if (outcome.failed() == targets.size()) {
+                log.warn("Skip marking notice as broadcasted: 전체 발송 실패. noticeId={}, targets={}",
+                        notice.getId(), targets.size());
+                continue;
+            }
+
             notice.markBroadcasted(Instant.now());
             noticeCommandRepository.save(notice);
             noticesBroadcasted++;
@@ -94,8 +111,9 @@ public class NoticeBroadcastScheduler {
         return new Result(noticesBroadcasted, notificationsSent);
     }
 
-    private int broadcastOne(Notice notice, Long policyId, List<OnboardingReminderUserDto> targets) {
+    private DeliveryOutcome broadcastOne(Notice notice, Long policyId, List<OnboardingReminderUserDto> targets) {
         int sent = 0;
+        int failed = 0;
         for (OnboardingReminderUserDto target : targets) {
             try {
                 String dedupKey = SystemNotificationPolicyKey.NOTICE_PUBLISHED_BROADCAST
@@ -108,11 +126,16 @@ public class NoticeBroadcastScheduler {
                     sent++;
                 }
             } catch (Exception e) {
+                failed++;
                 log.warn("Notice broadcast delivery failed. noticeId={}, userId={}",
                         notice.getId(), target.userId(), e);
             }
         }
-        return sent;
+        return new DeliveryOutcome(sent, failed);
+    }
+
+    /** 공지 1건에 대한 발송 결과. sent 는 신규 발급 건수, failed 는 예외로 실패한 건수. */
+    private record DeliveryOutcome(int sent, int failed) {
     }
 
     public record Result(int noticesBroadcasted, int notificationsSent) {
